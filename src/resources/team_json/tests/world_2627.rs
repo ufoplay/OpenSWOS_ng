@@ -64,8 +64,7 @@ fn every_team_converts_to_typed_and_back() {
             let team = entry
                 .to_team()
                 .unwrap_or_else(|error| panic!("{name}: {error}"));
-            let back = TeamEntry::from_team(&team, EntryIds::of(entry))
-                .unwrap_or_else(|error| panic!("{name}: {error}"));
+            let back = TeamEntry::from_team(&team, EntryIds::of(entry));
             assert_eq!(&back, entry, "{name}: {}", team.name);
             teams += 1;
         }

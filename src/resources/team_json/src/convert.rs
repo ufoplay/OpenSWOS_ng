@@ -1,13 +1,12 @@
 //! The JSON model to and from the typed team model (`openswos_team_resource`). The codes
 //! and skills are checked as the JSON is read; every other range is checked here on the way
-//! in. On the
-//! way out, a name field holding bytes after its end cannot be written (JSON keeps the text
-//! only).
+//! in. On the way out, nothing can fail: what the game does not read and JSON cannot keep
+//! (bytes after a name's end, the passing byte's high nibble) is not written.
 
-use openswos_common::{FixedName, NameError, TeamFileNumber, TeamId, TeamOrdinal};
+use openswos_common::{FixedName, NameError, Nibble, TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_team_resource::{
-    Division, Form, GlobalTeamNumber, GoalCounts, Kit, Nationality, Nibble, PLAYERS_PER_TEAM,
-    Player, PlayerRuntime, PriceId, Skills, Team, TeamRuntime,
+    Division, Form, GlobalTeamNumber, GoalCounts, Kit, Nationality, PLAYERS_PER_TEAM, Player,
+    PlayerRuntime, PriceId, Skills, Team, TeamRuntime,
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -49,12 +48,6 @@ pub enum EntryError {
         field: &'static str,
         /// Why.
         source: NameError,
-    },
-    /// A name field holds bytes after its end, which JSON cannot keep.
-    #[error("{field}: the name field holds bytes after its end, which JSON cannot keep")]
-    NonCanonicalName {
-        /// The JSON field.
-        field: &'static str,
     },
 }
 
@@ -160,13 +153,11 @@ impl TeamEntry {
         })
     }
 
-    /// The entry of `team`, with `ids`, its numbers written unsigned. The passing byte's
-    /// unused high nibble is not written: the JSON keeps only the skill.
-    ///
-    /// # Errors
-    ///
-    /// When a name field holds bytes after its end.
-    pub fn from_team(team: &Team, ids: EntryIds) -> Result<Self, EntryError> {
+    /// The entry of `team`, with `ids`, its numbers written unsigned. What the game does not
+    /// read is not written: names are their text (bytes after a name's end are dropped), and
+    /// passing is its skill (the byte's high nibble is dropped).
+    #[must_use]
+    pub fn from_team(team: &Team, ids: EntryIds) -> Self {
         let Team {
             id,
             global_number: GlobalTeamNumber(global_number),
@@ -195,8 +186,8 @@ impl TeamEntry {
             .iter()
             .zip(player_uuids)
             .map(|(player, uuid)| player_entry(player, uuid))
-            .collect::<Result<_, _>>()?;
-        Ok(Self {
+            .collect();
+        Self {
             uuid: team_uuid,
             checksum,
             team: TeamHeader {
@@ -204,7 +195,7 @@ impl TeamEntry {
                 team_ordinal: id.ordinal.0,
                 global_team_number: JsonWord::from(global_number.cast_unsigned()),
                 team_controls: *controls,
-                team_name: text(name, "team_name")?,
+                team_name: name.text(),
                 writes_zero_here: *own_goals,
                 and_with_0xfe: *match_flags,
                 tactics: *tactics,
@@ -219,14 +210,14 @@ impl TeamEntry {
                 secondary_basic_color: secondary_kit.basic,
                 secondary_shorts_color: secondary_kit.shorts,
                 secondary_socks_color: secondary_kit.socks,
-                coach_name: text(coach, "coach_name")?,
+                coach_name: coach.text(),
                 player_values_dirty: *player_values,
                 player_numbers: *player_order,
             },
             players: entries
                 .try_into()
                 .expect("a team has PLAYERS_PER_TEAM players"),
-        })
+        }
     }
 }
 
@@ -288,7 +279,7 @@ fn player(entry: &PlayerEntry) -> Result<Player, EntryError> {
 }
 
 /// The entry of a player.
-fn player_entry(player: &Player, uuid: Uuid) -> Result<PlayerEntry, EntryError> {
+fn player_entry(player: &Player, uuid: Uuid) -> PlayerEntry {
     let Player {
         nationality: Nationality(nationality),
         shirt_number,
@@ -323,12 +314,12 @@ fn player_entry(player: &Player, uuid: Uuid) -> Result<PlayerEntry, EntryError> 
                 form,
             },
     } = player;
-    Ok(PlayerEntry {
+    PlayerEntry {
         uuid,
         nationality: JsonByte::from(*nationality),
         cached_match_value: JsonByte::from(cached_match_value.cast_unsigned()),
         shirt_number: JsonByte::from(*shirt_number),
-        player_name: text(name, "player_name")?,
+        player_name: name.text(),
         position: *position,
         face: *face,
         flags: *flags,
@@ -345,7 +336,7 @@ fn player_entry(player: &Player, uuid: Uuid) -> Result<PlayerEntry, EntryError> 
         price: JsonByte::from(*price),
         goal_stats: [*league, *domestic_cup, *league_cup, *continental_cup],
         form: JsonByte::from(i8::from(*form).cast_unsigned()),
-    })
+    }
 }
 
 /// The cards-and-injuries byte of the JSON's three fields.
@@ -364,14 +355,6 @@ fn cards_injuries(cards: u8, injury: u8, status_bucket: u8) -> Result<u8, EntryE
 
 fn name<const N: usize>(text: &str, field: &'static str) -> Result<FixedName<N>, EntryError> {
     FixedName::from_text(text).map_err(|source| EntryError::Name { field, source })
-}
-
-fn text<const N: usize>(name: &FixedName<N>, field: &'static str) -> Result<String, EntryError> {
-    if name.is_canonical() {
-        Ok(name.text())
-    } else {
-        Err(EntryError::NonCanonicalName { field })
-    }
 }
 
 fn out_of_range(field: &'static str, value: u8) -> EntryError {
@@ -400,7 +383,7 @@ mod tests {
     fn teams_survive_the_json() {
         for team in oceania() {
             let ids = EntryIds::derived(WORLD_1996_97_TAG, &team);
-            let entry = TeamEntry::from_team(&team, ids.clone()).expect("canonical names");
+            let entry = TeamEntry::from_team(&team, ids.clone());
             assert_eq!(EntryIds::of(&entry), ids);
             assert_eq!(entry.to_team(), Ok(team.clone()), "{}", team.name);
         }
@@ -411,8 +394,7 @@ mod tests {
         let mut team = oceania().remove(0);
         // status 0b101 (bits 5-7), injury 0b011 (bits 2-4), cards 0b10 (bits 0-1)
         team.players[0].runtime.cards_injuries = 0b1010_1110;
-        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team))
-            .expect("converts");
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
         let player = &entry.players[0];
         assert_eq!(
             (player.cards, player.injury, player.status_bucket),
@@ -431,7 +413,7 @@ mod tests {
         let mut team = oceania().remove(0);
         team.players[0].nationality = Nationality(200);
         let ids = EntryIds::derived(WORLD_1996_97_TAG, &team);
-        let mut entry = TeamEntry::from_team(&team, ids).expect("converts");
+        let mut entry = TeamEntry::from_team(&team, ids);
         assert_eq!(entry.players[0].nationality.written(), 200);
         // OpenSWOS Setup writes the same byte signed.
         entry.players[0].nationality = JsonByte::try_from(-56_i16).expect("in range");
@@ -442,7 +424,7 @@ mod tests {
     fn out_of_range_values_are_named() {
         let team = oceania().remove(0);
         let ids = EntryIds::derived(WORLD_1996_97_TAG, &team);
-        let entry = TeamEntry::from_team(&team, ids).expect("converts");
+        let entry = TeamEntry::from_team(&team, ids);
         let mut bad = entry.clone();
         bad.players[0].injury = 8;
         assert_eq!(
@@ -466,8 +448,7 @@ mod tests {
     #[test]
     fn codes_outside_their_sets_do_not_read() {
         let team = oceania().remove(0);
-        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team))
-            .expect("converts");
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
         let json = serde_json::to_value(&entry).expect("serializes");
         for (pointer, value, message) in [
             ("/players/3/position", 8, "8 is not a player position"),
@@ -510,8 +491,7 @@ mod tests {
         team.players[0].runtime.form = Form::Trialist;
         team.players[1].runtime.form = Form::Reserve;
         team.players[2].runtime.form = Form::from(-100);
-        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team))
-            .expect("converts");
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
         let written: Vec<i16> = entry.players[..3]
             .iter()
             .map(|player| player.form.written())
@@ -525,8 +505,7 @@ mod tests {
         let clean = oceania().remove(0);
         let mut team = clean.clone();
         team.players[2].skills.passing_high = Nibble::try_from(3).expect("a nibble");
-        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team))
-            .expect("converts");
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
         assert_eq!(entry.players[2].passing, clean.players[2].skills.passing);
         assert_eq!(entry.to_team(), Ok(clean));
     }
@@ -534,8 +513,7 @@ mod tests {
     #[test]
     fn a_negative_passing_does_not_read() {
         let team = oceania().remove(0);
-        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team))
-            .expect("converts");
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
         let json = serde_json::to_value(&entry).expect("serializes");
         let mut negative = json.clone();
         *negative
@@ -545,16 +523,18 @@ mod tests {
     }
 
     #[test]
-    fn bytes_after_a_name_cannot_be_written() {
-        let mut team = oceania().remove(0);
+    fn bytes_after_a_name_are_not_written() {
+        let clean = oceania().remove(0);
+        let mut team = clean.clone();
         let mut bytes = *team.name.as_bytes();
         bytes[16] = b'X';
-        bytes[10] = 0;
         team.name = FixedName::from_bytes(bytes);
-        let ids = EntryIds::derived(WORLD_1996_97_TAG, &team);
-        assert_eq!(
-            TeamEntry::from_team(&team, ids),
-            Err(EntryError::NonCanonicalName { field: "team_name" })
-        );
+        let mut bytes = *team.players[4].name.as_bytes();
+        bytes[22] = b'Y';
+        team.players[4].name = FixedName::from_bytes(bytes);
+        assert!(!team.name.is_canonical());
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
+        assert_eq!(entry.team.team_name, "AUSTRALIA");
+        assert_eq!(entry.to_team(), Ok(clean));
     }
 }

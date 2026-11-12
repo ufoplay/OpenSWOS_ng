@@ -25,6 +25,7 @@ openswos_test_utils = { path = "src/test_utils" }
 
 # Resources
 openswos_poolplyr_resource = { path = "src/resources/poolplyr", version = "0.1.0" }
+openswos_tac_resource = { path = "src/resources/tac", version = "0.1.0" }
 openswos_team_json_resource = { path = "src/resources/team_json", version = "0.1.0" }
 openswos_team_resource = { path = "src/resources/team", version = "0.1.0" }
 openswos_tmd_resource = { path = "src/resources/tmd", version = "0.1.0" }

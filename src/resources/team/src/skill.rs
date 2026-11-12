@@ -1,14 +1,9 @@
 //! A player's skills. A record stores each one in a nibble (4 bits): a level the match
 //! plays with (bits 0-2) and a marker (bit 3).
 
+use openswos_common::Nibble;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-/// Bits in a nibble: a skill byte holds two.
-const NIBBLE_BITS: u32 = 4;
-
-/// A nibble's bits.
-const NIBBLE_MASK: u8 = 0x0F;
 
 /// The level's bits in a skill nibble: bits 0-2, all the match engine reads (upstream
 /// `match_sim.c` masks the four skill bytes with `0x07777777`).
@@ -17,57 +12,6 @@ const LEVEL_MASK: u8 = 0b0111;
 /// The marker's bit in a skill nibble: bit 3 (upstream `transfer_market.c`,
 /// `playerMarketPlayerMatchesFilters`).
 const MARKER_BIT: u8 = 0b1000;
-
-/// Four bits as a record stores them: half a byte.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(try_from = "u8", into = "u8")]
-pub struct Nibble(u8);
-
-/// A value too big for a nibble.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
-#[error("{0} does not fit a nibble (0..=15)")]
-pub struct InvalidNibble(pub u8);
-
-impl Nibble {
-    /// All bits clear.
-    pub const ZERO: Self = Self(0);
-
-    /// The value, 0..=15.
-    #[must_use]
-    pub fn value(self) -> u8 {
-        self.0
-    }
-
-    /// The high and low nibbles of a byte.
-    #[must_use]
-    pub fn split(byte: u8) -> (Self, Self) {
-        (Self(byte >> NIBBLE_BITS), Self(byte & NIBBLE_MASK))
-    }
-
-    /// The byte holding `high` and `low`.
-    #[must_use]
-    pub fn join(high: Self, low: Self) -> u8 {
-        (high.0 << NIBBLE_BITS) | low.0
-    }
-}
-
-impl TryFrom<u8> for Nibble {
-    type Error = InvalidNibble;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        if value <= NIBBLE_MASK {
-            Ok(Self(value))
-        } else {
-            Err(InvalidNibble(value))
-        }
-    }
-}
-
-impl From<Nibble> for u8 {
-    fn from(nibble: Nibble) -> Self {
-        nibble.0
-    }
-}
 
 /// A skill level: 0..=7, what the match plays with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -140,8 +84,8 @@ impl Skill {
 impl From<Nibble> for Skill {
     fn from(nibble: Nibble) -> Self {
         Self {
-            level: SkillLevel(nibble.0 & LEVEL_MASK),
-            marked: nibble.0 & MARKER_BIT != 0,
+            level: SkillLevel(nibble.value() & LEVEL_MASK),
+            marked: nibble.value() & MARKER_BIT != 0,
         }
     }
 }
@@ -149,7 +93,7 @@ impl From<Nibble> for Skill {
 impl From<Skill> for Nibble {
     fn from(skill: Skill) -> Self {
         let Skill { level, marked } = skill;
-        Self(if marked {
+        Self::from_low_bits(if marked {
             level.0 | MARKER_BIT
         } else {
             level.0
@@ -171,7 +115,7 @@ impl TryFrom<u8> for Skill {
 impl From<Skill> for u8 {
     /// The skill's nibble value, 0..=15.
     fn from(skill: Skill) -> Self {
-        Nibble::from(skill).0
+        Nibble::from(skill).value()
     }
 }
 
@@ -231,11 +175,6 @@ mod tests {
             InvalidSkillLevel(8).to_string(),
             "8 is not a skill level (0..=7)"
         );
-        assert_eq!(Nibble::try_from(16), Err(InvalidNibble(16)));
-        assert_eq!(
-            InvalidNibble(16).to_string(),
-            "16 does not fit a nibble (0..=15)"
-        );
     }
 
     #[test]
@@ -243,8 +182,6 @@ mod tests {
         // PAUL OKON's tackling-and-control byte (assets/TEAM/TEAM.085).
         assert_eq!(Skill::split(0x3E), (skill(3, false), skill(6, true)));
         assert_eq!(Skill::join(skill(3, false), skill(6, true)), 0x3E);
-        assert_eq!(Nibble::split(0x3E), (Nibble(3), Nibble(14)));
-        assert_eq!(Nibble::ZERO.value(), 0);
         assert_eq!(SkillLevel::try_from(5).map(SkillLevel::value), Ok(5));
     }
 
@@ -257,7 +194,6 @@ mod tests {
             skill(6, true)
         );
         assert!(serde_json::from_str::<Skill>(r#"{"level": 8, "marked": false}"#).is_err());
-        assert!(serde_json::from_str::<Nibble>("16").is_err());
     }
 
     proptest! {

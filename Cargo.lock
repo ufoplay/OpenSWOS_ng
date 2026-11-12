@@ -574,6 +574,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "openswos_tac_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_test_utils",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "openswos_team_json_resource"
 version = "0.1.0"
 dependencies = [

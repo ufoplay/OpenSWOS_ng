@@ -77,32 +77,26 @@ impl TeamJsonFile {
 
     /// `file` as JSON, as OpenSWOS Setup makes it from a binary team file: the country is
     /// its first team's file number, `country_name` is written when given, and every team
-    /// gets the ids `ids` gives it. Numbers are written unsigned.
-    ///
-    /// # Errors
-    ///
-    /// When a name field holds bytes after its end.
+    /// gets the ids `ids` gives it. Numbers are written unsigned, and what the game does not
+    /// read is not written ([`TeamEntry::from_team`]).
+    #[must_use]
     pub fn from_team_file(
         file: &TeamFile,
         country_name: Option<&str>,
         ids: impl Fn(&Team) -> EntryIds,
-    ) -> Result<Self, TeamJsonError> {
+    ) -> Self {
         let teams: Vec<TeamEntry> = file
             .teams
             .iter()
-            .enumerate()
-            .map(|(index, team)| {
-                TeamEntry::from_team(team, ids(team))
-                    .map_err(|source| TeamJsonError::Team { index, source })
-            })
-            .collect::<Result<_, _>>()?;
-        Ok(Self {
+            .map(|team| TeamEntry::from_team(team, ids(team)))
+            .collect();
+        Self {
             kind: FileKind::Team,
             country: file.teams.first().map(|team| team.id.file.0),
             country_name: country_name.map(|name| Some(name.to_owned())),
             count: teams.len(),
             teams,
-        })
+        }
     }
 }
 

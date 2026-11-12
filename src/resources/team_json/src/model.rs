@@ -4,10 +4,10 @@
 //! team model, checking every range. Codes (position, kit colours, tactics...) and skills
 //! are already the typed model's types, written as their numbers.
 
-use openswos_common::Position;
+use openswos_common::{Position, Tactics};
 use openswos_team_resource::{
     Face, KitColour, MatchFlags, PLAYERS_PER_TEAM, PlayerFlags, PlayerValues, ShirtType, Skill,
-    Tactics, TeamControls,
+    TeamControls,
 };
 use serde::{Deserialize, Deserializer, Serialize};
 use thiserror::Error;

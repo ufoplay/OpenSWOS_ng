@@ -8,7 +8,10 @@ Types and traits shared by the other OpenSWOS_ng crates:
 - `Importer` / `Exporter`: the traits each file format implements. Exporters are lossless.
 - `FixedName<N>`: a fixed-size name field that keeps every byte, so records round-trip
   exactly.
-- `TeamId` (`TeamFileNumber` + `TeamOrdinal`) and `Position`.
+- `TeamId` (`TeamFileNumber` + `TeamOrdinal`), `Position` and `Tactics` (the engine's 18
+  tactic slots, named by team records and tactics files).
+- `Nibble`: half a byte, as records pack two values into one.
+- `byte_enum!`: the conversions between a fieldless enum and its byte code.
 
 What numbers such as countries or team files *mean* is world data (docs/PLAN.md §5.2), so
 they are plain newtypes here. Only values the file formats fix are enums.

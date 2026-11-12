@@ -19,7 +19,9 @@
 //! | 76 | 16 × 38 | players ([`Player`]) |
 
 use bitflags::bitflags;
-use openswos_common::{ByteReader, ByteWriter, FixedName, ReadError, TeamId};
+use openswos_common::{
+    ByteReader, ByteWriter, FixedName, InvalidTactics, ReadError, Tactics, TeamId,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -50,82 +52,6 @@ pub const COACH_NAME_LEN: usize = 23;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct GlobalTeamNumber(pub i16);
-
-/// A team's tactics: one of the engine's 18 tactic slots (upstream `TACTIC_*`,
-/// include/game_types.h). What formation each slot plays is data (upstream
-/// `bin/data_json/tactics/`); the slots are the engine's. The PC game's files use the first
-/// ten, World 2026-27's only the first.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[repr(u8)]
-pub enum Tactics {
-    /// 4-4-2 (upstream `TACTIC_DEFAULT`).
-    FourFourTwo = 0,
-    /// 5-4-1.
-    FiveFourOne = 1,
-    /// 4-5-1.
-    FourFiveOne = 2,
-    /// 5-3-2.
-    FiveThreeTwo = 3,
-    /// 3-5-2.
-    ThreeFiveTwo = 4,
-    /// 4-3-3.
-    FourThreeThree = 5,
-    /// 4-2-4.
-    FourTwoFour = 6,
-    /// 3-4-3.
-    ThreeFourThree = 7,
-    /// Sweep.
-    Sweep = 8,
-    /// 5-2-3.
-    FiveTwoThree = 9,
-    /// Attack.
-    Attack = 10,
-    /// Defend.
-    Defend = 11,
-    /// The user's tactic A.
-    UserA = 12,
-    /// The user's tactic B.
-    UserB = 13,
-    /// The user's tactic C.
-    UserC = 14,
-    /// The user's tactic D.
-    UserD = 15,
-    /// The user's tactic E.
-    UserE = 16,
-    /// The user's tactic F.
-    UserF = 17,
-}
-
-/// A code that is not a tactic slot.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
-#[error("{0} is not a tactic slot")]
-pub struct InvalidTactics(pub u8);
-
-openswos_common::byte_enum!(
-    Tactics,
-    InvalidTactics,
-    [
-        FourFourTwo,
-        FiveFourOne,
-        FourFiveOne,
-        FiveThreeTwo,
-        ThreeFiveTwo,
-        FourThreeThree,
-        FourTwoFour,
-        ThreeFourThree,
-        Sweep,
-        FiveTwoThree,
-        Attack,
-        Defend,
-        UserA,
-        UserB,
-        UserC,
-        UserD,
-        UserE,
-        UserF,
-    ]
-);
 
 /// Which of its country's divisions the team plays in, 0 being the top one (upstream
 /// `league`; 0..=4 in the PC game's files).

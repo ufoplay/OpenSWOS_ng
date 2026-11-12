@@ -20,7 +20,10 @@ named fields, with a `uuid` per team and player and a `checksum` per team.
 - **What this port writes:** the World 2026-27 package's style. Numbers are always written
   unsigned: nationalities, shirt numbers and prices are unsigned codes, and Setup's signs
   come from the C structs' `int8_t`. The world packages it makes (World 1996-97) end with a
-  newline (`WORLD_PACKAGE_TRAILING_NEWLINE`). Setup's signed files are still read.
+  newline (`WORLD_PACKAGE_TRAILING_NEWLINE`). Setup's signed files are still read. Writing
+  never fails: what the game does not read and JSON cannot keep is dropped, namely bytes
+  after a name's end (the PC game's `SAFE.EDT` has some) and the passing byte's high
+  nibble.
 - **`convert`**: the model to and from the typed `Team`, checking the remaining ranges
   (cards and injuries, names). The JSON
   splits the cards-and-injuries byte as `cards` (bits 0-1), `injury` (bits 2-4) and
@@ -121,4 +124,5 @@ Upstream OpenSWOS: `tools/swosdata/lib/team_json.c` (the writer), `docs/TEAM_IDS
   round-trips byte for byte, converts to typed teams and back, and states the checksums
   its data gives.
 - `just test_real_assets <game_dir>`: every PC team file round-trips through this JSON,
-  and BRAZIL's checksum is upstream's documented one.
+  every `*.EDT` file exports to it with every name's text, and BRAZIL's checksum is
+  upstream's documented one.

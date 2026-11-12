@@ -26,8 +26,7 @@ fn from_binary() -> Vec<u8> {
     let binary = TeamFileFormat::import(&read("TEAM", "TEAM.085")).expect("a valid team file");
     let file = TeamJsonFile::from_team_file(&binary, Some(COUNTRY_NAME), |team| {
         EntryIds::derived(WORLD_1996_97_TAG, team)
-    })
-    .expect("canonical names");
+    });
     TeamJsonFormat::export(&TeamJsonDocument {
         file,
         trailing_newline: WORLD_PACKAGE_TRAILING_NEWLINE,

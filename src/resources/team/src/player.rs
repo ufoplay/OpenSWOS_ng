@@ -22,7 +22,9 @@
 use bitflags::bitflags;
 use openswos_common::{ByteReader, ByteWriter, FixedName, Position, ReadError};
 
-use crate::skill::{Nibble, Skill, Skills};
+use openswos_common::Nibble;
+
+use crate::skill::{Skill, Skills};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

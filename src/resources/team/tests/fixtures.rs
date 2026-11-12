@@ -1,10 +1,10 @@
 //! The committed original team files (`assets/TEAM/`): they round-trip, and decode as
 //! their sidecars or the assertions below say.
 
-use openswos_common::{Position, TeamFileNumber, TeamId, TeamOrdinal};
+use openswos_common::{Nibble, Position, TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_team_resource::{
-    Division, Face, Form, MatchFlags, Nationality, Nibble, PLAYERS_PER_TEAM, PlayerValues,
-    ShirtType, TeamControls, TeamFileFormat, TeamRuntime,
+    Division, Face, Form, MatchFlags, Nationality, PLAYERS_PER_TEAM, PlayerValues, ShirtType,
+    TeamControls, TeamFileFormat, TeamRuntime,
 };
 use openswos_test_utils::assets_path;
 use openswos_test_utils::fixtures::{assert_round_trip, assert_sidecar, fixtures};

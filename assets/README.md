@@ -33,3 +33,7 @@ Every committed file is listed here: where it comes from and under which license
 | `TMD/EUROCUP.TMD` | PC SWOS 96/97 (GOG), `DATA/EUROCUP.TMD`: the 16 Champions' Cup teams | Original game data © its rights holders; a small test excerpt (D2) |
 | `TEAM_JSON/OCEANIA.json` | Written by `openswos_team_json_resource`'s tests (`OPENSWOS_BLESS=1`) from `TEAM/TEAM.085`, as World 1996-97's team JSON (World 2026-27's style: unsigned numbers, trailing newline) | Derived from original game data (D2); the expected team JSON of that file |
 | `POOLPLYR/POOLPLYR.DAT` | PC SWOS 96/97 (GOG), `DATA/POOLPLYR.DAT`: the 900-player transfer pool | Original game data © its rights holders; a small test excerpt (D2) |
+| `TAC/01_442DOS.TAC` | SWOS 2020 (community release of the PC game), `swos/tactics/dos/01_442DOS.TAC`: a DOS 4-4-2, 370 bytes | Game data © its rights holders; a small test excerpt (D2) |
+| `TAC/06_433.TAC` | SWOS 2020, `swos/tactics/common/06_433.TAC`: a 4-3-3 whose name keeps bytes after its end | Game data © its rights holders; a small test excerpt (D2) |
+| `TAC/04_5-3-2.tac` | SWOS 2020, `tactics/cpu-tactics/tactics/04_5-3-2.tac`: a CPU 5-3-2, 376 bytes (six trailing zeros) | Game data © its rights holders; a small test excerpt (D2) |
+| `TAC/01_442DOS.TAC.json` | Written by `openswos_tac_resource`'s tests (`OPENSWOS_BLESS=1`), reviewed | The expected decoded model |
