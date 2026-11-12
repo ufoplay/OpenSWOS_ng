@@ -37,4 +37,10 @@ Every committed file is listed here: where it comes from and under which license
 | `TAC/06_433.TAC` | SWOS 2020, `swos/tactics/common/06_433.TAC`: a 4-3-3 whose name keeps bytes after its end | Game data © its rights holders; a small test excerpt (D2) |
 | `TAC/04_5-3-2.tac` | SWOS 2020, `tactics/cpu-tactics/tactics/04_5-3-2.tac`: a CPU 5-3-2, 376 bytes (six trailing zeros) | Game data © its rights holders; a small test excerpt (D2) |
 | `COMPETITIONS_JSON/*.json` (10 files) | Upstream OpenSWOS `bin/data_json/competitions/` at commit `ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b` (`just upstream_fetch`), unchanged | GPL-3.0-or-later (upstream's data) |
+| `TACTICS_JSON/*.json` (20 files) | Upstream OpenSWOS `bin/data_json/tactics/` at commit `ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b` (`just upstream_fetch`), unchanged: the 12 built-in tactics, and the Amiga original's and DOS release's 4-4-2, 4-3-3, 3-4-3 and Sweep | GPL-3.0-or-later (upstream's data) |
+| `CAREER_PARAMS_JSON/career_params.json` | Upstream OpenSWOS `bin/data_json/career_params.json` at the same commit, unchanged | GPL-3.0-or-later (upstream's data) |
+| `DIY/2005CLFINAL.DIY` | SWOS 2020, `swos/2005CLFINAL.DIY`: a DOS DIY cup, the 2005 Champions League final (2 teams), 6559 bytes | Game data © its rights holders; a small test excerpt (D2) |
+| `DIY/EC1964.diy` | SWOS 2020, `swos/EC1964.diy`: a DOS DIY cup, UEFA Euro 1964 (4 national teams), 7927 bytes | Game data © its rights holders; a small test excerpt (D2) |
+| `HIL/26-1111-1654-1-0.HIL` | SWOS 2020, `swos/highlights/26-1111-1654-1-0.HIL`: a DOS highlights file of one goal (Spain v Germany, World Cup), 64626 bytes | Game data © its rights holders; a small test excerpt (D2) |
+| `HIL/LATEST-100.RPL` | Cut from SWOS 2020's `swos/replays/LATEST.RPL` (Lazio v Advanced, team training, 2.35 MB): its header unchanged, the first 100 frames of its scene, then the end word; 15630 bytes | Game data © its rights holders; a small test excerpt (D2) |
 | `TAC/01_442DOS.TAC.json` | Written by `openswos_tac_resource`'s tests (`OPENSWOS_BLESS=1`), reviewed | The expected decoded model |

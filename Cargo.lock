@@ -545,10 +545,52 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
+name = "openswos_career_params_json_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_test_utils",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "openswos_career_save_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_save_json_resource",
+ "openswos_tac_resource",
+ "openswos_team_resource",
+ "openswos_test_utils",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "openswos_common"
 version = "0.1.0"
 dependencies = [
  "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "openswos_competition_save_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_career_save_resource",
+ "openswos_common",
+ "openswos_save_json_resource",
+ "openswos_tac_resource",
+ "openswos_team_resource",
+ "openswos_test_utils",
  "serde",
  "serde_json",
  "thiserror",
@@ -575,6 +617,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "openswos_hil_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_save_json_resource",
+ "openswos_test_utils",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "openswos_national_teams_json_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_test_utils",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "openswos_poolplyr_resource"
 version = "0.1.0"
 dependencies = [
@@ -587,10 +653,61 @@ dependencies = [
 ]
 
 [[package]]
+name = "openswos_rgd_resource"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "flate2",
+ "openswos_common",
+ "openswos_tac_resource",
+ "openswos_team_resource",
+ "openswos_test_utils",
+ "thiserror",
+]
+
+[[package]]
+name = "openswos_save_json_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_test_utils",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "openswos_srp_resource"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "flate2",
+ "openswos_common",
+ "openswos_hil_resource",
+ "openswos_test_utils",
+ "thiserror",
+]
+
+[[package]]
 name = "openswos_tac_resource"
 version = "0.1.0"
 dependencies = [
  "openswos_common",
+ "openswos_save_json_resource",
+ "openswos_test_utils",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "openswos_tactics_json_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_tac_resource",
  "openswos_test_utils",
  "proptest",
  "serde",

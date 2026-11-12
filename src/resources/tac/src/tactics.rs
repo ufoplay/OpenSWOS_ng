@@ -105,7 +105,7 @@ impl PairId {
     }
 
     /// The pair byte of `pair`.
-    fn byte(pair: Option<Self>) -> u8 {
+    pub(crate) fn byte(pair: Option<Self>) -> u8 {
         pair.map_or(NO_PAIR, |pair| pair.0)
     }
 }

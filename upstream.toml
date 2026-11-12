@@ -20,6 +20,7 @@ tracked = [
     "tools/swosdata/lib/**",
     "scripts/world_import.py",
     "scripts/assign_team_uuids.py",
+    "scripts/rgd_schema.py",
 ]
 checkout = [
     "src",
@@ -37,7 +38,7 @@ path = "third_party/swos-competition-engine"
 commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 
 [files]
-"bin/data_json/career_params.json" = { area = "world_data", status = "todo", notes = "career rules: World 1996-97 rules/" }
+"bin/data_json/career_params.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/career_params_json/src/document.rs", "src/resources/career_params_json/src/knobs.rs"], notes = "format read and written by career_params_json (M2 #10), byte for byte; its values become World 1996-97 rules/ in M4" }
 "bin/data_json/competitions/career.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/competitions_json/src/file.rs"], notes = "format read and written by competitions_json (M2 #7); becomes World 1996-97's competitions/ in M4" }
 "bin/data_json/competitions/countries.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/competitions_json/src/file.rs"], notes = "format read and written by competitions_json (M2 #7); becomes World 1996-97's competitions/ in M4" }
 "bin/data_json/competitions/country_competitions.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/competitions_json/src/file.rs"], notes = "format read and written by competitions_json (M2 #7); becomes World 1996-97's competitions/ in M4" }
@@ -142,26 +143,26 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "bin/data_json/menus/transferMarketMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
 "bin/data_json/menus/viewCompetitionsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
 "bin/data_json/menus/viewSquadMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
-"bin/data_json/tactics/343.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/343_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/343_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/352.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/424.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/433.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/433_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/433_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/442.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/442_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/442_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/451.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/523.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/532.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/541.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/Attack.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/Defend.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/Sweep.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/Sweep_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
-"bin/data_json/tactics/Sweep_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/343.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/343_dos.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/343_original.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/352.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/424.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/433.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/433_dos.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/433_original.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/442.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/442_dos.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/442_original.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/451.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/523.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/532.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/541.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/Attack.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/Defend.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/Sweep.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/Sweep_dos.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
+"bin/data_json/tactics/Sweep_original.json" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], notes = "format read and written by tactics_json (M2 #10), byte for byte; becomes World 1996-97 package data in M4" }
 "bin/data_json/translations/de.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
 "bin/data_json/translations/en.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
 "bin/data_json/translations/es.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
@@ -196,7 +197,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/career_capacity.h" = { area = "world_data", status = "todo", notes = "career rules: World 1996-97 rules/" }
 "include/career_eurocups.h" = { area = "core", status = "todo", notes = "career" }
 "include/career_init.h" = { area = "core", status = "todo", notes = "career" }
-"include/career_params.h" = { area = "world_data", status = "todo", notes = "career rules: World 1996-97 rules/" }
+"include/career_params.h" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/career_params_json/src/knobs.rs"], functions_done = ["CareerParams"], notes = "the knobs' keys and widths: career_params_json (M2 #10). Their values are World 1996-97 rules (M4); CareerParams_CapacitiesRaised is the career's (M7)" }
 "include/career_season.h" = { area = "core", status = "todo", notes = "career" }
 "include/career_status.h" = { area = "core", status = "todo", notes = "career" }
 "include/career_teams.h" = { area = "core", status = "todo", notes = "career" }
@@ -219,7 +220,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/deterministic.h" = { area = "core", status = "todo", notes = "determinism primitives" }
 "include/display.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "include/diy_competition.h" = { area = "core", status = "todo", notes = "competitions; mixed with the DIY UI (view)" }
-"include/diy_import_dos.h" = { area = "resource", status = "todo", notes = "competition_save: DOS .DIY import" }
+"include/diy_import_dos.h" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/competition_save/src/dos.rs"], functions_done = ["DiyImportDos_IsDosFile", "header_from_dos"], notes = "the DOS .DIY's layout: competition_save's DosDiyFormat reads and writes it (M2 #11i). Loading it into the competition's state (ex_from_dos, team_identity, DiyImportDos_LoadData) and --convert-diy are the competitions' (M5/M7)" }
 "include/dos_gameplay.h" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
 "include/dos_graphics.h" = { area = "resource", status = "todo", notes = "dos_sprite_bank (M3)" }
 "include/dos_mode.h" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
@@ -239,7 +240,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/game_options.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/game_state.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/game_timers.h" = { area = "core", status = "todo", notes = "match engine" }
-"include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs", "src/resources/poolplyr/src/lib.rs", "src/resources/tac/src/tactics.rs", "src/common/src/tactics.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST", "PoolPlayer", "PLAYER_FORM_TRIALIST", "PLAYER_FORM_RESERVE", "TEAM_VALUES_CLEAN", "TEAM_VALUES_DIRTY", "TACTIC_DEFAULT..TACTIC_USER_F", "TeamTactics", "PlayerPositions"], notes = "shared game types; the team and player records are in resources/team" }
+"include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs", "src/resources/poolplyr/src/lib.rs", "src/resources/tac/src/tactics.rs", "src/common/src/tactics.rs", "src/resources/national_teams_json/src/record.rs", "src/resources/career_save/src/season.rs", "src/resources/career_save/src/player.rs", "src/resources/career_save/src/offers.rs", "src/resources/career_save/src/competitions.rs", "src/resources/career_save/src/slots.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST", "PoolPlayer", "PLAYER_FORM_TRIALIST", "PLAYER_FORM_RESERVE", "TEAM_VALUES_CLEAN", "TEAM_VALUES_DIRTY", "TACTIC_DEFAULT..TACTIC_USER_F", "TeamTactics", "PlayerPositions", "NationalTeamRecord", "SeasonInformations", "MarketPlayer", "TransferOfferEntry", "JobOffer", "DIYTeamStats", "LeagueSplitState", "DIYCompetition", "DIYCompetitionEx", "DIYCompetitionEx_CupView", "DIYCompetitionEx_LeagueView", "DIYCompetitionEx_LeagueSectionState", "DIYTournamentSlot"], notes = "shared game types; the team and player records are in resources/team" }
 "include/game_utils.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/general_data.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/gfx.h" = { area = "view", status = "todo", notes = "rendering" }
@@ -262,7 +263,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/kit_art.h" = { area = "view", status = "todo", notes = "rendering" }
 "include/league_groups.h" = { area = "core", status = "todo", notes = "competitions" }
 "include/league_phase.h" = { area = "core", status = "todo", notes = "competitions" }
-"include/league_playoffs.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/league_playoffs.h" = { area = "core", status = "todo", notes = "competitions; its state's save format: career_save contests.rs (M2 #11d)" }
 "include/league_split.h" = { area = "core", status = "todo", notes = "competitions" }
 "include/live_cast.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/loader_bootstrap.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
@@ -290,7 +291,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/mods.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
 "include/mods_menu.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope)" }
 "include/music_stream.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
-"include/national_teams.h" = { area = "world_data", status = "todo", notes = "national teams: World 1996-97 rules/" }
+"include/national_teams.h" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/national_teams_json/src/teams.rs", "src/resources/national_teams_json/src/record.rs"], functions_done = ["NATIONAL_TEAMS_MAX", "NATIONALITIES_MAX", "NATIONAL_TEAM_NO_FILE"], notes = "the SDL maxima and no-file byte: national_teams_json (M2 #10). The tables are World 1996-97 rules (M4)" }
 "include/netem_core.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/netplay.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/netplay_compat.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
@@ -345,11 +346,11 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/sprite_data.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/sprites.h" = { area = "view", status = "todo", notes = "rendering" }
 "include/srp_resim.h" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
-"include/srp_writer.h" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
-"include/state_pool.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/srp_writer.h" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/srp/src/container.rs", "src/resources/srp/src/frames.rs", "src/resources/srp/src/events.rs"], notes = "the .SRP layout's constants: srp crate (M2 #13b)" }
+"include/state_pool.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6); its state's save format: career_save pools.rs (M2 #11d)" }
 "include/state_sim.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "include/state_wire.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
-"include/states.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/states.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6); its state's save format: career_save pools.rs (M2 #11d)" }
 "include/statistics.h" = { area = "core", status = "todo", notes = "match statistics; mixed with the stats screens (view)" }
 "include/stb_image_write.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
 "include/string_symbols.h" = { area = "view", status = "todo", notes = "text and strings" }
@@ -371,7 +372,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/team_control.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/team_db.h" = { area = "core", status = "todo", notes = "career" }
 "include/team_packs.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
-"include/team_pool.h" = { area = "core", status = "todo", notes = "career" }
+"include/team_pool.h" = { area = "core", status = "todo", notes = "career; its state's save format: career_save pools.rs (M2 #11d)" }
 "include/team_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/team_uuid.h" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/ids.rs"], notes = "derived ids and checksums: resources/team_json ids.rs" }
 "include/teamdb.h" = { area = "core", status = "todo", notes = "career" }
@@ -383,17 +384,18 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/transfer_market.h" = { area = "core", status = "todo", notes = "career; mixed with the transfer screens (view)" }
 "include/translations.h" = { area = "view", status = "todo", notes = "text and strings" }
 "include/tweaks.h" = { area = "world_data", status = "todo", notes = "tweaks become package rules (D6)" }
-"include/uefa_access.h" = { area = "core", status = "todo", notes = "competitions" }
-"include/uefa_coef.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/uefa_access.h" = { area = "core", status = "todo", notes = "competitions; its state's save format: career_save uefa.rs (M2 #11d)" }
+"include/uefa_coef.h" = { area = "core", status = "todo", notes = "competitions; its state's save format: career_save uefa.rs (M2 #11d)" }
 "include/uniform.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/update_players.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/world.h" = { area = "core", status = "todo", notes = "world selection: replaced by the world package loader (D7)" }
-"include/world_conti.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
-"include/world_cupd.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
-"include/world_cups.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
-"include/world_playoff.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/world_conti.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6); its state's save format: career_save world_cups.rs (M2 #11d)" }
+"include/world_cupd.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6); its state's save format: career_save world_cups.rs (M2 #11d)" }
+"include/world_cups.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6); its state's save format: career_save world_cups.rs (M2 #11d)" }
+"include/world_playoff.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6); its state's save format: career_save contests.rs (M2 #11d)" }
 "include/world_winners.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "scripts/assign_team_uuids.py" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/ids.rs"], notes = "derived ids and checksums: resources/team_json ids.rs" }
+"scripts/rgd_schema.py" = { area = "test_data", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/rgd/src/schema.rs"], notes = "the DOS frame's fields by name: the rgd crate's schema (M2 #12); the replay rig that compares them is M6" }
 "scripts/world_import.py" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/world_package/src/fingerprint.rs", "src/resources/world_package/src/ini.rs"], functions_done = ["world_fingerprint", "WORLD.ini writer"], notes = """builds World 2026-27's package and world_data.c: the completion step mirrors it (M4); its ids are uuid5("2627/team/<club id>")""" }
 "src/SWOS.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/adverts.c" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
@@ -465,12 +467,12 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/custom_team.c" = { area = "core", status = "todo", notes = "career" }
 "src/display.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/diy_competition.c" = { area = "core", status = "todo", notes = "competitions; mixed with the DIY UI (view)" }
-"src/diy_import_dos.c" = { area = "resource", status = "todo", notes = "competition_save: DOS .DIY import" }
+"src/diy_import_dos.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/competition_save/src/dos.rs"], functions_done = ["DiyImportDos_IsDosFile", "header_from_dos"], notes = "the DOS .DIY's layout: competition_save's DosDiyFormat reads and writes it (M2 #11i). Loading it into the competition's state (ex_from_dos, team_identity, DiyImportDos_LoadData) and --convert-diy are the competitions' (M5/M7)" }
 "src/dos_gameplay.c" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
 "src/dos_graphics.c" = { area = "resource", status = "todo", notes = "dos_sprite_bank (M3)" }
 "src/dos_music.c" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
 "src/dos_music_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
-"src/dos_replay_load.c" = { area = "resource", status = "todo", notes = "rpl (DOS replay)" }
+"src/dos_replay_load.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/hil/src/dos.rs", "src/resources/hil/src/header.rs", "src/resources/hil/src/scene.rs"], functions_done = ["DosReplay_IsDosHil"], notes = "the DOS .HIL/.RPL format: the hil crate reads and writes it (M2 #13a). The conversion into the Amiga layout for the engine (convert_team, convert_frames, write_hil_header), the playback rate (replay_fps_from_gamestyle) and the loaders are the view's and the match's (M3, M6)" }
 "src/dos_sound.c" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
 "src/dos_sound_tables.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
 "src/easing.c" = { area = "view", status = "todo", notes = "rendering" }
@@ -538,7 +540,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/menu_system.c" = { area = "view", status = "todo", notes = "menus/UI" }
 "src/menus.c" = { area = "view", status = "todo", notes = "menus/UI" }
 "src/miniz_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
-"src/mjson.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/mjson.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/save_json/src/formatter.rs"], functions_done = ["mjson_esc", "mjson_print_str"], notes = "the printer's escaping, which the saves' dialect reproduces (save_json, M2 #11a); parsing is serde_json's, after the dialect's mapping" }
 "src/mm_client.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "src/mobile.c" = { area = "out_of_scope", status = "not_ported", notes = "mobile (out of scope)" }
 "src/mod_api.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
@@ -613,12 +615,12 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/render_data.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/replay_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
 "src/replay_test.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
-"src/replay_v2.c" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
+"src/replay_v2.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/srp/src/meta.rs", "src/resources/srp/src/frames.rs"], functions_done = ["build_meta", "write_head"], notes = "the META and FRMS layouts: srp crate (M2 #13b). Recording and playback are the match's and the view's (M3, M6)" }
 "src/resload.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/rjp1.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/rnc.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga data packing: the installed PC game's files are not RNC-packed (D9)" }
 "src/rollback_rig.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
-"src/save_format_json.c" = { area = "resource", status = "todo", notes = "career_save / competition_save (D4)" }
+"src/save_format_json.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/career_params_json/src/document.rs", "src/resources/national_teams_json/src/teams.rs", "src/resources/save_json/src/text.rs", "src/resources/save_json/src/layout.rs", "src/resources/save_json/src/formatter.rs", "src/resources/save_json/src/document.rs", "src/resources/career_save/src/save.rs", "src/resources/career_save/src/season.rs", "src/resources/career_save/src/team.rs", "src/resources/career_save/src/player.rs", "src/resources/career_save/src/offers.rs", "src/resources/career_save/src/pools.rs", "src/resources/career_save/src/world_cups.rs", "src/resources/career_save/src/contests.rs", "src/resources/career_save/src/uefa.rs", "src/resources/career_save/src/flat.rs", "src/resources/career_save/src/competitions.rs", "src/resources/career_save/src/slots.rs", "src/resources/career_save/src/scalars.rs", "src/resources/competition_save/src/save.rs", "src/resources/competition_save/src/scalars.rs", "src/resources/hil/src/json/mod.rs", "src/resources/hil/src/json/team.rs", "src/resources/hil/src/json/scene.rs", "src/resources/tac/src/json.rs"], functions_done = ["SAVE_JSON_SCHEMA_VERSION", "KIND_CAREER", "KIND_PRESET", "KIND_DIY", "KIND_HIGHLIGHTS", "KIND_TACTICS", "SaveJson_BufferIsJson", "emit_string_field", "emit_str_pool_field", "emit_season_informations", "jb_player", "emit_player_file_body", "emit_market_player_body", "emit_team_file_ex_body", "emit_team_file_ex", "s_player_fields", "s_team_file_fields", "emit_struct_object", "emit_key_ulong", "emit_key_long", "emit_u8_at", "emit_s8_at", "emit_u16_at", "emit_s16_at", "emit_u32_at", "emit_bytes_at", "s_transfer_offer_fields", "s_job_offer_fields", "wp_emit_u16", "wp_emit_u8", "wp_emit_u32", "emit_comp_copy_dynamic", "emit_comp_copy_teamlists", "emit_cache_strides", "emit_competition_overrides", "emit_ctx_league_standings", "DIY_OVR_LEAGUE_ROWS", "emit_comp_slot", "emit_ctx_stage", "emit_stage_cupfull", "diy_teamseloffset_to_identity", "s_career_scalars", "emit_scalar_table", "emitted_len", "FieldDesc", "jb_key", "jb_ulong", "jb_long", "jb_key_str", "jb_key_bytes", "SaveJson_WriteCareer", "write_competition_buf", "emit_scalar_table_comp", "SaveJson_WritePreset", "SaveJson_WriteDIY", "SaveJson_WriteHighlights", "emit_team_game", "emit_scene", "emit_str_at", "HilFileHeader", "HIL_SCENE_SIZE", "write_tactics_buf", "SaveJson_WriteTactics", "SAVE_TAC_DATA_SIZE"], notes = "M2 #10: the data_json loaders' formats (DataJson_LoadCareerParams's keys and widths: career_params_json, its clamps are the career's, M7; DataJson_LoadNationalTeams's checks: national_teams_json). M2 #11a: the saves' dialect, schema version, kinds, layout (save_json). M2 #11b-g: the career save, every member typed in the writer's order and widths but the mods' sections (career_save). M2 #11h: the competition saves (competition_save). M2 #13c: the JSON highlights (hil json: the teams as TeamGame, the scenes as the writer decodes them) and the JSON tactics (tac json: the TeamTactics record). The loaders' effects on the game's state (truncations, rebuilt pointers, the competition blobs' layout, filling the Amiga highlights buffer: D9) are the career's and the match's (M6, M7)" }
 "src/scroll_blit.c" = { area = "view", status = "todo", notes = "rendering" }
 "src/selected_teams.c" = { area = "core", status = "todo", notes = "career" }
 "src/settings_menus.c" = { area = "view", status = "todo", notes = "menus/UI" }
@@ -640,7 +642,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/sprite_data.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/sprites.c" = { area = "view", status = "todo", notes = "rendering" }
 "src/srp_resim.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
-"src/srp_writer.c" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
+"src/srp_writer.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/srp/src/container.rs", "src/resources/srp/src/events.rs"], functions_done = ["chunk_make", "build_audio", "build_seek", "build_chapters", "build_players", "Srp_Build"], notes = "the container and the drawn chunks: srp crate (M2 #13b). Deflation is not miniz's (a deflated chunk read keeps its bytes); the netplay chunks' builders (SIMV, HASH, PRED, SEEN, READ) and Srp_WithPrediction are netplay's (M6)" }
 "src/state_pool.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "src/state_sim.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "src/state_wire.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
@@ -674,7 +676,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/tackle_foul.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/tactics_data.c" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
 "src/tactics_expert.c" = { area = "core", status = "todo", notes = "match engine" }
-"src/tactics_load_json.c" = { area = "resource", status = "todo", notes = "tactics_json" }
+"src/tactics_load_json.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/tactics_json/src/tactics.rs", "src/resources/tactics_json/src/preset.rs"], functions_done = ["tok_long", "read_bytes", "build_one", "s_presets"], notes = "the reader: tactics_json (M2 #10). TacticsJson_VerifyAll/InstallAll overwrite the compiled globals: the engine takes its tactics from the world package (M4)" }
 "src/tactics_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
 "src/team_audit.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
 "src/team_colors.c" = { area = "view", status = "todo", notes = "rendering" }
@@ -744,7 +746,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "third_party/swos-competition-engine/rules/sr_gplay.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
 "third_party/swos-competition-engine/rules/sr_groups.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
 "third_party/swos-competition-engine/rules/sr_post.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
-"third_party/swos-competition-engine/rules/swosrules.h" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/swosrules.h" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT); its state's save format: career_save contests.rs (M2 #11d)" }
 "third_party/swos-competition-engine/tests/contract/check.py" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
 "third_party/swos-competition-engine/tests/contract/sample/cup-fixed-draw.json" = { area = "test_data", status = "todo", notes = "contract scenarios (swc/1 inputs): known answers where the engine's behaviour applies" }
 "third_party/swos-competition-engine/tests/contract/sample/league-h2h.json" = { area = "test_data", status = "todo", notes = "contract scenarios (swc/1 inputs): known answers where the engine's behaviour applies" }

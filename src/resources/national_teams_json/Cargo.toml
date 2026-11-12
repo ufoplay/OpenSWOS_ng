@@ -1,0 +1,23 @@
+[package]
+name = "openswos_national_teams_json_resource"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Reader and writer for OpenSWOS's national teams JSON (national_teams.json): the national teams' records and the career manager's nationalities"
+readme = "readme.md"
+
+[dependencies]
+openswos_common = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+openswos_test_utils = { workspace = true }
+proptest = { workspace = true }
+
+[lints]
+workspace = true

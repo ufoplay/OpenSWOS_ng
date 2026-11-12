@@ -1,0 +1,23 @@
+[package]
+name = "openswos_srp_resource"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Reader and writer for OpenSWOS's match recordings (.SRP, replay format v2)"
+readme = "readme.md"
+
+[dependencies]
+bitflags = { workspace = true }
+flate2 = { workspace = true }
+openswos_common = { workspace = true }
+openswos_hil_resource = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+openswos_test_utils = { workspace = true }
+
+[lints]
+workspace = true

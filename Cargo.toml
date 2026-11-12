@@ -24,9 +24,18 @@ openswos_core = { path = "src/core", version = "0.1.0" }
 openswos_test_utils = { path = "src/test_utils" }
 
 # Resources
+openswos_career_params_json_resource = { path = "src/resources/career_params_json", version = "0.1.0" }
+openswos_career_save_resource = { path = "src/resources/career_save", version = "0.1.0" }
+openswos_competition_save_resource = { path = "src/resources/competition_save", version = "0.1.0" }
 openswos_competitions_json_resource = { path = "src/resources/competitions_json", version = "0.1.0" }
+openswos_national_teams_json_resource = { path = "src/resources/national_teams_json", version = "0.1.0" }
+openswos_hil_resource = { path = "src/resources/hil", version = "0.1.0" }
 openswos_poolplyr_resource = { path = "src/resources/poolplyr", version = "0.1.0" }
+openswos_rgd_resource = { path = "src/resources/rgd", version = "0.1.0" }
+openswos_srp_resource = { path = "src/resources/srp", version = "0.1.0" }
+openswos_save_json_resource = { path = "src/resources/save_json", version = "0.1.0" }
 openswos_tac_resource = { path = "src/resources/tac", version = "0.1.0" }
+openswos_tactics_json_resource = { path = "src/resources/tactics_json", version = "0.1.0" }
 openswos_team_json_resource = { path = "src/resources/team_json", version = "0.1.0" }
 openswos_team_resource = { path = "src/resources/team", version = "0.1.0" }
 openswos_tmd_resource = { path = "src/resources/tmd", version = "0.1.0" }
@@ -35,6 +44,8 @@ openswos_world_package_resource = { path = "src/resources/world_package", versio
 # The player flags of the team records.
 bitflags = { version = "2", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }
+# Decompresses the swos-port match recordings (.RGD.gz); the zip crate's backend.
+flate2 = { version = "1", default-features = false, features = ["zlib-rs"] }
 # Glob patterns over upstream paths (the migration ledger tool).
 globset = "0.4"
 proptest = "1"

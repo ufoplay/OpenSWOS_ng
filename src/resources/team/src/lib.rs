@@ -8,8 +8,9 @@ pub mod skill;
 pub mod team;
 
 pub use file::{TeamFile, TeamFileError, TeamFileFormat};
+pub use openswos_common::Nationality;
 pub use player::{
-    Face, Form, FormLevel, GoalCounts, InvalidFace, InvalidPlayerFlags, Nationality, NotAFormLevel,
+    Face, Form, FormLevel, GoalCounts, InvalidFace, InvalidPlayerFlags, NotAFormLevel,
     PLAYER_NAME_LEN, PLAYER_RECORD_LEN, Player, PlayerFlags, PlayerRuntime, PriceId,
 };
 pub use skill::{InvalidSkill, InvalidSkillLevel, Skill, SkillLevel, Skills};

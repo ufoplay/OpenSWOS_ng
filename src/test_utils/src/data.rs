@@ -14,6 +14,10 @@ pub const GAME_DIR_ENV: &str = "OPENSWOS_GAME_DIR";
 /// Environment variable naming an OpenSWOS Setup output folder.
 pub const SETUP_ASSETS_DIR_ENV: &str = "OPENSWOS_ASSETS_DIR";
 
+/// Environment variable naming a folder of OpenSWOS saves (`.CAR`, `.SEA`, `.DIY`…): yours,
+/// or ones the golden-career autopilot wrote. Never committed: they hold the game's data.
+pub const SAVES_DIR_ENV: &str = "OPENSWOS_SAVES_DIR";
+
 /// The installed PC game's folder.
 ///
 /// # Errors
@@ -30,6 +34,15 @@ pub fn game_dir() -> Result<PathBuf, Skip> {
 /// A [`Skip`] when [`SETUP_ASSETS_DIR_ENV`] is unset or not a folder.
 pub fn setup_assets_dir() -> Result<PathBuf, Skip> {
     dir_from(SETUP_ASSETS_DIR_ENV, std::env::var_os(SETUP_ASSETS_DIR_ENV))
+}
+
+/// A folder of OpenSWOS saves.
+///
+/// # Errors
+///
+/// A [`Skip`] when [`SAVES_DIR_ENV`] is unset or not a folder.
+pub fn saves_dir() -> Result<PathBuf, Skip> {
+    dir_from(SAVES_DIR_ENV, std::env::var_os(SAVES_DIR_ENV))
 }
 
 /// A file of the installed PC game, by its path in the game folder (`/`-separated),

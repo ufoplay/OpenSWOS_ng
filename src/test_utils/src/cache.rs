@@ -37,6 +37,108 @@ pub const WORLD_2627_PACKAGE: Download<'static> = Download {
     sha256: Some("80647e3423f1d9bd1949c7954ef85d8c2aa546eb32248d106313d44d88507acd"),
 };
 
+/// The URL of a file of swos-port's `tests/data`, at the commit pinned: its last change to
+/// that folder (4da94f5, 2026-09-06).
+macro_rules! swos_port_data {
+    ($file:literal) => {
+        concat!(
+            "https://raw.githubusercontent.com/zlatkok/swos-port/",
+            "4da94f538846e4c9b638711166315c9927236383/tests/data/",
+            $file
+        )
+    };
+}
+
+/// swos-port's match recordings (`.RGD.gz`): the DOS game's state on every frame of a
+/// match, the match engine's golden oracle (docs/PLAN.md §7.4). That repository declares
+/// no license, so they are downloaded, never committed (D8). The checksums are the files'
+/// at the pinned commit.
+pub const RGD_CORPUS: [Download<'static>; 15] = [
+    Download {
+        url: swos_port_data!("2xcpu-08030320.RGD.gz"),
+        file_name: "2xcpu-08030320.RGD.gz",
+        sha256: Some("0e9ba792d0658312e3ca482034f68b3b4b215c75d6730eed7c0585d209be437e"),
+    },
+    Download {
+        url: swos_port_data!("playa-10090613.RGD.gz"),
+        file_name: "playa-10090613.RGD.gz",
+        sha256: Some("af8defa667eb40ed15663816372a35695a4b7ec717f215f5f890503beab79ca3"),
+    },
+    Download {
+        url: swos_port_data!("playa-10095214.RGD.gz"),
+        file_name: "playa-10095214.RGD.gz",
+        sha256: Some("f8a780072569e0647ad7d136f247584b90240dd7b7b3ac35cf629b2a8815da6e"),
+    },
+    Download {
+        url: swos_port_data!("playa-10144556.RGD.gz"),
+        file_name: "playa-10144556.RGD.gz",
+        sha256: Some("c70157a1005b7999572ccd632146e3bca81d0b3e435fa9cbe2fc38fb2907b999"),
+    },
+    Download {
+        url: swos_port_data!("shootout-08200245.RGD.gz"),
+        file_name: "shootout-08200245.RGD.gz",
+        sha256: Some("0a135d070fdcb97b86efb0a44d2370feefa23f631ab132517e820b01aa7a0181"),
+    },
+    Download {
+        url: swos_port_data!("zkz-10140228.RGD.gz"),
+        file_name: "zkz-10140228.RGD.gz",
+        sha256: Some("cf36e82dc67a0d1bdda07cc17da6cf6294c48f63f7a66aed0325c29a77d3958e"),
+    },
+    Download {
+        url: swos_port_data!("zkz-10173518.RGD.gz"),
+        file_name: "zkz-10173518.RGD.gz",
+        sha256: Some("162d984eea20e1a92cd8639b6635080b5ee77fd2c9cb858cbfe37c38ede4e5f0"),
+    },
+    Download {
+        url: swos_port_data!("zkz-10174427.RGD.gz"),
+        file_name: "zkz-10174427.RGD.gz",
+        sha256: Some("185bd7d1edb8a1ba60578342cdaf1df6125445c347b5de3dbcb1a83bce56b40f"),
+    },
+    Download {
+        url: swos_port_data!("zkz-10190651.RGD.gz"),
+        file_name: "zkz-10190651.RGD.gz",
+        sha256: Some("6a1d8d83aaf75e5e47604ad8fa8e3ae007f85da57f627fea0c212afd398a6a6a"),
+    },
+    Download {
+        url: swos_port_data!("zkz-11021807.RGD.gz"),
+        file_name: "zkz-11021807.RGD.gz",
+        sha256: Some("edd4038cd3536dead1f618a13471addc1e5c2aaa1ff29e321707ce7d7b46ff35"),
+    },
+    Download {
+        url: swos_port_data!("zkz-11054632.RGD.gz"),
+        file_name: "zkz-11054632.RGD.gz",
+        sha256: Some("f13b763c79b91db3ae62c2459df1ca4d0204813aa433fb2d60fe28c27e7db2f6"),
+    },
+    Download {
+        url: swos_port_data!("zkz-11122841.RGD.gz"),
+        file_name: "zkz-11122841.RGD.gz",
+        sha256: Some("287c517944b0570c24ab800d23d036ddb4997ffda724bf6ad121b4905022005b"),
+    },
+    Download {
+        url: swos_port_data!("zkz-11215003.RGD.gz"),
+        file_name: "zkz-11215003.RGD.gz",
+        sha256: Some("83825668e34d39dc44604e1774a1c1c97358c3d2874f31d84c9b25e603f31cb9"),
+    },
+    Download {
+        url: swos_port_data!("zkz-12065730.RGD.gz"),
+        file_name: "zkz-12065730.RGD.gz",
+        sha256: Some("19a132370d485d82b7efb31f14ca56486a6833ecb3b9f0ab5c9e0f4df31fc68a"),
+    },
+    Download {
+        url: swos_port_data!("zkz-12080203.RGD.gz"),
+        file_name: "zkz-12080203.RGD.gz",
+        sha256: Some("cd29c7512e0505f6938a643de001b82bf229cb6b59021e603e9b08fccb33b575"),
+    },
+];
+
+/// The recording of `RGD_CORPUS` named `file_name`, if any.
+#[must_use]
+pub fn rgd_recording(file_name: &str) -> Option<&'static Download<'static>> {
+    RGD_CORPUS
+        .iter()
+        .find(|download| download.file_name == file_name)
+}
+
 /// Where downloaded test data is kept: `target/cache/downloads`.
 #[must_use]
 pub fn downloads_path() -> PathBuf {

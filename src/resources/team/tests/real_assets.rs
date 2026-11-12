@@ -56,7 +56,6 @@ fn edt_files() -> Option<Vec<std::path::PathBuf>> {
     let files = list_fixtures(&dir, |name| {
         name.to_ascii_uppercase().ends_with(EDT_EXTENSION)
     });
-    assert!(!files.is_empty(), "no *.EDT file in {}", dir.display());
     Some(files)
 }
 

@@ -20,7 +20,7 @@
 //! record with them in use.
 
 use bitflags::bitflags;
-use openswos_common::{ByteReader, ByteWriter, FixedName, Position, ReadError};
+use openswos_common::{ByteReader, ByteWriter, FixedName, Nationality, Position, ReadError};
 
 use openswos_common::Nibble;
 
@@ -48,11 +48,6 @@ const FACE_MASK: u8 = 0b11;
 
 /// The runtime flags' bits of the position-and-face byte: bits 0-2.
 const FLAGS_MASK: u8 = 0b111;
-
-/// A player's nationality code. Its meaning (which country) is world data.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct Nationality(pub u8);
 
 /// A player's base price: an index into the game's price table (0..=49 in the PC game's
 /// files; upstream: valid range `0x00..=0x31`).

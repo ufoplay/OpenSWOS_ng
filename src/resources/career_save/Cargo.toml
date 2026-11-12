@@ -1,0 +1,26 @@
+[package]
+name = "openswos_career_save_resource"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Reader and writer for OpenSWOS's career saves (.CAR), byte for byte"
+readme = "readme.md"
+
+[dependencies]
+openswos_common = { workspace = true }
+openswos_save_json_resource = { workspace = true }
+openswos_tac_resource = { workspace = true }
+openswos_team_resource = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+openswos_test_utils = { workspace = true }
+proptest = { workspace = true }
+
+[lints]
+workspace = true
