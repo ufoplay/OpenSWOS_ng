@@ -459,43 +459,50 @@ rules library submodule). The oracle contains no handwritten C.
 
 ## 8. Tracking upstream
 
-**`upstream.toml`** is the single source of truth:
+**`upstream.toml`** is the single source of truth. It is written by the tool, one line per
+file:
 
 ```toml
 [upstream]
-repository    = "https://github.com/benbaker76/OpenSWOS"
+repository = "https://github.com/benbaker76/OpenSWOS"
 pinned_commit = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b"   # 2026-11-10
-world_2627    = { url = "https://worldofswos.com/static/openswos/OpenSWOS-World-2627.zip", fingerprint = "efe1464b6d1d62b8" }
+tracked = ["src/**", "include/**", "bin/data_json/**", "tests/**",
+           "third_party/swos-competition-engine/rules/**", "third_party/swos-competition-engine/tests/**"]
+checkout = ["src", "include", "bin/data_json", "tests", "docs", "third_party/swos-competition-engine"]
+# M4 adds: world_2627 = { url = "https://worldofswos.com/static/openswos/OpenSWOS-World-2627.zip", fingerprint = "efe1464b6d1d62b8" }
 
 [[submodule]]
-path   = "third_party/swos-competition-engine"
+path = "third_party/swos-competition-engine"
 commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 
-[[file]]
-path        = "src/random.c"
-area        = "core"          # core | resource | world_data | view | out_of_scope
-status      = "done"          # untriaged | todo | partial | done | not_ported
-migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b"
-rust        = ["src/core/src/rng.rs"]
-functions_done = []           # for big files with status = "partial"
-notes       = ""
+[files]
+"src/netplay.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/random.c" = { area = "core", status = "done", migrated_at = "ec2ed2be…", rust = ["src/core/src/rng.rs"] }
 ```
 
-Every upstream `.c`/`.h` and data-JSON file gets an entry, so nothing is dropped silently.
-`world_data` marks files whose content goes into world packages (via `world_extract`)
-rather than into code (`competition_data.c`, `world_data.c`, `career_params.c`,
-`bin/data_json/competitions/*`…).
+- `area`: `untriaged | core | resource | world_data | test_data | view | out_of_scope`.
+- `status`: `todo | partial | done | not_ported`.
+- Optional fields: `migrated_at`, `rust` (our files holding the port), `functions_done` (for
+  big files that are `partial`), `notes`.
+
+Every tracked upstream file has an entry (807 at the baseline), so nothing is dropped
+silently. `world_data` marks files whose content goes into world packages (via
+`world_extract`) rather than into code (`competition_data.c`, `world_data.c`,
+`career_params.c`, `bin/data_json/competitions/*`…). `test_data` marks upstream test data
+the port reuses (golden careers, known-answer cases). Files under a tracked submodule are
+migrated against that submodule's commits.
 
 **`src/tools/upstream`** (Rust; it uses the `git` CLI):
 
 | Command | What it does |
 |---|---|
-| `fetch` | Clone or check out the pinned commit (and its submodules) into `.upstream/`. |
-| `status` | Per file: its status, and how many upstream commits touched it since `migrated_at`. Lists new upstream files as `untriaged`. Prints "fully migrated at X" when every in-scope file is `done`/`not_ported` at the pin. |
-| `diff <path>` | The upstream diff for a file since its `migrated_at`. |
-| `mark <path> --status … [--commit …]` | Update an entry. |
-| `bump --to <sha>` | Move the pin and list every in-scope file that changed. Also update the expected World 2026-27 fingerprint from the new pin's `world_data.c`. |
-| `check` | CI gate: every upstream file is classified, and every entry points at existing Rust paths. |
+| `fetch` | Clone (blobless) or update the checkout in `.upstream/OpenSWOS`, sparse-checked-out to `checkout`, at the pinned commit, with the ledger's submodules. |
+| `sync` | Add the tracked upstream files the ledger lacks as `untriaged`. Drop entries of removed files that hold no ported work, and keep (and report) the others. |
+| `mark <globs>… [--area] [--status] [--migrated-at] [--rust]… [--function]… [--note]` | Update the matching entries. A pattern matching nothing is an error. `partial`/`done` without `--migrated-at` record the pin. |
+| `status` | Counts per area × status, migrated files upstream changed since their `migrated_at`, and "fully migrated at X" once every in-scope file is `done` at the pin or `not_ported`. |
+| `check` | CI gate. The ledger must cover exactly the tracked upstream files. No entry may be untriaged. Out-of-scope entries must be `not_ported`. `partial`/`done` entries need `migrated_at` (an ancestor of the pin) and existing `rust` paths. Submodule commits must match upstream's. |
+| `diff <path>` (later) | The upstream diff for a file since its `migrated_at`. |
+| `bump --to <sha>` (later) | Move the pin and list every in-scope file that changed. Also update the expected World 2026-27 fingerprint. |
 
 **Integration loop:**
 
@@ -514,7 +521,12 @@ When C behaviour changes, the oracle tests fail, so integration also gets checke
 Each milestone ends with `just check_code` and `just test` passing in CI. Units inside a
 milestone are done **one at a time**, each finished (§10) before the next starts.
 
-### M0 — Bootstrap
+### M0 — Bootstrap ✅ (2026-11-12)
+
+Done. 807 upstream files classified: 192 core, 19 resource, 44 world_data, 14 test_data,
+207 view, 331 out of scope. Also delivered: `lint_magic`, and the ledger tool's
+`sync`/`mark`. Note: `src/codecs/*` and `src/resources/*` join the workspace members with
+their first crate (cargo refuses a glob that matches nothing).
 
 - Cargo workspace, `justfile` + `just/*`, workspace lints, `.gitignore` (`.upstream/`,
   `assets/local/`).

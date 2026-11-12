@@ -1,0 +1,86 @@
+name: Rust Build and Test
+
+on:
+  pull_request:
+    branches:
+    - main
+    - develop
+  push:
+    branches:
+    - main
+    - develop
+
+jobs:
+  build:
+    name: Build and Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-latest is Apple Silicon (aarch64). The core must give the same results on
+        # every platform, so it is tested on all three.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 30 || 60 }}
+
+    env:
+      CARGO_TERM_COLOR: always
+
+    steps:
+      # The Windows runner's Git checks text files out with CRLF, which would change the
+      # bytes of the text test fixtures.
+      - name: keep line endings as committed
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v7
+
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Just command runner
+        uses: extractions/setup-just@v4
+
+      # Formatting and lints don't depend on the OS: check them once.
+      - name: check rust code style
+        if: runner.os == 'Linux'
+        run: |
+          just check_code
+
+      - name: build
+        run: |
+          just build
+
+      - name: test
+        run: |
+          just test
+
+  upstream:
+    name: Migration ledger (upstream.toml)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CARGO_TERM_COLOR: always
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Just command runner
+        uses: extractions/setup-just@v4
+
+      - name: fetch upstream at the pinned commit
+        run: |
+          just upstream_fetch
+
+      - name: check the ledger
+        run: |
+          just upstream_check

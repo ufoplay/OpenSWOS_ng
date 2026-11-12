@@ -1,0 +1,16 @@
+[package]
+name = "openswos_core"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "The OpenSWOS_ng game logic: match engine, competitions and career, independent of any view"
+readme = "readme.md"
+
+[dependencies]
+openswos_common = { workspace = true }
+
+[lints]
+workspace = true

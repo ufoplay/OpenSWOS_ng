@@ -1,0 +1,61 @@
+[workspace]
+# `src/codecs/*` and `src/resources/*` join the list with their first crate (M2): cargo
+# refuses a glob that matches nothing.
+members = [
+    "src/common",
+    "src/core",
+    "src/test_utils",
+    "src/tools/*",
+]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "GPL-3.0-or-later"
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+homepage = "https://github.com/ufoplay/OpenSWOS_ng"
+repository = "https://github.com/ufoplay/OpenSWOS_ng"
+
+[workspace.dependencies]
+# Core
+openswos_common = { path = "src/common", version = "0.1.0" }
+openswos_core = { path = "src/core", version = "0.1.0" }
+openswos_test_utils = { path = "src/test_utils" }
+
+clap = { version = "4", features = ["derive"] }
+# Glob patterns over upstream paths (the migration ledger tool).
+globset = "0.4"
+# `span-locations` gives lint_magic the line and column of each finding.
+proc-macro2 = { version = "1", features = ["span-locations"] }
+serde = { version = "1", features = ["derive"] }
+# Rust parser used by lint_magic.
+syn = { version = "3", features = ["full", "visit"] }
+tempfile = "3"
+thiserror = "2"
+toml = "1"
+# Writes upstream.toml with one inline table per file.
+toml_edit = "0.25"
+walkdir = "2"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+wildcard_enum_match_arm = "deny"
+cast_possible_truncation = "deny"
+cast_sign_loss = "deny"
+cast_possible_wrap = "deny"
+
+[profile.dev]
+debug = "line-tables-only"
+
+# Dependencies (not workspace members) are optimised in dev/test builds: proptest-heavy
+# tests run much faster this way.
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.dev.build-override]
+opt-level = 2

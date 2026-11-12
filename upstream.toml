@@ -1,0 +1,841 @@
+# The migration ledger (docs/PLAN.md §8): the upstream OpenSWOS commit this port tracks,
+# and the state of every upstream file it covers, one line per file.
+#
+# Written by the `upstream` tool (`just upstream_sync`, `just upstream_mark ...`): edit it
+# through the tool, which keeps it sorted and formatted.
+#
+# area:   untriaged | core | resource | world_data | test_data | view | out_of_scope
+# status: todo | partial | done | not_ported
+
+[upstream]
+repository = "https://github.com/benbaker76/OpenSWOS"
+pinned_commit = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b"
+tracked = [
+    "src/**",
+    "include/**",
+    "bin/data_json/**",
+    "tests/**",
+    "third_party/swos-competition-engine/rules/**",
+    "third_party/swos-competition-engine/tests/**",
+]
+checkout = [
+    "src",
+    "include",
+    "bin/data_json",
+    "tests",
+    "docs",
+    "third_party/swos-competition-engine",
+]
+
+[[submodule]]
+path = "third_party/swos-competition-engine"
+commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
+
+[files]
+"bin/data_json/career_params.json" = { area = "world_data", status = "todo", notes = "career rules: World 1996-97 rules/" }
+"bin/data_json/competitions/career.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/countries.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/country_competitions.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/cups.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/league_blocks.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/leagues.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/playoffs.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/qualifying.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/seed_buckets.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/competitions/tournaments.json" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"bin/data_json/menus/_symbols.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/buyOtherPlayersMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/buyPlayerMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/careerMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/careerOverMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/chairmanMemosMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/chooseTacticsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/chooseTeamsFriendlyMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/chooseTeamsFriendlyMenu2.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/chooseTeamsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/clubBusinessMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/competitionStatsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/competitionTopGoalScorersMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/contestMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/continueAbortMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/continueMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/designDiyCupMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/designDiyLeagueMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/designDiyTournamentMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/diyCupMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/diyLeagueTournamentMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/editTacticsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/editTeamsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/friendlyGameMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/gotJobOfferMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/highlightsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/importTacticsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/jobOffersMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/managementRecordMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/nationalTeamAddPlayerMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/offersMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/choiceMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/controlsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/creditsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/fullCreditsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/joypadConfigMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/menuDialog.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/modEntriesMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/modPageMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/modsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/quickAccessMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/settingsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/settingsPage.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/openswos/teamPacksMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/optionsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/p2p/p2pMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/p2p/rateMatchMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/playMatchMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/playerOffersMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/playerTransferMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/selectFilesMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/selectNationalTeamMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/selectTeamsForTacticsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/selectTeamsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/showPlayerMarketMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/squadMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/stadiumMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/AboutMPMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/cupMatchViewMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/customTacticsWarningMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/hostGameMessageMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/leagueInfo1Menu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/leagueInfo2Menu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/leagueInfoMainMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/leagueInfoViewMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/logInMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/mLogReaderMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/mLogStatsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/mLogTickerMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/matchInfoMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/matchMakingMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/matchViewMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/messageMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/mmSettingsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/mpGameSetupMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/mpWaitingMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/myFriendlyStatsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/myRankedStatsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/newsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/oooInfoMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/openLobbyMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/playerInfoMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/rankingMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/rankingsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/selectFunCupTeams.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/selectMyCustomTeams.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/selectUniformMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swos2020/tournaInfoMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/swosMainMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/thirdPartyOfferMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/topGoalScorersMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/transferMarketMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/viewCompetitionsMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/menus/viewSquadMenu.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/tactics/343.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/343_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/343_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/352.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/424.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/433.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/433_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/433_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/442.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/442_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/442_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/451.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/523.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/532.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/541.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/Attack.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/Defend.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/Sweep.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/Sweep_dos.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/tactics/Sweep_original.json" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"bin/data_json/translations/de.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/translations/en.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/translations/es.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/translations/fr.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/translations/it.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"bin/data_json/translations/nl.json" = { area = "view", status = "todo", notes = "bin/data_json UI data" }
+"include/adverts.h" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
+"include/ai.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/amiga_libc/ctype.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/amiga_libc/stdint.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/amiga_libc/stdio.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/amiga_libc/stdlib.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/amiga_libc/string.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/animated_patterns.h" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
+"include/arcade.h" = { area = "out_of_scope", status = "not_ported", notes = "arcade mode (out of scope)" }
+"include/arcade_svcfont.h" = { area = "out_of_scope", status = "not_ported", notes = "arcade mode (out of scope)" }
+"include/asset_loader.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/assets_check.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/assets_ini.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/audio.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"include/audio_irq.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/audio_sfx_filter.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"include/auto_skip_debug.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"include/ball_physics.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/ball_possession.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/bench_subs.h" = { area = "core", status = "todo", notes = "match engine; mixed with the bench UI (view)" }
+"include/blitter.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/build_info.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"include/cal_label.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/camera.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/career_autopilot.h" = { area = "core", status = "todo", notes = "the career autopilot: the golden careers' test driver" }
+"include/career_capacity.h" = { area = "world_data", status = "todo", notes = "career rules: World 1996-97 rules/" }
+"include/career_eurocups.h" = { area = "core", status = "todo", notes = "career" }
+"include/career_init.h" = { area = "core", status = "todo", notes = "career" }
+"include/career_params.h" = { area = "world_data", status = "todo", notes = "career rules: World 1996-97 rules/" }
+"include/career_season.h" = { area = "core", status = "todo", notes = "career" }
+"include/career_status.h" = { area = "core", status = "todo", notes = "career" }
+"include/career_teams.h" = { area = "core", status = "todo", notes = "career" }
+"include/chairman_memo.h" = { area = "core", status = "todo", notes = "career; mixed with the chairman screens (view)" }
+"include/challenge_pack.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"include/chat_font.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/chat_style.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/classics_index.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"include/color_sprites.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/comp_identity.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/competition_data.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/contest_log.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"include/conti_season.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/controls_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/credits_aga_palette.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/credits_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/credits_text.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/crt_effects.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/custom_team.h" = { area = "core", status = "todo", notes = "career" }
+"include/deterministic.h" = { area = "core", status = "todo", notes = "determinism primitives" }
+"include/display.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/diy_competition.h" = { area = "core", status = "todo", notes = "competitions; mixed with the DIY UI (view)" }
+"include/diy_import_dos.h" = { area = "resource", status = "todo", notes = "competition_save: DOS .DIY import" }
+"include/dos_gameplay.h" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
+"include/dos_graphics.h" = { area = "resource", status = "todo", notes = "dos_sprite_bank (M3)" }
+"include/dos_mode.h" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
+"include/dos_music.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"include/dos_sound.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"include/easing.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/edit_tactics.h" = { area = "view", status = "todo", notes = "tactics editor; its .TAC write path goes to resources/tac" }
+"include/endian_helpers.h" = { area = "resource", status = "todo", notes = "common::bytes / FixedName" }
+"include/fade.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/file_io.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/fixture_data.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/fixture_rounds.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/frontend.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/game_hud.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/game_init.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/game_loop.h" = { area = "core", status = "todo", notes = "match loop; mixed with frame pacing and drawing (view)" }
+"include/game_options.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/game_state.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/game_timers.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/game_types.h" = { area = "core", status = "todo", notes = "shared game types" }
+"include/game_utils.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/general_data.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/gfx.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/goal_ring.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/goal_scored.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/goalkeeper.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/gpu_present.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/gpu_slang.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/headers.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/highlight.h" = { area = "core", status = "todo", notes = "highlights ring (SIM_TIER_VIEW); the .HIL format goes to resources/hil" }
+"include/highlights_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/image_cmd.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/ini.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/input.h" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
+"include/input_text.h" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
+"include/interrupts.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/intro_chip_ram.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/jag_graphics.h" = { area = "out_of_scope", status = "not_ported", notes = "Jaguar sprites (out of scope)" }
+"include/job_offers.h" = { area = "core", status = "todo", notes = "career" }
+"include/kit_art.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/league_groups.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/league_phase.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/league_playoffs.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/league_split.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/live_cast.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/loader_bootstrap.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/loader_intro.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/match_chat.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/match_prediction.h" = { area = "core", status = "todo", notes = "results of matches nobody plays" }
+"include/match_record.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/match_report.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/match_setup.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/match_sim.h" = { area = "core", status = "todo", notes = "results of matches nobody plays" }
+"include/match_step.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/math68k.h" = { area = "core", status = "todo", notes = "determinism primitives" }
+"include/menu_baked.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/menu_data.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/menu_dialog.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/menu_load_json.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/menu_symbols.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/menu_system.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/menus.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/miniz_swos.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/mjson.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/mm_client.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/mod_api.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"include/mod_hooks.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"include/mods.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"include/mods_menu.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope)" }
+"include/music_stream.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"include/national_teams.h" = { area = "world_data", status = "todo", notes = "national teams: World 1996-97 rules/" }
+"include/netem_core.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay_compat.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay_ghost.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay_live_test.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay_lobby.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay_match.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay_netem.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/netplay_setup.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/online_account.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/online_menus.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/p2p_link.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/p2p_menu.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/palette_data.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/panic.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"include/phone_copy.h" = { area = "out_of_scope", status = "not_ported", notes = "mobile (out of scope)" }
+"include/phone_fetch.h" = { area = "out_of_scope", status = "not_ported", notes = "mobile (out of scope)" }
+"include/pitch.h" = { area = "view", status = "todo", notes = "pitch rendering; check sim_state.c for the fan tile slots the match reads" }
+"include/pixel_filter.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/platform_sdl.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/play_match_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/player_anim.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/player_data.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/player_face3.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/player_positioning.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/player_sprites.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/project_identity.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"include/random.h" = { area = "core", status = "todo", notes = "determinism primitives" }
+"include/raster_bars.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/record_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/referee.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/relay_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/render_data.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/replay_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/replay_test.h" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
+"include/replay_v2.h" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
+"include/report_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/resload.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/rjp1.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/rnc.h" = { area = "resource", status = "todo", notes = "codecs/rnc" }
+"include/rnc_magic.h" = { area = "resource", status = "todo", notes = "codecs/rnc" }
+"include/rollback_rig.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/save_format_json.h" = { area = "resource", status = "todo", notes = "career_save / competition_save (D4)" }
+"include/scroll_blit.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/sfx_crowd.h" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
+"include/sfx_debug.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"include/sfx_ids.h" = { area = "core", status = "todo", notes = "shared game types" }
+"include/shirt_numbers.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/sim_state.h" = { area = "core", status = "todo", notes = "match state registry: the blueprint of MatchState, not ported 1:1" }
+"include/simulation_data.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/slang.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/sprite_data.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/sprites.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/srp_resim.h" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
+"include/srp_writer.h" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
+"include/state_pool.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/state_sim.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/state_wire.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/states.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/statistics.h" = { area = "core", status = "todo", notes = "match statistics; mixed with the stats screens (view)" }
+"include/stb_image_write.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/string_symbols.h" = { area = "view", status = "todo", notes = "text and strings" }
+"include/string_utils.h" = { area = "view", status = "todo", notes = "text and strings" }
+"include/strings_data.h" = { area = "view", status = "todo", notes = "text and strings" }
+"include/swos2020_menus.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/swos_asm.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/swos_fixed_team_name.h" = { area = "resource", status = "todo", notes = "common::bytes / FixedName" }
+"include/swos_io.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/swos_platform.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/swos_sections.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"include/swos_settings.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/swos_types.h" = { area = "core", status = "todo", notes = "shared game types" }
+"include/swos_window_icon.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"include/tackle_foul.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/tactics_data.h" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"include/tactics_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/team_colors.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/team_control.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/team_db.h" = { area = "core", status = "todo", notes = "career" }
+"include/team_packs.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"include/team_pool.h" = { area = "core", status = "todo", notes = "career" }
+"include/team_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"include/team_uuid.h" = { area = "resource", status = "todo", notes = "team_json: team uuids and checksums" }
+"include/teamdb.h" = { area = "core", status = "todo", notes = "career" }
+"include/teams.h" = { area = "core", status = "todo", notes = "teams; their file loading goes to resources/team" }
+"include/test_rules.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"include/text_render.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/touch_controls.h" = { area = "out_of_scope", status = "not_ported", notes = "mobile (out of scope)" }
+"include/training_match.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/transfer_market.h" = { area = "core", status = "todo", notes = "career; mixed with the transfer screens (view)" }
+"include/translations.h" = { area = "view", status = "todo", notes = "text and strings" }
+"include/tweaks.h" = { area = "world_data", status = "todo", notes = "tweaks become package rules (D6)" }
+"include/uefa_access.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/uefa_coef.h" = { area = "core", status = "todo", notes = "competitions" }
+"include/uniform.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/update_players.h" = { area = "core", status = "todo", notes = "match engine" }
+"include/world.h" = { area = "core", status = "todo", notes = "world selection: replaced by the world package loader (D7)" }
+"include/world_conti.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/world_cupd.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/world_cups.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/world_playoff.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"include/world_winners.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/SWOS.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/adverts.c" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
+"src/ai.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/amiga_libc.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/animated_patterns.c" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
+"src/arcade.c" = { area = "out_of_scope", status = "not_ported", notes = "arcade mode (out of scope)" }
+"src/asset_loader.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/asset_sys.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/assets_check.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/audio.c" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"src/audio_irq.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/audio_sdl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/ball_physics.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/ball_possession.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/bench_subs.c" = { area = "core", status = "todo", notes = "match engine; mixed with the bench UI (view)" }
+"src/blitter.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/build_info.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/cal_label.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/camera.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/car_rebuild.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/car_rebuild_names.inc" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/car_rebuild_names_dos.inc" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/career_autopilot.c" = { area = "core", status = "todo", notes = "the career autopilot: the golden careers' test driver" }
+"src/career_board_confidence.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_comp_copies.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_copa.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_counters.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_diy_league_state.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_eurocups.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_finance_tail.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_finances.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_foreign_market.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_index_tables.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_init.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_key_cache.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_manager_identity.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_match_state.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_params.c" = { area = "world_data", status = "todo", notes = "career rules: World 1996-97 rules/" }
+"src/career_season.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_season_info.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_season_record.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_season_state.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_selector_state.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_settings.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_setup.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_status.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_status_flags.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_team_buffers.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_team_scalars.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_teams.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_transfer_market.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_trophy_flags.c" = { area = "core", status = "todo", notes = "career" }
+"src/career_unavailable_players.c" = { area = "core", status = "todo", notes = "career" }
+"src/chairman_memo.c" = { area = "core", status = "todo", notes = "career; mixed with the chairman screens (view)" }
+"src/challenge_pack.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/chat_font.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/chat_font_data.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/clash_kit_masks.inc" = { area = "view", status = "todo", notes = "rendering" }
+"src/clash_kits.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/color_sprites.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/competition_data.c" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"src/competition_data_copa_baked.c" = { area = "world_data", status = "todo", notes = "competition records: World 1996-97 competitions/" }
+"src/contest_log.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/conti_season.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/controls_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/credits_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/crt_effects.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/custom_team.c" = { area = "core", status = "todo", notes = "career" }
+"src/display.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/diy_competition.c" = { area = "core", status = "todo", notes = "competitions; mixed with the DIY UI (view)" }
+"src/diy_import_dos.c" = { area = "resource", status = "todo", notes = "competition_save: DOS .DIY import" }
+"src/dos_gameplay.c" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
+"src/dos_graphics.c" = { area = "resource", status = "todo", notes = "dos_sprite_bank (M3)" }
+"src/dos_music.c" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"src/dos_music_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/dos_replay_load.c" = { area = "resource", status = "todo", notes = "rpl (DOS replay)" }
+"src/dos_sound.c" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"src/dos_sound_tables.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"src/easing.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/edit_tactics.c" = { area = "view", status = "todo", notes = "tactics editor; its .TAC write path goes to resources/tac" }
+"src/esc_confirm.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/fade.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/file_io.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/fixture_data.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/fixture_rounds.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/font_ext_conv.inc" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/font_ext_script.inc" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/fps_overlay.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/frontend.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/game_hud.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/game_init.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/game_loop.c" = { area = "core", status = "todo", notes = "match loop; mixed with frame pacing and drawing (view)" }
+"src/game_state.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/game_timers.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/game_utils.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/general_data.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/gfx.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/goal_scored.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/goalkeeper.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/gpu_native.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/gpu_present.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/gpu_slang.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/head_dump.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/headers.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/highlight.c" = { area = "core", status = "todo", notes = "highlights ring (SIM_TIER_VIEW); the .HIL format goes to resources/hil" }
+"src/highlights_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/image_cmd.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/ini.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/input.c" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
+"src/input_sdl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/input_text.c" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
+"src/interrupts.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/intro_menu_image_script_cmds.inc" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/jag_graphics.c" = { area = "out_of_scope", status = "not_ported", notes = "Jaguar sprites (out of scope)" }
+"src/job_offers.c" = { area = "core", status = "todo", notes = "career" }
+"src/kit_art.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/league_groups.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/league_phase.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/league_playoffs.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/league_split.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/live_cast.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/loader_bootstrap.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/loader_intro.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/main.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/match_chat.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/match_prediction.c" = { area = "core", status = "todo", notes = "results of matches nobody plays" }
+"src/match_record.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/match_report.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/match_setup.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/match_sim.c" = { area = "core", status = "todo", notes = "results of matches nobody plays" }
+"src/match_step.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/math68k.c" = { area = "core", status = "todo", notes = "determinism primitives" }
+"src/menu_bg_image_script_cmds.inc" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_color_text_script_cmds.inc" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_data.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_dialog.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_extras.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_load_json.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_mouse.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_symbols.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menu_system.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/menus.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/miniz_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/mjson.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/mm_client.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/mobile.c" = { area = "out_of_scope", status = "not_ported", notes = "mobile (out of scope)" }
+"src/mod_api.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_autoplay.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_backgrounds.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_balltrails.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_career.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_challenges.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_classics.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_comps.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_display2020.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_dosmenus.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_draw8.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_entries.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_euro36.c" = { area = "world_data", status = "todo", notes = "rule-changing mod: the 36-club European formats become package data (D6)" }
+"src/mod_euro36_data.inc" = { area = "world_data", status = "todo", notes = "rule-changing mod: the 36-club European formats become package data (D6)" }
+"src/mod_extras.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_flags.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_hair.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_hooks.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_match.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_menu_tools.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_netstats.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_paletteq.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_petarku_practice.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_pitchmaps.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_pitchselect.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_practice.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_retrotv.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_scoreboard.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_speedrun.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mod_weather.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mods.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mods_builtin.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/mods_menu.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope)" }
+"src/mouse_cursors.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/move_camera.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/music_stream.c" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
+"src/netem_core.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay_ghost.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay_live_test.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay_lobby.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay_match.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay_netem.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay_netem_install.cpp" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/netplay_setup.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/online_account.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/online_menus.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/p2p_link.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/p2p_menu.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/palette_data.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/panic.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/phone_fetch.c" = { area = "out_of_scope", status = "not_ported", notes = "mobile (out of scope)" }
+"src/pitch.c" = { area = "view", status = "todo", notes = "pitch rendering; check sim_state.c for the fan tile slots the match reads" }
+"src/pitch_scroll_test.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/pitch_weather_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/pixel_filter.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/platform_amiga_stubs.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/platform_sdl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/platform_switch.cpp" = { area = "out_of_scope", status = "not_ported", notes = "Nintendo Switch (out of scope)" }
+"src/platform_timer.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/play_match_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/player_anim.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/player_data.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/player_face3.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/player_positioning.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/player_sprites.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/quick_access.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/random.c" = { area = "core", status = "todo", notes = "determinism primitives" }
+"src/referee.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/render_data.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/replay_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/replay_test.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
+"src/replay_v2.c" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
+"src/resload.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/rjp1.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/rnc.c" = { area = "resource", status = "todo", notes = "codecs/rnc" }
+"src/rollback_rig.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/save_format_json.c" = { area = "resource", status = "todo", notes = "career_save / competition_save (D4)" }
+"src/scroll_blit.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/selected_teams.c" = { area = "core", status = "todo", notes = "career" }
+"src/settings_menus.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/sfx_crowd.c" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
+"src/sfx_debug.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/shadercc/glslang/build_info.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/shaders/present.glsl" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/shaders/present.glsl.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/shirt_numbers.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/sim_state.c" = { area = "core", status = "todo", notes = "match state registry: the blueprint of MatchState, not ported 1:1" }
+"src/sim_state_ids.h" = { area = "core", status = "todo", notes = "match state registry: the blueprint of MatchState, not ported 1:1" }
+"src/simulation_data.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/slang.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/sokol_config.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/sokol_gl_loader.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/sokol_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/sokol_impl_d3d11.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/sokol_impl_metal.m" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/sprite_data.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/sprites.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/srp_resim.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
+"src/srp_writer.c" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
+"src/state_pool.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/state_sim.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/state_wire.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
+"src/states.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/statistics.c" = { area = "core", status = "todo", notes = "match statistics; mixed with the stats screens (view)" }
+"src/stb_image_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/stb_image_write_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/stb_vorbis_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/string_symbols.c" = { area = "view", status = "todo", notes = "text and strings" }
+"src/string_utils.c" = { area = "view", status = "todo", notes = "text and strings" }
+"src/strings_data.c" = { area = "view", status = "todo", notes = "text and strings" }
+"src/swos_amiga_data_imports.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/swos_amiga_data_stubs.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/swos_amiga_func_stubs.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/swos_amiga_ptr_imports.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/swos_amiga_strings.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
+"src/swos_competition_slots.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_data_bulk_imports.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga memory-layout scaffolding: replaced by explicit state" }
+"src/swos_data_typed_stubs.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga memory-layout scaffolding: replaced by explicit state" }
+"src/swos_globals.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga memory-layout scaffolding: replaced by explicit state" }
+"src/swos_globals_career_overlay.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga memory-layout scaffolding: replaced by explicit state" }
+"src/swos_io.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/swos_rules_check.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_rules_cupd.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_rules_cups.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_rules_dplay.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_rules_gplay.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_rules_groups.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_rules_post.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/swos_settings.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/tackle_foul.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/tactics_data.c" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
+"src/tactics_expert.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/tactics_load_json.c" = { area = "resource", status = "todo", notes = "tactics_json" }
+"src/tactics_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/team_audit.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/team_colors.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/team_control.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/team_db.c" = { area = "core", status = "todo", notes = "career" }
+"src/team_packs.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
+"src/team_packs_menu.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope)" }
+"src/team_pool.c" = { area = "core", status = "todo", notes = "career" }
+"src/team_uuid.c" = { area = "resource", status = "todo", notes = "team_json: team uuids and checksums" }
+"src/teamdb.c" = { area = "core", status = "todo", notes = "career" }
+"src/teams.c" = { area = "core", status = "todo", notes = "teams; their file loading goes to resources/team" }
+"src/test_rules.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
+"src/text_render.c" = { area = "view", status = "todo", notes = "rendering" }
+"src/tileagent_impl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/touch_controls.c" = { area = "out_of_scope", status = "not_ported", notes = "mobile (out of scope)" }
+"src/training_match.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/transfer_market.c" = { area = "core", status = "todo", notes = "career; mixed with the transfer screens (view)" }
+"src/translations.c" = { area = "view", status = "todo", notes = "text and strings" }
+"src/tweaks.c" = { area = "world_data", status = "todo", notes = "tweaks become package rules (D6)" }
+"src/uefa_access.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/uefa_coef.c" = { area = "core", status = "todo", notes = "competitions" }
+"src/uniform_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/update_players.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/world.c" = { area = "core", status = "todo", notes = "world selection: replaced by the world package loader (D7)" }
+"src/world_conti.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/world_cupd.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/world_cups.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/world_data.c" = { area = "world_data", status = "todo", notes = "World 2026-27's baked tables: completion step" }
+"src/world_playoff.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"src/world_winners.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"tests/career_golden.txt" = { area = "test_data", status = "todo", notes = "golden careers (D4)" }
+"tests/career_golden_careers.txt" = { area = "test_data", status = "todo", notes = "golden careers (D4)" }
+"tests/league_playoffs/conti_main.h" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/conti_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/conti_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/cupd_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"tests/league_playoffs/cupd_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/cupd_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/cups_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"tests/league_playoffs/cups_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/cups_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/groups_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"tests/league_playoffs/groups_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/groups_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/lp_check.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/mod_dp.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/mod_ftic.h" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/mod_gp.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/mod_main.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/mod_sec.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/pools_drv.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/sec_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"tests/league_playoffs/seconds.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/split_check.py" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/states_drv.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/tables.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"tests/league_playoffs/uefa_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"tests/league_playoffs/uefa_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/league_playoffs/uefa_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/mjson_index.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tests/netplay_compat.txt" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/rules/sr_check.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/sr_cupd.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/sr_cups.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/sr_dplay.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/sr_gplay.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/sr_groups.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/sr_post.c" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/rules/swosrules.h" = { area = "core", status = "todo", notes = "the swos-competition-engine rules library (MIT)" }
+"third_party/swos-competition-engine/tests/contract/check.py" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/contract/sample/cup-fixed-draw.json" = { area = "test_data", status = "todo", notes = "contract scenarios (swc/1 inputs): known answers where the engine's behaviour applies" }
+"third_party/swos-competition-engine/tests/contract/sample/league-h2h.json" = { area = "test_data", status = "todo", notes = "contract scenarios (swc/1 inputs): known answers where the engine's behaviour applies" }
+"third_party/swos-competition-engine/tests/golden/sample.dump" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/golden/sample.swc" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/bteams_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/bteams_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/check.sh" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/cupd_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"third_party/swos-competition-engine/tests/rules/cupd_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/cupd_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/cups_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"third_party/swos-competition-engine/tests/rules/cups_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/cups_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/groups_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"third_party/swos-competition-engine/tests/rules/groups_guard.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/groups_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/groups_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/italy_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/italy_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/knockouts_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/knockouts_mod_dp.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/knockouts_mod_gp.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/knockouts_ours.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/sec_cases.h" = { area = "test_data", status = "todo", notes = "known-answer cases" }
+"third_party/swos-competition-engine/tests/rules/spec_check.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/arg.pg" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/arg.pr" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/arg.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/aus.pg" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/aus.pr" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/aus.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/aut.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/bra.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/bul.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/can.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/col.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/crc.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/cze.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/den.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/eng.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/esp.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/fra.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/ger.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/groups.txt" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/gua.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/hon.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/ita.pg" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/ita.pr" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/ita.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/jpn.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/make_specs.py" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/mex.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/mlt.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/ned.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/nir.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/nzl.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/pan.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/par.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/per.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/por.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/rou.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/sco.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/shapes.txt" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/slv.pg" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/slv.pr" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/slv.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/smr.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/tur.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/uru.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/usa.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/specs/wal.spec" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/tables.h" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/rules/team_order.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/run_specs.sh" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/accent.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/balance.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/club_name_long.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/club_unknown.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/count_mismatch.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/decider_missing.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/dup_ordinal.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/fixed_count.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/fixed_twice.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/fixed_unknown.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/fixed_without_pairing.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/lang_missing.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/lowercase.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/position_out.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/schema.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/short_wide.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/syntax.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/tiebreak_bad.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/ties_wrong.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/title_long.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/to_unknown.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/too_many_rows.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/bad/unknown_member.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/ok-openswos/accents.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/specs/ok/mini.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"third_party/swos-competition-engine/tests/test_format.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
