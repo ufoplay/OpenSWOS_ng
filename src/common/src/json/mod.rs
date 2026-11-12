@@ -8,7 +8,7 @@ pub mod text;
 use serde::{Deserialize, Deserializer};
 
 pub use numbers::{JsonByte, JsonWord, OutOfRange};
-pub use text::{NonAscii, TrailingNewline, to_text};
+pub use text::{Indent, NonAscii, TrailingNewline, to_text};
 
 /// For an `Option<Option<T>>` field (with `#[serde(default)]` and
 /// `skip_serializing_if = "Option::is_none"`): an absent key reads `None`, `null` reads

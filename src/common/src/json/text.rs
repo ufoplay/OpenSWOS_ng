@@ -1,5 +1,5 @@
-//! The text layout of upstream's JSON files: Python's `json.dump(indent=2)`. That means:
-//! - one value a line, indented by two spaces;
+//! The text layout of upstream's JSON files: Python's `json.dump(indent=…)`. That means:
+//! - one value a line, indented by two spaces (one in a mod's `mod.json`);
 //! - `": "` after a key;
 //! - `[]` / `{}` for an empty container;
 //! - with `ensure_ascii` (the default), every character outside space..`~` escaped as
@@ -12,8 +12,29 @@ use std::fmt::Write as _;
 use serde::Serialize;
 use serde_json::ser::{PrettyFormatter, Serializer};
 
-/// The indentation of one nesting level.
-const INDENT: &[u8] = b"  ";
+/// One space: `indent=1`.
+const ONE_SPACE: &[u8] = b" ";
+
+/// Two spaces: `indent=2`.
+const TWO_SPACES: &[u8] = b"  ";
+
+/// The indentation of one nesting level: Python's `indent`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Indent {
+    /// One space (a mod's `mod.json`, upstream scripts/make_world_package.sh).
+    One,
+    /// Two spaces (the team and competition JSON).
+    Two,
+}
+
+impl Indent {
+    fn bytes(self) -> &'static [u8] {
+        match self {
+            Self::One => ONE_SPACE,
+            Self::Two => TWO_SPACES,
+        }
+    }
+}
 
 /// The last character written as it is: the end of printable ASCII (`~`). Every character
 /// above it is escaped, as `ensure_ascii` does (serde_json already escapes the ones below
@@ -57,12 +78,13 @@ impl TrailingNewline {
 /// When `value` cannot be serialised as JSON (a map with non-string keys).
 pub fn to_text<T: Serialize>(
     value: &T,
+    indent: Indent,
     non_ascii: NonAscii,
     newline: TrailingNewline,
 ) -> Result<String, serde_json::Error> {
     let mut bytes = Vec::new();
     let mut serializer =
-        Serializer::with_formatter(&mut bytes, PrettyFormatter::with_indent(INDENT));
+        Serializer::with_formatter(&mut bytes, PrettyFormatter::with_indent(indent.bytes()));
     value.serialize(&mut serializer)?;
     let pretty = String::from_utf8(bytes).expect("serde_json writes UTF-8");
     let mut text = match non_ascii {
@@ -101,7 +123,13 @@ mod tests {
     #[test]
     fn lays_out_like_python() {
         let value = json!({ "type": "team", "count": 2, "list": [0, 1], "empty": [], "nested": { "a": null } });
-        let text = to_text(&value, NonAscii::Escaped, TrailingNewline::Absent).expect("serializes");
+        let text = to_text(
+            &value,
+            Indent::Two,
+            NonAscii::Escaped,
+            TrailingNewline::Absent,
+        )
+        .expect("serializes");
         assert_eq!(
             text,
             "{\n  \"count\": 2,\n  \"empty\": [],\n  \"list\": [\n    0,\n    1\n  ],\n  \"nested\": {\n    \"a\": null\n  },\n  \"type\": \"team\"\n}"
@@ -112,6 +140,7 @@ mod tests {
     fn escapes_what_ensure_ascii_escapes() {
         let text = to_text(
             &json!("ÉIRE\u{7f}\u{1}\n\"~"),
+            Indent::Two,
             NonAscii::Escaped,
             TrailingNewline::Absent,
         )
@@ -123,6 +152,7 @@ mod tests {
     fn writes_beyond_ascii_raw_when_asked() {
         let text = to_text(
             &json!("SÜPER LIG\u{1}"),
+            Indent::Two,
             NonAscii::Raw,
             TrailingNewline::Absent,
         )
@@ -134,6 +164,7 @@ mod tests {
     fn escapes_beyond_the_basic_plane_as_surrogates() {
         let text = to_text(
             &json!("\u{1F600}"),
+            Indent::Two,
             NonAscii::Escaped,
             TrailingNewline::Absent,
         )
@@ -142,9 +173,27 @@ mod tests {
     }
 
     #[test]
+    fn indents_by_one_space_when_asked() {
+        let text = to_text(
+            &json!({ "targets": ["sdl"] }),
+            Indent::One,
+            NonAscii::Escaped,
+            TrailingNewline::Present,
+        )
+        .expect("serializes");
+        assert_eq!(text, "{\n \"targets\": [\n  \"sdl\"\n ]\n}\n");
+    }
+
+    #[test]
     fn adds_the_trailing_newline_when_asked() {
         assert_eq!(
-            to_text(&json!(1), NonAscii::Raw, TrailingNewline::Present).expect("serializes"),
+            to_text(
+                &json!(1),
+                Indent::Two,
+                NonAscii::Raw,
+                TrailingNewline::Present
+            )
+            .expect("serializes"),
             "1\n"
         );
         assert_eq!(TrailingNewline::of(b"{}\n"), TrailingNewline::Present);

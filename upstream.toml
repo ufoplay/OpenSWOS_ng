@@ -394,7 +394,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/world_playoff.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "include/world_winners.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "scripts/assign_team_uuids.py" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/ids.rs"], notes = "derived ids and checksums: resources/team_json ids.rs" }
-"scripts/world_import.py" = { area = "world_data", status = "todo", notes = """builds World 2026-27's package and world_data.c: the completion step mirrors it (M4); its ids are uuid5("2627/team/<club id>")""" }
+"scripts/world_import.py" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/world_package/src/fingerprint.rs", "src/resources/world_package/src/ini.rs"], functions_done = ["world_fingerprint", "WORLD.ini writer"], notes = """builds World 2026-27's package and world_data.c: the completion step mirrors it (M4); its ids are uuid5("2627/team/<club id>")""" }
 "src/SWOS.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/adverts.c" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
 "src/ai.c" = { area = "core", status = "todo", notes = "match engine" }
@@ -702,7 +702,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/world_conti.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "src/world_cupd.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "src/world_cups.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
-"src/world_data.c" = { area = "world_data", status = "todo", notes = "World 2026-27's baked tables: completion step" }
+"src/world_data.c" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/world_package/tests/world_2627.rs"], functions_done = ["World_DataFingerprint"], notes = "World 2026-27's baked tables: completion step" }
 "src/world_playoff.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "src/world_winners.c" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "tests/career_golden.txt" = { area = "test_data", status = "todo", notes = "golden careers (D4)" }

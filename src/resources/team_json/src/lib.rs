@@ -6,7 +6,7 @@ pub mod convert;
 pub mod ids;
 pub mod model;
 
-use openswos_common::json::{NonAscii, to_text};
+use openswos_common::json::{Indent, NonAscii, to_text};
 use openswos_common::{Exporter, Importer};
 use openswos_team_resource::{Team, TeamFile};
 use thiserror::Error;
@@ -129,7 +129,13 @@ impl Exporter for TeamJsonFormat {
     type Error = TeamJsonError;
 
     fn export(model: &TeamJsonDocument) -> Result<Vec<u8>, TeamJsonError> {
-        Ok(to_text(&model.file, NonAscii::Escaped, model.trailing_newline)?.into_bytes())
+        Ok(to_text(
+            &model.file,
+            Indent::Two,
+            NonAscii::Escaped,
+            model.trailing_newline,
+        )?
+        .into_bytes())
     }
 }
 

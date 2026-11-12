@@ -9,7 +9,7 @@ pub mod leagues;
 pub mod shared;
 pub mod tables;
 
-use openswos_common::json::{NonAscii, TrailingNewline, to_text};
+use openswos_common::json::{Indent, NonAscii, TrailingNewline, to_text};
 use openswos_common::{Exporter, Importer};
 use thiserror::Error;
 
@@ -85,7 +85,7 @@ impl Exporter for CompetitionsJsonFormat {
     type Error = CompetitionsJsonError;
 
     fn export(model: &CompetitionsDocument) -> Result<Vec<u8>, CompetitionsJsonError> {
-        Ok(to_text(&model.file, NON_ASCII, model.trailing_newline)?.into_bytes())
+        Ok(to_text(&model.file, Indent::Two, NON_ASCII, model.trailing_newline)?.into_bytes())
     }
 }
 

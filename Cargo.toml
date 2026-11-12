@@ -30,6 +30,7 @@ openswos_tac_resource = { path = "src/resources/tac", version = "0.1.0" }
 openswos_team_json_resource = { path = "src/resources/team_json", version = "0.1.0" }
 openswos_team_resource = { path = "src/resources/team", version = "0.1.0" }
 openswos_tmd_resource = { path = "src/resources/tmd", version = "0.1.0" }
+openswos_world_package_resource = { path = "src/resources/world_package", version = "0.1.0" }
 
 # The player flags of the team records.
 bitflags = { version = "2", features = ["serde"] }
