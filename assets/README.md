@@ -26,4 +26,7 @@ Every committed file is listed here: where it comes from and under which license
 
 | File | Source | License / notes |
 |---|---|---|
-| | | |
+| `TEAM/TEAM.008` | PC SWOS 96/97 (GOG), `DATA/TEAM.008`: England, 93 teams | Original game data © its rights holders; a small test excerpt (D2) |
+| `TEAM/TEAM.057` | PC SWOS 96/97 (GOG), `DATA/TEAM.057`: South Korea, 1 team | Original game data © its rights holders; a small test excerpt (D2) |
+| `TEAM/TEAM.085` | PC SWOS 96/97 (GOG), `DATA/TEAM.085`: Oceania, 4 teams | Original game data © its rights holders; a small test excerpt (D2) |
+| `TEAM/TEAM.057.json`, `TEAM/TEAM.085.json` | Written by `openswos_team_resource`'s tests (`OPENSWOS_BLESS=1`), reviewed | The expected decoded models |

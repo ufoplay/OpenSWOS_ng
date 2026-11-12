@@ -1,0 +1,2128 @@
+{
+  "teams": [
+    {
+      "coach": "EDDIE THOMSON",
+      "division": 0,
+      "global_number": 587,
+      "id": {
+        "file": 85,
+        "ordinal": 0
+      },
+      "name": "AUSTRALIA",
+      "player_order": [
+        0,
+        2,
+        4,
+        5,
+        3,
+        6,
+        9,
+        10,
+        8,
+        12,
+        13,
+        1,
+        7,
+        11,
+        14,
+        15
+      ],
+      "players": [
+        {
+          "face": "white",
+          "name": "MARK BOSNICH",
+          "nationality": 148,
+          "position": "goalkeeper",
+          "price": 34,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 1,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "ZELJKO KALAC",
+          "nationality": 148,
+          "position": "goalkeeper",
+          "price": 22,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 12,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "TONY VIDMAR",
+          "nationality": 148,
+          "position": "right_back",
+          "price": 20,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 2,
+          "skills": {
+            "control": 2,
+            "finishing": 2,
+            "heading": 3,
+            "passing": 3,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 15,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "ANDY BERNAL",
+          "nationality": 148,
+          "position": "left_back",
+          "price": 15,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 3,
+          "skills": {
+            "control": 1,
+            "finishing": 1,
+            "heading": 1,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 15,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "PAUL OKON",
+          "nationality": 148,
+          "position": "centre_defender",
+          "price": 29,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 6,
+          "skills": {
+            "control": 14,
+            "finishing": 1,
+            "heading": 2,
+            "passing": 14,
+            "passing_high": 0,
+            "speed": 14,
+            "tackling": 3,
+            "velocity": 13
+          }
+        },
+        {
+          "face": "white",
+          "name": "NED ZELIC",
+          "nationality": 148,
+          "position": "centre_defender",
+          "price": 26,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 4,
+          "skills": {
+            "control": 14,
+            "finishing": 3,
+            "heading": 1,
+            "passing": 14,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 1,
+            "velocity": 15
+          }
+        },
+        {
+          "face": "white",
+          "name": "STEVE HORVAT",
+          "nationality": 148,
+          "position": "centre_defender",
+          "price": 24,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 5,
+          "skills": {
+            "control": 2,
+            "finishing": 3,
+            "heading": 15,
+            "passing": 3,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 15,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "MILAN IVANOVIC",
+          "nationality": 148,
+          "position": "centre_defender",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 13,
+          "skills": {
+            "control": 2,
+            "finishing": 2,
+            "heading": 14,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 12,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "ROBBY SLATER",
+          "nationality": 148,
+          "position": "right_wing",
+          "price": 19,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 10,
+          "skills": {
+            "control": 13,
+            "finishing": 1,
+            "heading": 2,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 13,
+            "tackling": 2,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "STEVE CORICA",
+          "nationality": 148,
+          "position": "left_wing",
+          "price": 28,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 7,
+          "skills": {
+            "control": 4,
+            "finishing": 3,
+            "heading": 5,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 3,
+            "tackling": 4,
+            "velocity": 15
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "ERNIE TAPAI",
+          "nationality": 148,
+          "position": "midfielder",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 8,
+          "skills": {
+            "control": 15,
+            "finishing": 1,
+            "heading": 2,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 13,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "ALEX TOBIN",
+          "nationality": 148,
+          "position": "midfielder",
+          "price": 18,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 14,
+          "skills": {
+            "control": 2,
+            "finishing": 1,
+            "heading": 1,
+            "passing": 13,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 14,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "GRAEME ARNOLD",
+          "nationality": 148,
+          "position": "striker",
+          "price": 27,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 9,
+          "skills": {
+            "control": 2,
+            "finishing": 15,
+            "heading": 14,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 2,
+            "velocity": 15
+          }
+        },
+        {
+          "face": "white",
+          "name": "AURELIO VIDMAR",
+          "nationality": 148,
+          "position": "striker",
+          "price": 30,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 11,
+          "skills": {
+            "control": 14,
+            "finishing": 13,
+            "heading": 13,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 13,
+            "tackling": 2,
+            "velocity": 13
+          }
+        },
+        {
+          "face": "white",
+          "name": "FRANK FARINA",
+          "nationality": 148,
+          "position": "striker",
+          "price": 27,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 15,
+          "skills": {
+            "control": 13,
+            "finishing": 14,
+            "heading": 1,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 14,
+            "tackling": 3,
+            "velocity": 13
+          }
+        },
+        {
+          "face": "white",
+          "name": "GEORGE KULCSAR",
+          "nationality": 148,
+          "position": "striker",
+          "price": 20,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 16,
+          "skills": {
+            "control": 14,
+            "finishing": 13,
+            "heading": 2,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 12,
+            "tackling": 1,
+            "velocity": 2
+          }
+        }
+      ],
+      "primary_kit": {
+        "basic": 9,
+        "shirt_type": "plain",
+        "shorts": 8,
+        "socks": 1,
+        "stripes": 9
+      },
+      "runtime": {
+        "controls": 0,
+        "match_flags": 0,
+        "own_goals": 0,
+        "values_dirty": 0
+      },
+      "secondary_kit": {
+        "basic": 8,
+        "shirt_type": "plain",
+        "shorts": 1,
+        "socks": 8,
+        "stripes": 8
+      },
+      "tactics": 0
+    },
+    {
+      "coach": "BILLY SINGH",
+      "division": 0,
+      "global_number": 588,
+      "id": {
+        "file": 85,
+        "ordinal": 1
+      },
+      "name": "FIJI",
+      "player_order": [
+        0,
+        2,
+        4,
+        5,
+        3,
+        7,
+        9,
+        10,
+        8,
+        13,
+        14,
+        1,
+        6,
+        11,
+        12,
+        15
+      ],
+      "players": [
+        {
+          "face": "black",
+          "name": "VILIAME BATIDEGEI",
+          "nationality": 150,
+          "position": "goalkeeper",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 1,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "TAITO BULAMEICAVAI",
+          "nationality": 150,
+          "position": "goalkeeper",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 12,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "LOTE DELAI",
+          "nationality": 150,
+          "position": "right_back",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 2,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 9,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "RAMENDRA DUTT",
+          "nationality": 150,
+          "position": "left_back",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 3,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 9,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "EPELI LEVACI",
+          "nationality": 150,
+          "position": "centre_defender",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 4,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 9,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "MARITINO NEMANI",
+          "nationality": 150,
+          "position": "centre_defender",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 5,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "RAVUAMA MADIGI",
+          "nationality": 150,
+          "position": "centre_defender",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 13,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "RADIKE NAWALU",
+          "nationality": 150,
+          "position": "right_wing",
+          "price": 3,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 6,
+          "skills": {
+            "control": 10,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 9,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "VIMAL RAO VYASH",
+          "nationality": 150,
+          "position": "left_wing",
+          "price": 5,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 7,
+          "skills": {
+            "control": 10,
+            "finishing": 1,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 9,
+            "tackling": 0,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "black",
+          "name": "IOSEVO VOSABOTO",
+          "nationality": 150,
+          "position": "midfielder",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 8,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 8,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 9,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "MOHAMED YUSUF",
+          "nationality": 150,
+          "position": "midfielder",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 10,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 8,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 9,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "EPELI ROKOQICA",
+          "nationality": 150,
+          "position": "midfielder",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 14,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 8,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 9,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "ABRAHAM WATKINS",
+          "nationality": 150,
+          "position": "midfielder",
+          "price": 2,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 15,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 1,
+            "passing": 9,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "TAGI VONOLAGI",
+          "nationality": 150,
+          "position": "striker",
+          "price": 2,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 9,
+          "skills": {
+            "control": 0,
+            "finishing": 10,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "NETE FRANCIS",
+          "nationality": 150,
+          "position": "striker",
+          "price": 4,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 11,
+          "skills": {
+            "control": 0,
+            "finishing": 9,
+            "heading": 10,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "black",
+          "name": "POASA TUBUNA",
+          "nationality": 150,
+          "position": "striker",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 16,
+          "skills": {
+            "control": 0,
+            "finishing": 8,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        }
+      ],
+      "primary_kit": {
+        "basic": 1,
+        "shirt_type": "plain",
+        "shorts": 2,
+        "socks": 1,
+        "stripes": 1
+      },
+      "runtime": {
+        "controls": 0,
+        "match_flags": 0,
+        "own_goals": 0,
+        "values_dirty": 0
+      },
+      "secondary_kit": {
+        "basic": 2,
+        "shirt_type": "vertical_stripes",
+        "shorts": 2,
+        "socks": 1,
+        "stripes": 1
+      },
+      "tactics": 8
+    },
+    {
+      "coach": "IAN MARSHALL",
+      "division": 0,
+      "global_number": 589,
+      "id": {
+        "file": 85,
+        "ordinal": 2
+      },
+      "name": "NEW ZEALAND",
+      "player_order": [
+        0,
+        2,
+        4,
+        5,
+        3,
+        7,
+        9,
+        10,
+        8,
+        13,
+        14,
+        1,
+        6,
+        11,
+        12,
+        15
+      ],
+      "players": [
+        {
+          "face": "white",
+          "name": "CLINT GOSLING",
+          "nationality": 149,
+          "position": "goalkeeper",
+          "price": 14,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 1,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "MICHAEL UTTING",
+          "nationality": 149,
+          "position": "goalkeeper",
+          "price": 12,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 12,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "CHRIS ZOROCICH",
+          "nationality": 149,
+          "position": "right_back",
+          "price": 14,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 2,
+          "skills": {
+            "control": 1,
+            "finishing": 1,
+            "heading": 12,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 13,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "RODGER GRAY",
+          "nationality": 149,
+          "position": "left_back",
+          "price": 15,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 3,
+          "skills": {
+            "control": 1,
+            "finishing": 1,
+            "heading": 1,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 12,
+            "tackling": 14,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "BRIAN HAYES",
+          "nationality": 149,
+          "position": "centre_defender",
+          "price": 15,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 4,
+          "skills": {
+            "control": 2,
+            "finishing": 1,
+            "heading": 12,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 15,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "CERI EVANS",
+          "nationality": 149,
+          "position": "centre_defender",
+          "price": 19,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 5,
+          "skills": {
+            "control": 1,
+            "finishing": 1,
+            "heading": 14,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 15,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "TONY LAUS",
+          "nationality": 149,
+          "position": "centre_defender",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 13,
+          "skills": {
+            "control": 1,
+            "finishing": 1,
+            "heading": 15,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 13,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "ROBERT IRONSIDE",
+          "nationality": 149,
+          "position": "right_wing",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 6,
+          "skills": {
+            "control": 12,
+            "finishing": 1,
+            "heading": 0,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 12,
+            "tackling": 15,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "MICHAEL MCGARRY",
+          "nationality": 149,
+          "position": "left_wing",
+          "price": 15,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 7,
+          "skills": {
+            "control": 11,
+            "finishing": 0,
+            "heading": 2,
+            "passing": 11,
+            "passing_high": 0,
+            "speed": 13,
+            "tackling": 0,
+            "velocity": 10
+          }
+        },
+        {
+          "face": "white",
+          "name": "CHRIS RILEY",
+          "nationality": 149,
+          "position": "midfielder",
+          "price": 15,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 8,
+          "skills": {
+            "control": 1,
+            "finishing": 0,
+            "heading": 1,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 12,
+            "tackling": 13,
+            "velocity": 11
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "ALUN EVANS",
+          "nationality": 149,
+          "position": "midfielder",
+          "price": 14,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 10,
+          "skills": {
+            "control": 14,
+            "finishing": 2,
+            "heading": 1,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 2,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "PERRY COTTON",
+          "nationality": 149,
+          "position": "midfielder",
+          "price": 13,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 14,
+          "skills": {
+            "control": 0,
+            "finishing": 1,
+            "heading": 0,
+            "passing": 12,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 14,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "ginger",
+          "name": "DARREN MCCLENNAN",
+          "nationality": 149,
+          "position": "midfielder",
+          "price": 12,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 15,
+          "skills": {
+            "control": 1,
+            "finishing": 1,
+            "heading": 1,
+            "passing": 13,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 10,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "FRED DEJONG",
+          "nationality": 149,
+          "position": "striker",
+          "price": 16,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 9,
+          "skills": {
+            "control": 1,
+            "finishing": 12,
+            "heading": 12,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 2,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "DANNY HALLIGAN",
+          "nationality": 149,
+          "position": "striker",
+          "price": 16,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 11,
+          "skills": {
+            "control": 0,
+            "finishing": 13,
+            "heading": 1,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 11,
+            "tackling": 1,
+            "velocity": 12
+          }
+        },
+        {
+          "face": "white",
+          "name": "VAUGHAN COVENY",
+          "nationality": 149,
+          "position": "striker",
+          "price": 15,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 16,
+          "skills": {
+            "control": 2,
+            "finishing": 14,
+            "heading": 2,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 2,
+            "velocity": 1
+          }
+        }
+      ],
+      "primary_kit": {
+        "basic": 1,
+        "shirt_type": "plain",
+        "shorts": 1,
+        "socks": 1,
+        "stripes": 1
+      },
+      "runtime": {
+        "controls": 0,
+        "match_flags": 0,
+        "own_goals": 0,
+        "values_dirty": 0
+      },
+      "secondary_kit": {
+        "basic": 2,
+        "shirt_type": "plain",
+        "shorts": 1,
+        "socks": 1,
+        "stripes": 2
+      },
+      "tactics": 0
+    },
+    {
+      "coach": "LUITO FA'ARODO",
+      "division": 0,
+      "global_number": 590,
+      "id": {
+        "file": 85,
+        "ordinal": 3
+      },
+      "name": "SOLOMON ISLANDS",
+      "player_order": [
+        0,
+        2,
+        4,
+        5,
+        3,
+        8,
+        10,
+        11,
+        9,
+        13,
+        14,
+        1,
+        6,
+        7,
+        12,
+        15
+      ],
+      "players": [
+        {
+          "face": "black",
+          "name": "JOSEPH BATAI",
+          "nationality": 151,
+          "position": "goalkeeper",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 1,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "SOLOMON VEVOA",
+          "nationality": 151,
+          "position": "goalkeeper",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 12,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "PATRICK HORIWAPU",
+          "nationality": 151,
+          "position": "right_back",
+          "price": 2,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 2,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 1,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 9,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "JOHN TANISPAPA",
+          "nationality": 151,
+          "position": "left_back",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 3,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 8,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "ALFRED WALA",
+          "nationality": 151,
+          "position": "centre_defender",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 4,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "GEORGE TEMAHUA",
+          "nationality": 151,
+          "position": "centre_defender",
+          "price": 5,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 5,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 11,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 9,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "black",
+          "name": "SAMSON GAMASI",
+          "nationality": 151,
+          "position": "centre_defender",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 13,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 9,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "RICHARD GULU",
+          "nationality": 151,
+          "position": "centre_defender",
+          "price": 2,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 14,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 9,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "CHARLES ASHLEY",
+          "nationality": 151,
+          "position": "right_wing",
+          "price": 3,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 6,
+          "skills": {
+            "control": 9,
+            "finishing": 2,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 8,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "CHRIS MOLI",
+          "nationality": 151,
+          "position": "left_wing",
+          "price": 3,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 7,
+          "skills": {
+            "control": 10,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 9,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "MATAIASI VAVA",
+          "nationality": 151,
+          "position": "midfielder",
+          "price": 2,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 8,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 8,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 10,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "IAN PWAHOLO",
+          "nationality": 151,
+          "position": "midfielder",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 10,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 8,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "ROBINSON BOE",
+          "nationality": 151,
+          "position": "midfielder",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 15,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 8,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 8,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "NOEL BERRY",
+          "nationality": 151,
+          "position": "striker",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 9,
+          "skills": {
+            "control": 0,
+            "finishing": 8,
+            "heading": 9,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "GEORGE KIRIAU",
+          "nationality": 151,
+          "position": "striker",
+          "price": 0,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 11,
+          "skills": {
+            "control": 0,
+            "finishing": 8,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "black",
+          "name": "DUDLEY NATEI",
+          "nationality": 151,
+          "position": "striker",
+          "price": 1,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 16,
+          "skills": {
+            "control": 0,
+            "finishing": 9,
+            "heading": 8,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        }
+      ],
+      "primary_kit": {
+        "basic": 5,
+        "shirt_type": "plain",
+        "shorts": 4,
+        "socks": 4,
+        "stripes": 5
+      },
+      "runtime": {
+        "controls": 0,
+        "match_flags": 0,
+        "own_goals": 0,
+        "values_dirty": 0
+      },
+      "secondary_kit": {
+        "basic": 4,
+        "shirt_type": "plain",
+        "shorts": 4,
+        "socks": 4,
+        "stripes": 4
+      },
+      "tactics": 8
+    }
+  ]
+}

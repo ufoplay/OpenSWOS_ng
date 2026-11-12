@@ -222,7 +222,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/dos_sound.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
 "include/easing.h" = { area = "view", status = "todo", notes = "rendering" }
 "include/edit_tactics.h" = { area = "view", status = "todo", notes = "tactics editor; its .TAC write path goes to resources/tac" }
-"include/endian_helpers.h" = { area = "resource", status = "todo", notes = "common::bytes / FixedName" }
+"include/endian_helpers.h" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/common/src/bytes.rs", "src/common/src/team_id.rs"], notes = "BE/LE reads and writes: ByteReader/ByteWriter; PACK_BE_U16(file, ordinal): TeamId" }
 "include/fade.h" = { area = "view", status = "todo", notes = "rendering" }
 "include/file_io.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
 "include/fixture_data.h" = { area = "core", status = "todo", notes = "competitions" }
@@ -234,7 +234,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/game_options.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/game_state.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/game_timers.h" = { area = "core", status = "todo", notes = "match engine" }
-"include/game_types.h" = { area = "core", status = "todo", notes = "shared game types" }
+"include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST"], notes = "shared game types; the team and player records are in resources/team" }
 "include/game_utils.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/general_data.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/gfx.h" = { area = "view", status = "todo", notes = "rendering" }
@@ -325,8 +325,8 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/report_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/resload.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "include/rjp1.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
-"include/rnc.h" = { area = "resource", status = "todo", notes = "codecs/rnc" }
-"include/rnc_magic.h" = { area = "resource", status = "todo", notes = "codecs/rnc" }
+"include/rnc.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga data packing: the installed PC game's files are not RNC-packed (D9)" }
+"include/rnc_magic.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga data packing: the installed PC game's files are not RNC-packed (D9)" }
 "include/rollback_rig.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/save_format_json.h" = { area = "resource", status = "todo", notes = "career_save / competition_save (D4)" }
 "include/scroll_blit.h" = { area = "view", status = "todo", notes = "rendering" }
@@ -352,7 +352,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/strings_data.h" = { area = "view", status = "todo", notes = "text and strings" }
 "include/swos2020_menus.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/swos_asm.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
-"include/swos_fixed_team_name.h" = { area = "resource", status = "todo", notes = "common::bytes / FixedName" }
+"include/swos_fixed_team_name.h" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/common/src/name.rs"], functions_done = ["SWOS_CopyTeamName17", "SWOS_TeamNameCopy"], notes = "the 17-byte name record: FixedName. SWOS_CopyTeamName18's display clean-up (control characters to spaces) belongs to the view" }
 "include/swos_io.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
 "include/swos_platform.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
 "include/swos_sections.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
@@ -609,7 +609,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/replay_v2.c" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
 "src/resload.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/rjp1.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
-"src/rnc.c" = { area = "resource", status = "todo", notes = "codecs/rnc" }
+"src/rnc.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga data packing: the installed PC game's files are not RNC-packed (D9)" }
 "src/rollback_rig.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "src/save_format_json.c" = { area = "resource", status = "todo", notes = "career_save / competition_save (D4)" }
 "src/scroll_blit.c" = { area = "view", status = "todo", notes = "rendering" }

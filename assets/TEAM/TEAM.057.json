@@ -1,0 +1,535 @@
+{
+  "teams": [
+    {
+      "coach": "KO JAE-OK",
+      "division": 0,
+      "global_number": 1332,
+      "id": {
+        "file": 57,
+        "ordinal": 0
+      },
+      "name": "SOUTH KOREA",
+      "player_order": [
+        0,
+        2,
+        4,
+        5,
+        3,
+        7,
+        9,
+        10,
+        8,
+        13,
+        14,
+        1,
+        6,
+        11,
+        12,
+        15
+      ],
+      "players": [
+        {
+          "face": "white",
+          "name": "CHOI IN-YOUNG",
+          "nationality": 127,
+          "position": "goalkeeper",
+          "price": 14,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 1,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "KIM POONG-JOE",
+          "nationality": 127,
+          "position": "goalkeeper",
+          "price": 13,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 12,
+          "skills": {
+            "control": 0,
+            "finishing": 0,
+            "heading": 0,
+            "passing": 0,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 0,
+            "velocity": 0
+          }
+        },
+        {
+          "face": "white",
+          "name": "CHOI KANG-HEE",
+          "nationality": 127,
+          "position": "right_back",
+          "price": 18,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 2,
+          "skills": {
+            "control": 3,
+            "finishing": 3,
+            "heading": 1,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 10,
+            "tackling": 15,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "GU SANG-BUM",
+          "nationality": 127,
+          "position": "left_back",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 3,
+          "skills": {
+            "control": 2,
+            "finishing": 2,
+            "heading": 1,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 14,
+            "tackling": 10,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "PARK KIUNG-HOON",
+          "nationality": 127,
+          "position": "centre_defender",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 4,
+          "skills": {
+            "control": 1,
+            "finishing": 1,
+            "heading": 13,
+            "passing": 3,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 12,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "CHUNG JONG-HWAN",
+          "nationality": 127,
+          "position": "centre_defender",
+          "price": 19,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 5,
+          "skills": {
+            "control": 1,
+            "finishing": 3,
+            "heading": 13,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 14,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "CHUNG JONG-SO",
+          "nationality": 127,
+          "position": "centre_defender",
+          "price": 13,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 13,
+          "skills": {
+            "control": 4,
+            "finishing": 0,
+            "heading": 10,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 10,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "HONG MYUNG-BO",
+          "nationality": 127,
+          "position": "right_wing",
+          "price": 14,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 6,
+          "skills": {
+            "control": 10,
+            "finishing": 1,
+            "heading": 1,
+            "passing": 3,
+            "passing_high": 0,
+            "speed": 11,
+            "tackling": 3,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "NOH SOO-JIN",
+          "nationality": 127,
+          "position": "left_wing",
+          "price": 18,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 7,
+          "skills": {
+            "control": 12,
+            "finishing": 1,
+            "heading": 4,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 12,
+            "tackling": 1,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "LEE YOUNG-JIN",
+          "nationality": 127,
+          "position": "midfielder",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 10,
+          "skills": {
+            "control": 3,
+            "finishing": 3,
+            "heading": 0,
+            "passing": 10,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 15,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "HWANG SEON-HONG",
+          "nationality": 127,
+          "position": "midfielder",
+          "price": 18,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 8,
+          "skills": {
+            "control": 3,
+            "finishing": 2,
+            "heading": 4,
+            "passing": 12,
+            "passing_high": 0,
+            "speed": 3,
+            "tackling": 9,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "KIM SANG-HO",
+          "nationality": 127,
+          "position": "midfielder",
+          "price": 13,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 15,
+          "skills": {
+            "control": 1,
+            "finishing": 10,
+            "heading": 11,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 2,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "DEUK YOO-YOON",
+          "nationality": 127,
+          "position": "midfielder",
+          "price": 15,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 14,
+          "skills": {
+            "control": 1,
+            "finishing": 3,
+            "heading": 2,
+            "passing": 11,
+            "passing_high": 0,
+            "speed": 1,
+            "tackling": 11,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "KIM JOO-SUNG",
+          "nationality": 127,
+          "position": "striker",
+          "price": 19,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 9,
+          "skills": {
+            "control": 2,
+            "finishing": 14,
+            "heading": 11,
+            "passing": 2,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 2,
+            "velocity": 2
+          }
+        },
+        {
+          "face": "white",
+          "name": "CHOI SUN-HOO",
+          "nationality": 127,
+          "position": "striker",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 11,
+          "skills": {
+            "control": 1,
+            "finishing": 0,
+            "heading": 3,
+            "passing": 14,
+            "passing_high": 0,
+            "speed": 2,
+            "tackling": 12,
+            "velocity": 1
+          }
+        },
+        {
+          "face": "white",
+          "name": "BYUNG YOO-BYUN",
+          "nationality": 127,
+          "position": "striker",
+          "price": 17,
+          "runtime": {
+            "cached_match_value": 0,
+            "cards_injuries": 0,
+            "flags": "",
+            "form": 0,
+            "goals": {
+              "continental_cup": 0,
+              "domestic_cup": 0,
+              "league": 0,
+              "league_cup": 0
+            }
+          },
+          "shirt_number": 16,
+          "skills": {
+            "control": 1,
+            "finishing": 13,
+            "heading": 14,
+            "passing": 1,
+            "passing_high": 0,
+            "speed": 0,
+            "tackling": 2,
+            "velocity": 2
+          }
+        }
+      ],
+      "primary_kit": {
+        "basic": 4,
+        "shirt_type": "plain",
+        "shorts": 4,
+        "socks": 4,
+        "stripes": 4
+      },
+      "runtime": {
+        "controls": 0,
+        "match_flags": 0,
+        "own_goals": 0,
+        "values_dirty": 0
+      },
+      "secondary_kit": {
+        "basic": 5,
+        "shirt_type": "plain",
+        "shorts": 5,
+        "socks": 5,
+        "stripes": 5
+      },
+      "tactics": 0
+    }
+  ]
+}

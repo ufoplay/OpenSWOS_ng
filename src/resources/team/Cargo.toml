@@ -1,0 +1,24 @@
+[package]
+name = "openswos_team_resource"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Reader and writer for the PC SWOS 96/97 team database files (DATA/TEAM.nnn)"
+readme = "readme.md"
+
+[dependencies]
+bitflags = { workspace = true }
+openswos_common = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+openswos_test_utils = { workspace = true }
+proptest = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

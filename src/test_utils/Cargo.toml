@@ -8,6 +8,12 @@ publish = false
 description = "Test helpers for the OpenSWOS_ng crates"
 
 [dependencies]
+openswos_common = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+tempfile = { workspace = true }
+ureq = { workspace = true }
 
 [lints]
 workspace = true

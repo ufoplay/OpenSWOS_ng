@@ -19,6 +19,7 @@ later.
 | D6 | **Rules are data from day one.** The original game is just another world. There is one logic and no `if original … else …`. Anything the original hardcodes (e.g. Italy has 2 divisions) becomes data in the World 1996-97 package (§5.2). |
 | D7 | **"World 1996-97" is a world package with the same file structure as World 2026-27** (OpenSWOS's world package). It is in effect a mod that reproduces the original 96/97 game exactly, with no hardcoded logic (§5.2). |
 | D8 | Test data we can't commit (World 2026-27, the RGD recordings) is **downloaded on demand and cached under `target/`** (§6). |
+| D9 | **Importers read only the DOS (PC) game's file formats**, plus OpenSWOS's own platform-neutral formats that D4/D7 need (JSON saves, team/competition JSON, world packages, `.SRP`). Amiga formats are not read: RNC-packed files, the `data/` folder of world packages (Amiga `TEAM.nnn`), OCS/AGA graphics, RJP1 music. The installed PC game's files are not RNC-packed (RNC only wraps the floppy release's installer archives), so there is no RNC codec. |
 
 ---
 
@@ -42,7 +43,7 @@ later.
 - Amiga support: the m68k target, the emulated Amiga hardware (blitter, copper, Paula,
   CIA, interrupts, AGA), and Amiga-only data formats (OCS/AGA `.RAW`/`.MAP`, RJP1
   `.SNG`/`.INS`, ADF/HDF/LHA/WHDLoad). The Amiga *game style* is in scope (D1).
-  `TEAM.nnn` stays in scope, since world packages carry it.
+  Under D9, only DOS (PC) binary formats are read.
 - Netplay/online/rollback, arcade mode, the Jaguar sprites.
 - The mod *system* (hooks, cosmetic mods). Mods that change rules (e.g. Career+ knobs,
   the 36-club European formats) are covered because their rules are world data (D6).
@@ -66,7 +67,7 @@ later.
 | `src/sim_state.c` lists every variable the match reads (tier SIM). Crowd chants, advert boards and crowd animation **call `Rand()`**, and the camera/on-screen flags are **read by the match**. | This is the blueprint for `MatchState`. Those features' logic belongs in `core`, or bit-exactness is lost. |
 | The match is deterministic. It runs one frame at a time from 2 player inputs (`match_step.h`). | Core API: `Match::step([PlayerInput; 2]) -> FrameEvents`. |
 | Game styles differ in constants and behaviour: `ApplyGameStyle`, `docs/DOS_GAMEPLAY.md` §3 (ball physics, goalkeeper, clock thresholds, formations) and §8 (the 41/64 movement speed factor). | The inventory of `GameStyle` trait methods (§5.3). |
-| `TEAM.nnn`, `*.TMD` and `POOLPLYR.DAT` are RNC-packed on the Amiga, in the OpenSWOS assets folder and in world packages, and raw in the PC (GOG) `DATA/`. The layouts are identical, and big-endian. | One reader per format that accepts both. RNC is a separate codec crate. |
+| `TEAM.nnn`, `*.TMD` and `POOLPLYR.DAT` are RNC-packed on the Amiga, in the OpenSWOS assets folder and in world packages, and raw in the PC (GOG) `DATA/`. The layouts are identical, and big-endian. | We read the PC files (D9): no RNC. World packages' rosters are read from `teams/*.json`, not from their Amiga `data/`. |
 | `.RGD` recordings capture the original DOS game's state on every frame. They're published in [swos-port](https://github.com/zlatkok/swos-port) `tests/data` (≈6.5 MB each; that repo declares no license). Upstream replays 297,918 frames at 100% for scalars/teams/info. | The match engine's golden oracle (§7.4), downloaded on demand like World 2026-27 (D8). |
 | Golden careers: upstream plays 5 seasons per career with the autopilot and hashes the JSON save each season. Its list covers **both** worlds (e.g. `BRA-FLAMENGO`, `ARG2627-BOCA`). | With D4 these become the end-to-end oracle for the career, for both world packages (§7.4). |
 | Upstream already compiles single `.c` files with stubbed externs (`tests/league_playoffs/*`). | A C oracle per translation unit is known to work (§7.3). |
@@ -97,7 +98,6 @@ OpenSWOS_ng/
 ├── docs/
 └── src/
     ├── common/             # openswos_common
-    ├── codecs/rnc/         # openswos_rnc_codec
     ├── resources/<fmt>/    # openswos_<fmt>_resource — one crate per file format
     ├── core/               # openswos_core
     ├── test_utils/         # publish = false; includes the download cache (§6)
@@ -117,8 +117,8 @@ target/cache/               # all temporary data lives under target/ (`cargo cle
 **Dependency rules**
 
 - `common` has no workspace dependencies.
-- `codecs/*` and `resources/*` depend on `common` (a resource may also depend on a codec,
-  or on another resource for a shared record such as `TeamFile`).
+- `resources/*` depend on `common` (a resource may also depend on another resource for a
+  shared record such as `TeamFile`).
 - `core` depends on `common` and `resources/*`.
 - `oracle` and `test_utils` appear only in `[dev-dependencies]` (and in `world_extract`).
   No shipped crate depends on `oracle`.
@@ -128,7 +128,9 @@ target/cache/               # all temporary data lives under target/ (`cargo cle
 - `bytes`: a bounds-checked big-/little-endian reader and writer. SWOS data mixes
   Amiga-origin BE records with DOS LE formats.
 - `FixedName<const N: usize>`: a fixed-size name field that keeps the exact bytes (§5.6).
-- Shared types: `TeamId` `{file, ordinal}`, country codes, `Position`, kit colours…
+- Shared types. `TeamId` `{file, ordinal}`. Country, nationality and team-file numbers are
+  numeric newtypes: their meaning is world data (D6), and World 2026-27 renumbers them.
+  Only values the file format fixes are enums (e.g. `Position`, 3 bits).
 - The `Importer`/`Exporter` traits (infinitier naming), and the base error types
   (`thiserror`).
 
@@ -220,7 +222,7 @@ structure:
   WORLD.ini                       tag, name, fingerprint                           (upstream)
   mod.json                        the world as a mod (optional: older packages lack it)  (upstream)
   teams/<COUNTRY>.json            rosters, upstream team JSON                      (upstream)
-  data/TEAM.nnn                   the same rosters, binary                         (upstream)
+  data/TEAM.nnn                   the same rosters for the Amiga build: not read (D9)  (upstream)
   competitions/leagues.json       upstream competition JSON                        (upstream)
   competitions/cups.json, tournaments.json, playoffs.json, qualifying.json,
                league_blocks.json, seed_buckets.json, countries.json,
@@ -273,7 +275,7 @@ The principles:
   moves clubs, the European qualification order) are written by hand, each citing the
   upstream function.
 - `world_extract` also assembles the full package in `target/cache/worlds/1996-97/`. It
-  adds `teams/*.json` and `data/TEAM.nnn` made from your game copy (as OpenSWOS Setup
+  adds `teams/*.json` made from your PC game copy's `DATA/TEAM.nnn` (as OpenSWOS Setup
   does) and computes `WORLD.ini`'s fingerprint.
 - Proof: the Rust engine + this package reproduces upstream's 96/97 path (an oracle test
   per function, golden careers end to end).
@@ -363,7 +365,7 @@ every upstream JSON file. In practice:
 
 - **Committed (`assets/<FORMAT>/`).** Each fixture is a file plus a JSON sidecar
   (`name.ext` + `name.json`, the expected decoded model, as in infinitier):
-  - a **small, curated set of original files** (e.g. two or three `TEAM.nnn`, one `.TMD`,
+  - a **small, curated set of original files** (e.g. two or three PC `DATA/TEAM.nnn`, one `.TMD`,
     `POOLPLYR.DAT`, one sprite bank, one pitch, a few samples), kept small;
   - synthetic fixtures for edge cases;
   - upstream's GPL JSON data.
@@ -526,8 +528,7 @@ milestone are done **one at a time**, each finished (§10) before the next start
 
 Done. 807 upstream files classified: 192 core, 19 resource, 44 world_data, 14 test_data,
 207 view, 331 out of scope. Also delivered: the ledger tool's
-`sync`/`mark`. Note: `src/codecs/*` and `src/resources/*` join the workspace members with
-their first crate (cargo refuses a glob that matches nothing).
+`sync`/`mark`. Note: `src/resources/*` joins the workspace members with its first crate (cargo refuses a glob that matches nothing).
 
 - Cargo workspace, `justfile` + `just/*`, workspace lints, `.gitignore` (nothing beyond
   `target/`: every temporary or local file lives there).
@@ -540,31 +541,47 @@ their first crate (cargo refuses a glob that matches nothing).
   `fetch`/`status`/`check`.
 - `license = "GPL-3.0-or-later"` in the workspace metadata.
 
-### M1 — Resource foundation
+### M1 — Resource foundation ✅ (2026-11-12)
 
-- `common::bytes`, `FixedName<N>`, the shared types, the `Importer`/`Exporter` traits,
-  the error types.
-- `test_utils`: asset paths, JSON-sidecar comparison, local-data discovery, the download
-  cache, and skip reporting.
+Done.
+
+- `common`:
+  - `ByteReader`/`ByteWriter`: bounds-checked BE/LE reads and writes. A failed read moves
+    nothing.
+  - `Importer`/`Exporter`.
+  - `FixedName<N>`: lossless. It serialises as text when canonical, as raw bytes otherwise.
+  - `TeamId` (`TeamFileNumber` + `TeamOrdinal`) and `Position`.
+
+  Country and nationality newtypes come with the team crate that first needs them.
+- `test_utils`:
+  - `fixtures`: listing, JSON sidecars named `<fixture>.json`, `OPENSWOS_BLESS=1` to
+    (re)write them, byte-for-byte `assert_round_trip`.
+  - `data`: `OPENSWOS_GAME_DIR` / `OPENSWOS_ASSETS_DIR`, case-insensitive game files.
+  - `cache`: downloads into `target/cache/downloads/`, SHA-256-verified, atomic, capped at
+    64 MiB. A checksum mismatch fails the test; no network means a skip.
+  - `skip` + `require!`: skips report why; `OPENSWOS_STRICT_TEST_DATA=1` turns them into
+    failures.
+- `just test_real_assets <game_dir>` passes your game folder to the tests.
 
 ### M2 — Core-data resources, in this order
 
+All binary formats are the PC (DOS) game's (D9).
+
 | # | Crate | File(s) | Notes |
 |---|---|---|---|
-| 1 | `codecs/rnc` | RNC ProPack v1/v2 | Unpack; pack byte-identical to the originals. |
-| 2 | `team` | `TEAM.nnn` | BE count + 684-byte `TeamFileEx`. Raw (PC) or RNC v1. Up to 256 clubs per file, a country over several files (World 2026-27). |
-| 3 | `team_json` | `teams/<COUNTRY>.json` | Upstream's team JSON (uuids, checksums). Cross-checked with `team` on the same rosters. |
-| 4 | `tmd` | `EUROCUP/EUROCWC/UEFACUP.TMD` | Bare `TeamFileEx[]`, RNC v2. |
-| 5 | `poolplyr` | `POOLPLYR.DAT` | 58-byte `PoolPlayer[]`, RNC v2. |
-| 6 | `edt` | `CUSTOMS.EDT` | BE count + `TeamFile[]`. |
-| 7 | `tac` | `.TAC` | 370-byte tactics record, binary + JSON variant. |
-| 8 | `competitions_json` | `competitions/*.json` | Upstream's competition JSON family (`competition_leagues`, cups, tournaments, playoffs, qualifying, league blocks, seed buckets, countries, country competitions, career). One crate, because the files are sections of one schema and share their records. |
-| 9 | `world_rules` | `rules/*.json` | Our new files (§5.2). Schemas are defined as M4/M5/M7 find what upstream hardcodes; the crate grows with them. |
-| 10 | `world_package` | `WORLD.ini`, `mod.json`, the layout | Opens and writes a package, computes and checks the fingerprint, reads a package zip. |
-| 11 | `tactics_json`, `career_params_json`, `national_teams_json` | upstream `bin/data_json/…` | Inputs to `world_extract`. |
-| 12 | `career_save`, `competition_save` | `.CAR`/`.SEA`, `.PRE`/`.DIY` (JSON) + DOS `.DIY` import | Byte-identical writer (D4), including the raw competition blobs in the x86_64 layout upstream's golden record uses. Both worlds. |
-| 13 | `rgd` | swos-port `.RGD(.gz)` | Versions 1.0–1.5. Needed for the match oracle. |
-| 14 | `hil`, `srp`, `rpl` | highlights, OpenSWOS replay v2, DOS replay | `.HIL` binary + JSON. `.SRP` is chunked (`META`/`FRMS`/`INPT`/`HASH`…). |
+| 1 ✅ | `team` | PC `DATA/TEAM.nnn`, `DATA/TEAM.CUS` | BE count + 684-byte `TeamFileEx` (76-byte header + 16 × 38-byte player). Not RNC-packed. Every team database of the PC game round-trips (79 files, 1,794 teams); `DATA/TEAM.248` is a stray file in another layout, rejected. |
+| 2 | `team_json` | `teams/<COUNTRY>.json` | Upstream's team JSON (uuids, checksums): the rosters of world packages, World 2026-27's included (up to 256 clubs per file, a country over several files). Cross-checked with `team` on the same rosters. |
+| 3 | `tmd` | PC `DATA/EUROCUP/EUROCWC/UEFACUP.TMD` | Bare `TeamFileEx[]`. |
+| 4 | `poolplyr` | PC `DATA/POOLPLYR.DAT` | 58-byte `PoolPlayer[]`. |
+| 5 | `edt` | `CUSTOMS.EDT` | BE count + `TeamFile[]`. |
+| 6 | `tac` | `.TAC` | 370-byte tactics record, binary + JSON variant. |
+| 7 | `competitions_json` | `competitions/*.json` | Upstream's competition JSON family (`competition_leagues`, cups, tournaments, playoffs, qualifying, league blocks, seed buckets, countries, country competitions, career). One crate, because the files are sections of one schema and share their records. |
+| 8 | `world_rules` | `rules/*.json` | Our new files (§5.2). Schemas are defined as M4/M5/M7 find what upstream hardcodes; the crate grows with them. |
+| 9 | `world_package` | `WORLD.ini`, `mod.json`, the layout | Opens and writes a package, computes and checks the fingerprint, reads a package zip. Ignores the Amiga `data/` folder (D9). |
+| 10 | `tactics_json`, `career_params_json`, `national_teams_json` | upstream `bin/data_json/…` | Inputs to `world_extract`. |
+| 11 | `career_save`, `competition_save` | `.CAR`/`.SEA`, `.PRE`/`.DIY` (JSON) + DOS `.DIY` import | Byte-identical writer (D4), including the raw competition blobs in the x86_64 layout upstream's golden record uses. Both worlds. |
+| 12 | `rgd` | swos-port `.RGD(.gz)` | Versions 1.0–1.5. Needed for the match oracle. |
+| 13 | `hil`, `srp`, `rpl` | highlights, OpenSWOS replay v2, DOS replay | `.HIL` binary + JSON. `.SRP` is chunked (`META`/`FRMS`/`INPT`/`HASH`…). |
 
 ### M3 — View resources (readers/writers only)
 

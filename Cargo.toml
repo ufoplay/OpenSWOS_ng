@@ -1,9 +1,9 @@
 [workspace]
-# `src/codecs/*` and `src/resources/*` join the list with their first crate (M2): cargo
-# refuses a glob that matches nothing.
+# One crate per file format under src/resources (docs/PLAN.md §4).
 members = [
     "src/common",
     "src/core",
+    "src/resources/*",
     "src/test_utils",
     "src/tools/*",
 ]
@@ -23,15 +23,26 @@ openswos_common = { path = "src/common", version = "0.1.0" }
 openswos_core = { path = "src/core", version = "0.1.0" }
 openswos_test_utils = { path = "src/test_utils" }
 
+# Resources
+openswos_team_resource = { path = "src/resources/team", version = "0.1.0" }
+
+# The player flags of the team records.
+bitflags = { version = "2", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }
 # Glob patterns over upstream paths (the migration ledger tool).
 globset = "0.4"
+proptest = "1"
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Verifies downloaded test data (test_utils' download cache).
+sha2 = "0.11"
 tempfile = "3"
 thiserror = "2"
 toml = "1"
 # Writes upstream.toml with one inline table per file.
 toml_edit = "0.25"
+# HTTP client of test_utils' download cache (docs/PLAN.md §6, D8).
+ureq = "3"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
