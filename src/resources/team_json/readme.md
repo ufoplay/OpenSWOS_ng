@@ -13,10 +13,12 @@ named fields, with a `uuid` per team and player and a `checksum` per team.
   all written as their numbers; a number outside a code's or a skill's range does not
   import. Other numbers are kept exactly as written.
   OpenSWOS Setup writes some fields signed (`-56`) and the World 2026-27 import writes them
-  unsigned (`200`); both mean the same byte (`JsonByte`, `JsonWord`).
-- **`text`**: upstream's layout, Python's `json.dump(indent=2)` with `ensure_ascii`. Upstream
-  files round-trip byte for byte, trailing newline included (Setup writes none, the World
-  2026-27 import writes one).
+  unsigned (`200`); both mean the same byte (`JsonByte`, `JsonWord`, shared with the other
+  JSON resources in `openswos_common::json`).
+- **The text**: upstream's layout, Python's `json.dump(indent=2)` with `ensure_ascii`
+  (`openswos_common::json::to_text` with `NonAscii::Escaped`). Upstream files round-trip
+  byte for byte, trailing newline included (Setup writes none, the World 2026-27 import
+  writes one).
 - **What this port writes:** the World 2026-27 package's style. Numbers are always written
   unsigned: nationalities, shirt numbers and prices are unsigned codes, and Setup's signs
   come from the C structs' `int8_t`. The world packages it makes (World 1996-97) end with a
@@ -115,8 +117,9 @@ Upstream OpenSWOS: `tools/swosdata/lib/team_json.c` (the writer), `docs/TEAM_IDS
 
 ## Tests
 
-- Unit tests: signed and unsigned numbers, layout and escaping, upstream's documented id
-  example (BRAZIL), conversions and their errors, round trips of the PC game's `TEAM.085`.
+- Unit tests: upstream's documented id example (BRAZIL), conversions and their errors,
+  round trips of the PC game's `TEAM.085`. The numbers and the layout are tested in
+  `openswos_common::json`.
 - `assets/TEAM_JSON/OCEANIA.json`: World 1996-97's team JSON for the PC game's `TEAM.085`,
   as this port writes it (derived 96/97 ids, unsigned numbers, a trailing newline). It
   round-trips byte for byte, and decodes to exactly the teams of `assets/TEAM/TEAM.085`.

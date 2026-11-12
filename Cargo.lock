@@ -555,6 +555,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "openswos_competitions_json_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_test_utils",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "zip",
+]
+
+[[package]]
 name = "openswos_core"
 version = "0.1.0"
 dependencies = [

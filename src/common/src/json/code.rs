@@ -1,5 +1,5 @@
-//! A code (an enum or flags of `openswos_team_resource`) written as its byte, as upstream
-//! writes it: `#[serde(with = "code")]`. A number that is not one of the code's values does
+//! A code (an enum, flags, a nibble) written as its byte, as upstream writes it:
+//! `#[serde(with = "code")]`. A number that is not one of the code's values does
 //! not read.
 
 use std::fmt::Display;
@@ -37,8 +37,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use openswos_common::Position;
-    use openswos_team_resource::{KitColour, MatchFlags, PlayerFlags};
+    use crate::{Nibble, Position, Tactics};
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -46,26 +45,20 @@ mod tests {
         #[serde(with = "super")]
         position: Position,
         #[serde(with = "super")]
-        colour: KitColour,
+        tactics: Tactics,
         #[serde(with = "super")]
-        flags: PlayerFlags,
-        #[serde(with = "super")]
-        match_flags: MatchFlags,
+        nibble: Nibble,
     }
 
     #[test]
     fn codes_are_written_as_their_bytes() {
         let codes = Codes {
             position: Position::Striker,
-            colour: KitColour::Purple,
-            flags: PlayerFlags::IN_FORM | PlayerFlags::TRIALIST,
-            match_flags: MatchFlags::from(0b1000_0001),
+            tactics: Tactics::UserF,
+            nibble: Nibble::from_low_bits(9),
         };
         let text = serde_json::to_string(&codes).expect("serializes");
-        assert_eq!(
-            text,
-            r#"{"position":7,"colour":10,"flags":5,"match_flags":129}"#
-        );
+        assert_eq!(text, r#"{"position":7,"tactics":17,"nibble":9}"#);
         assert_eq!(
             serde_json::from_str::<Codes>(&text).expect("deserializes"),
             codes
@@ -76,19 +69,19 @@ mod tests {
     fn a_number_that_is_no_code_does_not_read() {
         for (text, message) in [
             (
-                r#"{"position":8,"colour":0,"flags":0,"match_flags":0}"#,
+                r#"{"position":8,"tactics":0,"nibble":0}"#,
                 "8 is not a player position",
             ),
             (
-                r#"{"position":0,"colour":11,"flags":0,"match_flags":0}"#,
-                "11 is not a kit colour",
+                r#"{"position":0,"tactics":18,"nibble":0}"#,
+                "18 is not a tactic slot",
             ),
             (
-                r#"{"position":0,"colour":0,"flags":8,"match_flags":0}"#,
-                "0x08 holds bits that are not player flags",
+                r#"{"position":0,"tactics":0,"nibble":16}"#,
+                "16 does not fit a nibble (0..=15)",
             ),
             (
-                r#"{"position":0,"colour":0,"flags":0,"match_flags":256}"#,
+                r#"{"position":0,"tactics":0,"nibble":256}"#,
                 "invalid value: integer `256`",
             ),
         ] {

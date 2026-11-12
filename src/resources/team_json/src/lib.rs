@@ -2,13 +2,11 @@
 // Resource crates handle untrusted data: every access is checked.
 #![deny(clippy::indexing_slicing)]
 
-mod code;
 pub mod convert;
 pub mod ids;
 pub mod model;
-pub mod numbers;
-pub mod text;
 
+use openswos_common::json::{NonAscii, to_text};
 use openswos_common::{Exporter, Importer};
 use openswos_team_resource::{Team, TeamFile};
 use thiserror::Error;
@@ -18,8 +16,7 @@ pub use ids::{
     TEAM_ID_NAMESPACE, WORLD_1996_97_TAG, derived_player_uuid, derived_team_uuid, team_checksum,
 };
 pub use model::{FileKind, PlayerEntry, TeamChecksum, TeamEntry, TeamHeader, TeamJsonFile};
-pub use numbers::{JsonByte, JsonWord};
-pub use text::TrailingNewline;
+pub use openswos_common::json::{JsonByte, JsonWord, TrailingNewline};
 
 /// A team JSON file and the one thing about its text the model does not hold: whether it
 /// ends with a newline.
@@ -132,7 +129,7 @@ impl Exporter for TeamJsonFormat {
     type Error = TeamJsonError;
 
     fn export(model: &TeamJsonDocument) -> Result<Vec<u8>, TeamJsonError> {
-        Ok(text::to_text(&model.file, model.trailing_newline)?.into_bytes())
+        Ok(to_text(&model.file, NonAscii::Escaped, model.trailing_newline)?.into_bytes())
     }
 }
 

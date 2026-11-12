@@ -36,4 +36,5 @@ Every committed file is listed here: where it comes from and under which license
 | `TAC/01_442DOS.TAC` | SWOS 2020 (community release of the PC game), `swos/tactics/dos/01_442DOS.TAC`: a DOS 4-4-2, 370 bytes | Game data © its rights holders; a small test excerpt (D2) |
 | `TAC/06_433.TAC` | SWOS 2020, `swos/tactics/common/06_433.TAC`: a 4-3-3 whose name keeps bytes after its end | Game data © its rights holders; a small test excerpt (D2) |
 | `TAC/04_5-3-2.tac` | SWOS 2020, `tactics/cpu-tactics/tactics/04_5-3-2.tac`: a CPU 5-3-2, 376 bytes (six trailing zeros) | Game data © its rights holders; a small test excerpt (D2) |
+| `COMPETITIONS_JSON/*.json` (10 files) | Upstream OpenSWOS `bin/data_json/competitions/` at commit `ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b` (`just upstream_fetch`), unchanged | GPL-3.0-or-later (upstream's data) |
 | `TAC/01_442DOS.TAC.json` | Written by `openswos_tac_resource`'s tests (`OPENSWOS_BLESS=1`), reviewed | The expected decoded model |

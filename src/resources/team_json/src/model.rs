@@ -9,12 +9,11 @@ use openswos_team_resource::{
     Face, KitColour, MatchFlags, PLAYERS_PER_TEAM, PlayerFlags, PlayerValues, ShirtType, Skill,
     TeamControls,
 };
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::code;
-use crate::numbers::{JsonByte, JsonWord};
+use openswos_common::json::{JsonByte, JsonWord, code, present};
 
 /// Competition slots of a player's goal counters (upstream `goalStats[4]`): league,
 /// domestic cup, league cup, continental cup.
@@ -44,11 +43,6 @@ pub struct TeamJsonFile {
     pub count: usize,
     /// The teams.
     pub teams: Vec<TeamEntry>,
-}
-
-/// A key that is there, possibly `null`.
-fn present<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Option<String>>, D::Error> {
-    Option::<String>::deserialize(deserializer).map(Some)
 }
 
 /// The kind of a team JSON file. Only team files carry ids; the European-cup pools and the

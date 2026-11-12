@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::ids::{derived_player_uuid, derived_team_uuid, team_checksum};
 use crate::model::{PlayerEntry, TeamChecksum, TeamEntry, TeamHeader};
-use crate::numbers::{JsonByte, JsonWord};
+use openswos_common::json::{JsonByte, JsonWord};
 
 /// The JSON's `cards`: bits 0-1 of the cards-and-injuries byte.
 const CARDS_MASK: u8 = 0b11;

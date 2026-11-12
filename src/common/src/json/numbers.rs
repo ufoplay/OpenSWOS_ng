@@ -1,6 +1,7 @@
 //! Record bytes and words as the JSON writes them.
 //!
-//! The writers disagree on signedness. OpenSWOS Setup (`tools/swosdata/lib/team_json.c`)
+//! The writers disagree on signedness. Upstream's competition JSON writes each byte as the C
+//! initialiser spells it (`-128` or `162`). OpenSWOS Setup (`tools/swosdata/lib/team_json.c`)
 //! signs some fields as the C structs do (`nationality -56`); the World 2026-27 import, and
 //! this port, write them unsigned (`nationality 200`). Both mean the same byte. These types
 //! keep the number exactly as written, so every file round-trips byte for byte, and give the

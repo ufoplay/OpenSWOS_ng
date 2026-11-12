@@ -5,6 +5,7 @@
 pub mod byte_enum;
 pub mod bytes;
 pub mod format;
+pub mod json;
 pub mod name;
 pub mod nibble;
 pub mod position;
