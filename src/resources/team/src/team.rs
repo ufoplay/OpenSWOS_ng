@@ -18,6 +18,7 @@
 //! | 60 | 16 | player order |
 //! | 76 | 16 × 38 | players ([`Player`]) |
 
+use bitflags::bitflags;
 use openswos_common::{ByteReader, ByteWriter, FixedName, ReadError, TeamId};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -44,10 +45,81 @@ pub const COACH_NAME_LEN: usize = 23;
 #[serde(transparent)]
 pub struct GlobalTeamNumber(pub i16);
 
-/// A team's tactics: an index into the game's tactics (0..=9 in the PC game's files).
+/// A team's tactics: one of the engine's 18 tactic slots (upstream `TACTIC_*`,
+/// include/game_types.h). What formation each slot plays is data (upstream
+/// `bin/data_json/tactics/`); the slots are the engine's. The PC game's files use the first
+/// ten, World 2026-27's only the first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct TacticsIndex(pub u8);
+#[serde(rename_all = "snake_case")]
+#[repr(u8)]
+pub enum Tactics {
+    /// 4-4-2 (upstream `TACTIC_DEFAULT`).
+    FourFourTwo = 0,
+    /// 5-4-1.
+    FiveFourOne = 1,
+    /// 4-5-1.
+    FourFiveOne = 2,
+    /// 5-3-2.
+    FiveThreeTwo = 3,
+    /// 3-5-2.
+    ThreeFiveTwo = 4,
+    /// 4-3-3.
+    FourThreeThree = 5,
+    /// 4-2-4.
+    FourTwoFour = 6,
+    /// 3-4-3.
+    ThreeFourThree = 7,
+    /// Sweep.
+    Sweep = 8,
+    /// 5-2-3.
+    FiveTwoThree = 9,
+    /// Attack.
+    Attack = 10,
+    /// Defend.
+    Defend = 11,
+    /// The user's tactic A.
+    UserA = 12,
+    /// The user's tactic B.
+    UserB = 13,
+    /// The user's tactic C.
+    UserC = 14,
+    /// The user's tactic D.
+    UserD = 15,
+    /// The user's tactic E.
+    UserE = 16,
+    /// The user's tactic F.
+    UserF = 17,
+}
+
+/// A code that is not a tactic slot.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("{0} is not a tactic slot")]
+pub struct InvalidTactics(pub u8);
+
+openswos_common::byte_enum!(
+    Tactics,
+    InvalidTactics,
+    [
+        FourFourTwo,
+        FiveFourOne,
+        FourFiveOne,
+        FiveThreeTwo,
+        ThreeFiveTwo,
+        FourThreeThree,
+        FourTwoFour,
+        ThreeFourThree,
+        Sweep,
+        FiveTwoThree,
+        Attack,
+        Defend,
+        UserA,
+        UserB,
+        UserC,
+        UserD,
+        UserE,
+        UserF,
+    ]
+);
 
 /// Which of its country's divisions the team plays in, 0 being the top one (upstream
 /// `league`; 0..=4 in the PC game's files).
@@ -55,11 +127,50 @@ pub struct TacticsIndex(pub u8);
 #[serde(transparent)]
 pub struct Division(pub u8);
 
-/// A kit colour: an index into the game's kit colours (0..=9 in the PC game's files; World
-/// 2026-27 adds 10, purple). Which colour each one is belongs to the view.
+/// A kit colour (upstream `KIT_COLOURS`, include/team_colors.h; the names are upstream
+/// docs/CUSTOM_TEAMS.md's). The game's kit-clash rules tell them apart; how each one is
+/// drawn belongs to the view. The PC game's files use the first ten; purple comes from the
+/// SWOS 96/97 Mod (World 2026-27).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct KitColour(pub u8);
+#[serde(rename_all = "snake_case")]
+#[repr(u8)]
+pub enum KitColour {
+    /// Grey.
+    Grey = 0,
+    /// White.
+    White = 1,
+    /// Black.
+    Black = 2,
+    /// Orange.
+    Orange = 3,
+    /// Red.
+    Red = 4,
+    /// Blue.
+    Blue = 5,
+    /// Brown (upstream `KIT_MAROON`).
+    Brown = 6,
+    /// Light blue.
+    LightBlue = 7,
+    /// Green.
+    Green = 8,
+    /// Yellow.
+    Yellow = 9,
+    /// Purple (upstream `KIT_PURPLE`).
+    Purple = 10,
+}
+
+/// A code that is not a kit colour.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("{0} is not a kit colour")]
+pub struct InvalidKitColour(pub u8);
+
+openswos_common::byte_enum!(
+    KitColour,
+    InvalidKitColour,
+    [
+        Grey, White, Black, Orange, Red, Blue, Brown, LightBlue, Green, Yellow, Purple,
+    ]
+);
 
 /// A shirt's pattern (upstream `SHIRT_*`, include/team_colors.h).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -81,33 +192,11 @@ pub enum ShirtType {
 #[error("{0} is not a shirt type")]
 pub struct InvalidShirtType(pub u8);
 
-impl ShirtType {
-    /// Every shirt type, in code order.
-    pub const ALL: &[Self] = &[
-        Self::Plain,
-        Self::ColouredSleeves,
-        Self::VerticalStripes,
-        Self::HorizontalStripes,
-    ];
-}
-
-impl From<ShirtType> for u8 {
-    fn from(shirt_type: ShirtType) -> Self {
-        shirt_type as Self
-    }
-}
-
-impl TryFrom<u8> for ShirtType {
-    type Error = InvalidShirtType;
-
-    fn try_from(code: u8) -> Result<Self, Self::Error> {
-        Self::ALL
-            .iter()
-            .copied()
-            .find(|shirt_type| u8::from(*shirt_type) == code)
-            .ok_or(InvalidShirtType(code))
-    }
-}
+openswos_common::byte_enum!(
+    ShirtType,
+    InvalidShirtType,
+    [Plain, ColouredSleeves, VerticalStripes, HorizontalStripes]
+);
 
 /// A kit, as a team record stores it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -129,40 +218,117 @@ impl Kit {
         let [shirt_type, stripes, basic, shorts, socks] = reader.read_array()?;
         Ok(Self {
             shirt_type: ShirtType::try_from(shirt_type)?,
-            stripes: KitColour(stripes),
-            basic: KitColour(basic),
-            shorts: KitColour(shorts),
-            socks: KitColour(socks),
+            stripes: KitColour::try_from(stripes)?,
+            basic: KitColour::try_from(basic)?,
+            shorts: KitColour::try_from(shorts)?,
+            socks: KitColour::try_from(socks)?,
         })
     }
 
     fn write(&self, writer: &mut ByteWriter) {
         let Self {
             shirt_type,
-            stripes: KitColour(stripes),
-            basic: KitColour(basic),
-            shorts: KitColour(shorts),
-            socks: KitColour(socks),
+            stripes,
+            basic,
+            shorts,
+            socks,
         } = *self;
-        writer.write_bytes(&[u8::from(shirt_type), stripes, basic, shorts, socks]);
+        writer.write_bytes(&[
+            u8::from(shirt_type),
+            u8::from(stripes),
+            u8::from(basic),
+            u8::from(shorts),
+            u8::from(socks),
+        ]);
     }
 }
 
-/// The header fields the game writes while it runs: 0 in the PC game's files, in use in
-/// career saves. Their meaning belongs to the game logic.
+/// Who controls a team in the competition being played (upstream `teamControls`:
+/// `TEAM_NOT_SELECTED` in src/teams.c, `TEAM_COMPUTER`..`TEAM_COACH` in
+/// include/play_match_menu.h).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[repr(u8)]
+pub enum TeamControls {
+    /// Not playing: the value of every team file.
+    NotSelected = 0,
+    /// The computer.
+    Computer = 1,
+    /// A human, as player and coach.
+    PlayerCoach = 2,
+    /// A human, as coach only.
+    Coach = 3,
+}
+
+/// A code that is not a team control.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("{0} is not a team control")]
+pub struct InvalidTeamControls(pub u8);
+
+openswos_common::byte_enum!(
+    TeamControls,
+    InvalidTeamControls,
+    [NotSelected, Computer, PlayerCoach, Coach]
+);
+
+/// Whether a team's cached player match values are up to date (upstream
+/// `playerValuesDirty`, `TEAM_VALUES_*`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[repr(u8)]
+pub enum PlayerValues {
+    /// Up to date (upstream `TEAM_VALUES_CLEAN`).
+    Clean = 0,
+    /// The squad changed: recompute them before use (upstream `TEAM_VALUES_DIRTY`).
+    Dirty = 1,
+}
+
+/// A code that is not a player-values state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("{0} is neither clean (0) nor dirty (1) player values")]
+pub struct InvalidPlayerValues(pub u8);
+
+openswos_common::byte_enum!(PlayerValues, InvalidPlayerValues, [Clean, Dirty]);
+
+bitflags! {
+    /// A team's match flags (upstream `andWith0xFE`). Bits without a name are kept as
+    /// read.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    pub struct MatchFlags: u8 {
+        /// The team has played a training match: set for both sides (upstream
+        /// src/game_init.c), cleared when the team is initialised (src/match_sim.c) and
+        /// when a competition result is computed (src/diy_competition.c). The squad menu
+        /// disables an entry while it is set (src/menus.c).
+        const TRAINED = 0b1;
+        // The other bits are unnamed but kept.
+        const _ = !0;
+    }
+}
+
+impl From<u8> for MatchFlags {
+    fn from(bits: u8) -> Self {
+        Self::from_bits_retain(bits)
+    }
+}
+
+impl From<MatchFlags> for u8 {
+    fn from(flags: MatchFlags) -> Self {
+        flags.bits()
+    }
+}
+
+/// The header fields the game writes while it runs: unset in the PC game's files, in use
+/// in career saves.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TeamRuntime {
-    /// Who controls the team (upstream `teamControls`; include/play_match_menu.h names 1
-    /// computer, 2 player-coach, 3 coach).
-    pub controls: u8,
+    /// Who controls the team.
+    pub controls: TeamControls,
     /// Own goals conceded in the last match (upstream `writesZeroHere`).
     pub own_goals: u8,
-    /// Match flags: bit 0 is set for both sides of a played match (upstream
-    /// `andWith0xFE`).
-    pub match_flags: u8,
-    /// Whether the players' cached match values must be recomputed: 0 clean, 1 dirty
-    /// (upstream `playerValuesDirty`).
-    pub values_dirty: u8,
+    /// Match flags.
+    pub match_flags: MatchFlags,
+    /// Whether the players' cached match values are up to date.
+    pub player_values: PlayerValues,
 }
 
 /// Why a team record does not decode.
@@ -174,6 +340,18 @@ pub enum RecordError {
     /// A kit's shirt type is not one.
     #[error(transparent)]
     ShirtType(#[from] InvalidShirtType),
+    /// A kit colour is not one.
+    #[error(transparent)]
+    KitColour(#[from] InvalidKitColour),
+    /// The tactics are not a slot.
+    #[error(transparent)]
+    Tactics(#[from] InvalidTactics),
+    /// The team control is not one.
+    #[error(transparent)]
+    TeamControls(#[from] InvalidTeamControls),
+    /// The player-values state is neither clean nor dirty.
+    #[error(transparent)]
+    PlayerValues(#[from] InvalidPlayerValues),
 }
 
 /// One team and its squad.
@@ -186,7 +364,7 @@ pub struct Team {
     /// Its name.
     pub name: FixedName<TEAM_NAME_LEN>,
     /// Its tactics.
-    pub tactics: TacticsIndex,
+    pub tactics: Tactics,
     /// Its division.
     pub division: Division,
     /// Its first kit.
@@ -209,20 +387,21 @@ impl Team {
     ///
     /// # Errors
     ///
-    /// When the data is too short or a shirt type is invalid.
+    /// When the data is too short or a code (shirt type, kit colour, tactics, team control,
+    /// player-values state) is not one.
     pub fn read(reader: &mut ByteReader<'_>) -> Result<Self, RecordError> {
         let id = TeamId::from_bytes(reader.read_array()?);
         let global_number = GlobalTeamNumber(reader.read_i16_be()?);
-        let controls = reader.read_u8()?;
+        let controls = TeamControls::try_from(reader.read_u8()?)?;
         let name = FixedName::from_bytes(reader.read_array()?);
         let own_goals = reader.read_u8()?;
-        let match_flags = reader.read_u8()?;
-        let tactics = TacticsIndex(reader.read_u8()?);
+        let match_flags = MatchFlags::from(reader.read_u8()?);
+        let tactics = Tactics::try_from(reader.read_u8()?)?;
         let division = Division(reader.read_u8()?);
         let primary_kit = Kit::read(reader)?;
         let secondary_kit = Kit::read(reader)?;
         let coach = FixedName::from_bytes(reader.read_array()?);
-        let values_dirty = reader.read_u8()?;
+        let player_values = PlayerValues::try_from(reader.read_u8()?)?;
         let player_order = reader.read_array()?;
         let players: Vec<Player> = (0..PLAYERS_PER_TEAM)
             .map(|_| Player::read(reader))
@@ -244,7 +423,7 @@ impl Team {
                 controls,
                 own_goals,
                 match_flags,
-                values_dirty,
+                player_values,
             },
         })
     }
@@ -255,7 +434,7 @@ impl Team {
             id,
             global_number: GlobalTeamNumber(global_number),
             name,
-            tactics: TacticsIndex(tactics),
+            tactics,
             division: Division(division),
             primary_kit,
             secondary_kit,
@@ -267,21 +446,21 @@ impl Team {
                     controls,
                     own_goals,
                     match_flags,
-                    values_dirty,
+                    player_values,
                 },
         } = self;
         writer.write_bytes(&id.to_bytes());
         writer.write_i16_be(*global_number);
-        writer.write_u8(*controls);
+        writer.write_u8(u8::from(*controls));
         writer.write_bytes(name.as_bytes());
         writer.write_u8(*own_goals);
-        writer.write_u8(*match_flags);
-        writer.write_u8(*tactics);
+        writer.write_u8(u8::from(*match_flags));
+        writer.write_u8(u8::from(*tactics));
         writer.write_u8(*division);
         primary_kit.write(writer);
         secondary_kit.write(writer);
         writer.write_bytes(coach.as_bytes());
-        writer.write_u8(*values_dirty);
+        writer.write_u8(u8::from(*player_values));
         writer.write_bytes(player_order);
         for player in players {
             player.write(writer);
@@ -296,7 +475,22 @@ mod tests {
     use openswos_common::{TeamFileNumber, TeamOrdinal};
     use proptest::prelude::*;
 
-    /// A team record whose every header byte is told apart, with valid shirt types.
+    /// Offset of the team control in a record.
+    const CONTROLS_AT: usize = 4;
+
+    /// Offset of the tactics in a record.
+    const TACTICS_AT: usize = 24;
+
+    /// Offsets of the kits' shirt types in a record.
+    const SHIRT_TYPES_AT: [usize; 2] = [26, 31];
+
+    /// Offsets of the kits' colours in a record.
+    const KIT_COLOURS_AT: [usize; 8] = [27, 28, 29, 30, 32, 33, 34, 35];
+
+    /// Offset of the player-values state in a record.
+    const PLAYER_VALUES_AT: usize = 59;
+
+    /// A team record whose every header byte is told apart, with valid codes.
     fn record() -> Vec<u8> {
         let mut bytes = vec![0u8; TEAM_RECORD_LEN];
         bytes[0] = 33; // file
@@ -335,28 +529,37 @@ mod tests {
         );
         assert_eq!(team.global_number, GlobalTeamNumber(1360));
         assert_eq!(team.name.text(), "BORUSSIA MOENCHEN");
-        assert_eq!(team.tactics, TacticsIndex(5));
+        assert_eq!(team.tactics, Tactics::FourThreeThree);
         assert_eq!(team.division, Division(3));
         assert_eq!(
             team.primary_kit,
             Kit {
                 shirt_type: ShirtType::HorizontalStripes,
-                stripes: KitColour(4),
-                basic: KitColour(1),
-                shorts: KitColour(2),
-                socks: KitColour(9),
+                stripes: KitColour::Red,
+                basic: KitColour::White,
+                shorts: KitColour::Black,
+                socks: KitColour::Yellow,
             }
         );
-        assert_eq!(team.secondary_kit.shirt_type, ShirtType::Plain);
+        assert_eq!(
+            team.secondary_kit,
+            Kit {
+                shirt_type: ShirtType::Plain,
+                stripes: KitColour::Blue,
+                basic: KitColour::Blue,
+                shorts: KitColour::Blue,
+                socks: KitColour::Blue,
+            }
+        );
         assert_eq!(team.coach.text(), "ROY AITKEN");
         assert_eq!(team.player_order[2], 5);
         assert_eq!(
             team.runtime,
             TeamRuntime {
-                controls: 2,
+                controls: TeamControls::PlayerCoach,
                 own_goals: 1,
-                match_flags: 1,
-                values_dirty: 1,
+                match_flags: MatchFlags::TRAINED,
+                player_values: PlayerValues::Dirty,
             }
         );
         let shirts: Vec<u8> = team
@@ -377,12 +580,54 @@ mod tests {
     }
 
     #[test]
-    fn an_invalid_shirt_type_is_reported() {
-        let mut bytes = record();
-        bytes[31] = 4;
-        let error = Team::read(&mut ByteReader::new(&bytes)).expect_err("shirt type 4");
-        assert_eq!(error, RecordError::ShirtType(InvalidShirtType(4)));
-        assert_eq!(error.to_string(), "4 is not a shirt type");
+    fn an_invalid_code_is_reported() {
+        let cases = [
+            (
+                SHIRT_TYPES_AT[1],
+                4,
+                RecordError::ShirtType(InvalidShirtType(4)),
+                "4 is not a shirt type",
+            ),
+            (
+                KIT_COLOURS_AT[7],
+                11,
+                RecordError::KitColour(InvalidKitColour(11)),
+                "11 is not a kit colour",
+            ),
+            (
+                TACTICS_AT,
+                18,
+                RecordError::Tactics(InvalidTactics(18)),
+                "18 is not a tactic slot",
+            ),
+            (
+                CONTROLS_AT,
+                4,
+                RecordError::TeamControls(InvalidTeamControls(4)),
+                "4 is not a team control",
+            ),
+            (
+                PLAYER_VALUES_AT,
+                2,
+                RecordError::PlayerValues(InvalidPlayerValues(2)),
+                "2 is neither clean (0) nor dirty (1) player values",
+            ),
+        ];
+        for (offset, value, expected, message) in cases {
+            let mut bytes = record();
+            bytes[offset] = value;
+            let error = Team::read(&mut ByteReader::new(&bytes)).expect_err(message);
+            assert_eq!(error, expected);
+            assert_eq!(error.to_string(), message);
+        }
+    }
+
+    #[test]
+    fn match_flags_keep_their_unnamed_bits() {
+        let flags = MatchFlags::from(0b1000_0001);
+        assert!(flags.contains(MatchFlags::TRAINED));
+        assert_eq!(u8::from(flags), 0b1000_0001);
+        assert_eq!(u8::from(MatchFlags::empty()), 0);
     }
 
     #[test]
@@ -396,13 +641,55 @@ mod tests {
         );
     }
 
-    #[test]
-    fn shirt_types_follow_their_codes() {
-        for (code, shirt_type) in (0u8..).zip(ShirtType::ALL.iter().copied()) {
-            assert_eq!(ShirtType::try_from(code), Ok(shirt_type));
-            assert_eq!(u8::from(shirt_type), code);
+    /// Every variant of `all` has its index as its code.
+    fn assert_codes_in_order<T>(all: &[T])
+    where
+        T: Copy + PartialEq + std::fmt::Debug + Into<u8> + TryFrom<u8>,
+        <T as TryFrom<u8>>::Error: std::fmt::Debug,
+    {
+        for (code, value) in (0u8..).zip(all.iter().copied()) {
+            assert_eq!(value.into(), code);
+            assert_eq!(T::try_from(code).ok(), Some(value));
         }
+    }
+
+    #[test]
+    fn codes_follow_upstream() {
+        assert_codes_in_order(ShirtType::ALL);
+        assert_codes_in_order(KitColour::ALL);
+        assert_codes_in_order(Tactics::ALL);
+        assert_codes_in_order(TeamControls::ALL);
+        assert_codes_in_order(PlayerValues::ALL);
+        assert_eq!(KitColour::ALL.len(), 11, "upstream KIT_COLOURS");
+        assert_eq!(u8::from(KitColour::Brown), 6, "upstream KIT_MAROON");
+        assert_eq!(u8::from(KitColour::Purple), 10, "upstream KIT_PURPLE");
+        assert_eq!(u8::from(Tactics::UserF), 17, "upstream TACTIC_USER_F");
+        assert_eq!(u8::from(TeamControls::Coach), 3, "upstream TEAM_COACH");
         assert_eq!(ShirtType::try_from(4), Err(InvalidShirtType(4)));
+    }
+
+    #[test]
+    fn codes_serialize_by_name() {
+        let kit = Kit {
+            shirt_type: ShirtType::VerticalStripes,
+            stripes: KitColour::LightBlue,
+            basic: KitColour::White,
+            shorts: KitColour::Black,
+            socks: KitColour::Purple,
+        };
+        let json = serde_json::to_value(kit).expect("serializes");
+        assert_eq!(json["stripes"], "light_blue");
+        assert_eq!(json["socks"], "purple");
+        assert_eq!(
+            serde_json::to_value(Tactics::FourFourTwo).expect("serializes"),
+            "four_four_two"
+        );
+        assert_eq!(
+            serde_json::to_value(TeamControls::PlayerCoach).expect("serializes"),
+            "player_coach"
+        );
+        let back: Kit = serde_json::from_value(json).expect("deserializes");
+        assert_eq!(back, kit);
     }
 
     #[test]
@@ -410,18 +697,35 @@ mod tests {
         assert_eq!(TEAM_RECORD_LEN, 684);
     }
 
-    /// Any record whose shirt types are valid.
+    /// The number of codes of a code enum.
+    fn code_count<T>(all: &[T]) -> u8 {
+        u8::try_from(all.len()).expect("fewer than 256 codes")
+    }
+
+    /// Any record whose codes are valid.
     fn any_record() -> impl Strategy<Value = Vec<u8>> {
         (
             proptest::collection::vec(any::<u8>(), TEAM_RECORD_LEN),
-            0u8..4,
-            0u8..4,
+            0..code_count(TeamControls::ALL),
+            0..code_count(Tactics::ALL),
+            proptest::array::uniform2(0..code_count(ShirtType::ALL)),
+            proptest::array::uniform8(0..code_count(KitColour::ALL)),
+            0..code_count(PlayerValues::ALL),
         )
-            .prop_map(|(mut bytes, primary, secondary)| {
-                bytes[26] = primary;
-                bytes[31] = secondary;
-                bytes
-            })
+            .prop_map(
+                |(mut bytes, controls, tactics, shirt_types, colours, values)| {
+                    bytes[CONTROLS_AT] = controls;
+                    bytes[TACTICS_AT] = tactics;
+                    for (offset, shirt_type) in SHIRT_TYPES_AT.into_iter().zip(shirt_types) {
+                        bytes[offset] = shirt_type;
+                    }
+                    for (offset, colour) in KIT_COLOURS_AT.into_iter().zip(colours) {
+                        bytes[offset] = colour;
+                    }
+                    bytes[PLAYER_VALUES_AT] = values;
+                    bytes
+                },
+            )
     }
 
     proptest! {

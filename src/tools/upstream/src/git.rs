@@ -87,13 +87,15 @@ impl Git {
             .map(drop)
     }
 
-    /// Restricts the working tree to `dirs` (a cone-mode sparse checkout).
+    /// Restricts the working tree to `dirs` (a cone-mode sparse checkout). A submodule's
+    /// path may be one of them: `--skip-checks` lets git accept it once the index holds the
+    /// submodule as a gitlink rather than a directory.
     ///
     /// # Errors
     ///
     /// Fails when git fails.
     pub fn sparse_checkout(&self, dirs: &[String]) -> Result<()> {
-        let mut args = vec!["sparse-checkout", "set", "--cone"];
+        let mut args = vec!["sparse-checkout", "set", "--cone", "--skip-checks"];
         args.extend(dirs.iter().map(String::as_str));
         self.run(&args).map(drop)
     }

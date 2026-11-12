@@ -21,6 +21,8 @@
 
 use bitflags::bitflags;
 use openswos_common::{ByteReader, ByteWriter, FixedName, Position, ReadError};
+
+use crate::skill::{Nibble, Skill, Skills};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -44,16 +46,6 @@ const FACE_MASK: u8 = 0b11;
 
 /// The runtime flags' bits of the position-and-face byte: bits 0-2.
 const FLAGS_MASK: u8 = 0b111;
-
-/// Bits in a nibble: a skill byte holds two skills.
-const NIBBLE_BITS: u32 = 4;
-
-/// A nibble's bits.
-const NIBBLE_MASK: u8 = 0x0F;
-
-/// The bits of a skill nibble the engine reads: bits 0-2. Many original players have bit
-/// 3 set, which the engine ignores (upstream docs/DATA_PIPELINE.md).
-const EFFECTIVE_SKILL_MASK: u8 = 0b0111;
 
 /// A player's nationality code. Its meaning (which country) is world data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -86,28 +78,7 @@ pub enum Face {
 #[error("{0} is not a face")]
 pub struct InvalidFace(pub u8);
 
-impl Face {
-    /// Every face, in code order.
-    pub const ALL: &[Self] = &[Self::White, Self::Ginger, Self::Black, Self::BlackBlond];
-}
-
-impl From<Face> for u8 {
-    fn from(face: Face) -> Self {
-        face as Self
-    }
-}
-
-impl TryFrom<u8> for Face {
-    type Error = InvalidFace;
-
-    fn try_from(code: u8) -> Result<Self, Self::Error> {
-        Self::ALL
-            .iter()
-            .copied()
-            .find(|face| u8::from(*face) == code)
-            .ok_or(InvalidFace(code))
-    }
-}
+openswos_common::byte_enum!(Face, InvalidFace, [White, Ginger, Black, BlackBlond]);
 
 bitflags! {
     /// A player's runtime flags (upstream `PF_INFORM`, `PF_LOAN`, `PF_TRIALIST`).
@@ -122,78 +93,92 @@ bitflags! {
     }
 }
 
-/// A 4-bit skill value, as stored: 0..=15.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(try_from = "u8", into = "u8")]
-pub struct RawSkill(u8);
-
-/// A value too big for a skill nibble.
+/// A byte holding bits that are not player flags.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
-#[error("{0} does not fit a skill nibble (0..=15)")]
-pub struct InvalidSkill(pub u8);
+#[error("{0:#04x} holds bits that are not player flags")]
+pub struct InvalidPlayerFlags(pub u8);
 
-impl RawSkill {
-    /// The stored value, 0..=15.
-    #[must_use]
-    pub fn value(self) -> u8 {
-        self.0
-    }
-
-    /// The value the engine plays with, 0..=7: bit 3 is ignored.
-    #[must_use]
-    pub fn effective(self) -> u8 {
-        self.0 & EFFECTIVE_SKILL_MASK
-    }
-
-    /// The high and low nibbles of a skill byte.
-    fn split(byte: u8) -> (Self, Self) {
-        (Self(byte >> NIBBLE_BITS), Self(byte & NIBBLE_MASK))
-    }
-
-    /// The skill byte holding `high` and `low`.
-    fn join(high: Self, low: Self) -> u8 {
-        (high.0 << NIBBLE_BITS) | low.0
+impl From<PlayerFlags> for u8 {
+    fn from(flags: PlayerFlags) -> Self {
+        flags.bits()
     }
 }
 
-impl TryFrom<u8> for RawSkill {
-    type Error = InvalidSkill;
+impl TryFrom<u8> for PlayerFlags {
+    type Error = InvalidPlayerFlags;
 
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        if value <= NIBBLE_MASK {
-            Ok(Self(value))
-        } else {
-            Err(InvalidSkill(value))
+    fn try_from(bits: u8) -> Result<Self, Self::Error> {
+        Self::from_bits(bits).ok_or(InvalidPlayerFlags(bits))
+    }
+}
+
+/// The form byte of a trialist (upstream `PLAYER_FORM_TRIALIST`, `0x9B`).
+const FORM_TRIALIST: i8 = -101;
+
+/// The form byte of a reserve (upstream `PLAYER_FORM_RESERVE`, `0x9A`).
+const FORM_RESERVE: i8 = -102;
+
+/// A player's form byte (upstream `PlayerFile.form`): the form of a first-team player, or
+/// the status of one who is not.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(from = "i8", into = "i8")]
+pub enum Form {
+    /// A first-team player's form.
+    Level(FormLevel),
+    /// A trialist: status "TRIAL", 33% wage (upstream `PLAYER_FORM_TRIALIST`).
+    Trialist,
+    /// A reserve: status "RES", 66% wage (upstream `PLAYER_FORM_RESERVE`).
+    Reserve,
+}
+
+/// A first-team player's form: `-100..=100` as the game keeps it (upstream
+/// `PLAYER_FORM_MIN..=PLAYER_FORM_MAX`). Any other byte but the two status ones is kept as
+/// read, so every record round-trips.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FormLevel(i8);
+
+/// A form byte that is a status, not a level.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("{0} is a player status, not a form level")]
+pub struct NotAFormLevel(pub i8);
+
+impl FormLevel {
+    /// The level.
+    #[must_use]
+    pub fn value(self) -> i8 {
+        self.0
+    }
+}
+
+impl TryFrom<i8> for FormLevel {
+    type Error = NotAFormLevel;
+
+    fn try_from(value: i8) -> Result<Self, Self::Error> {
+        match Form::from(value) {
+            Form::Level(level) => Ok(level),
+            Form::Trialist | Form::Reserve => Err(NotAFormLevel(value)),
         }
     }
 }
 
-impl From<RawSkill> for u8 {
-    fn from(skill: RawSkill) -> Self {
-        skill.0
+impl From<i8> for Form {
+    fn from(value: i8) -> Self {
+        match value {
+            FORM_TRIALIST => Self::Trialist,
+            FORM_RESERVE => Self::Reserve,
+            level => Self::Level(FormLevel(level)),
+        }
     }
 }
 
-/// A player's seven skills.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Skills {
-    /// Passing.
-    pub passing: RawSkill,
-    /// Velocity: shot power (the player card's "Ve").
-    pub velocity: RawSkill,
-    /// Heading.
-    pub heading: RawSkill,
-    /// Tackling.
-    pub tackling: RawSkill,
-    /// Ball control.
-    pub control: RawSkill,
-    /// Speed.
-    pub speed: RawSkill,
-    /// Finishing.
-    pub finishing: RawSkill,
-    /// The passing byte's high nibble: unused by the game, 0 in every original file, kept
-    /// so the record round-trips.
-    pub passing_high: RawSkill,
+impl From<Form> for i8 {
+    fn from(form: Form) -> Self {
+        match form {
+            Form::Level(FormLevel(level)) => level,
+            Form::Trialist => FORM_TRIALIST,
+            Form::Reserve => FORM_RESERVE,
+        }
+    }
 }
 
 /// Goals scored, per competition slot (upstream `goalStats[4]`).
@@ -217,13 +202,13 @@ pub struct PlayerRuntime {
     pub cached_match_value: i8,
     /// In form, on loan, trialist.
     pub flags: PlayerFlags,
-    /// Cards (bits 2-4) and injury (bits 5-7).
+    /// Card suspension (bits 0-1), injury severity (bits 2-4) and status bucket (bits 5-7)
+    /// (upstream `CI_*`, src/career_status.c).
     pub cards_injuries: u8,
     /// Goals scored this season.
     pub goals: GoalCounts,
-    /// Form, -100..=100, or a status sentinel (upstream `PLAYER_FORM_TRIALIST` /
-    /// `PLAYER_FORM_RESERVE`).
-    pub form: i8,
+    /// Form, or the status of a player outside the first team.
+    pub form: Form,
 }
 
 /// One player.
@@ -260,13 +245,13 @@ impl Player {
         let name = FixedName::from_bytes(reader.read_array()?);
         let position_and_face = reader.read_u8()?;
         let cards_injuries = reader.read_u8()?;
-        let (passing_high, passing) = RawSkill::split(reader.read_u8()?);
-        let (velocity, heading) = RawSkill::split(reader.read_u8()?);
-        let (tackling, control) = RawSkill::split(reader.read_u8()?);
-        let (speed, finishing) = RawSkill::split(reader.read_u8()?);
+        let (passing_high, passing) = Nibble::split(reader.read_u8()?);
+        let (velocity, heading) = Skill::split(reader.read_u8()?);
+        let (tackling, control) = Skill::split(reader.read_u8()?);
+        let (speed, finishing) = Skill::split(reader.read_u8()?);
         let price = PriceId(reader.read_u8()?);
         let [league, domestic_cup, league_cup, continental_cup] = reader.read_array()?;
-        let form = reader.read_i8()?;
+        let form = Form::from(reader.read_i8()?);
         Ok(Self {
             nationality,
             shirt_number,
@@ -276,7 +261,7 @@ impl Player {
             face: Face::try_from((position_and_face >> FACE_SHIFT) & FACE_MASK)
                 .expect("2 bits always hold a face"),
             skills: Skills {
-                passing,
+                passing: Skill::from(passing),
                 velocity,
                 heading,
                 tackling,
@@ -346,13 +331,13 @@ impl Player {
                 | (flags.bits() & FLAGS_MASK),
         );
         writer.write_u8(cards_injuries);
-        writer.write_u8(RawSkill::join(passing_high, passing));
-        writer.write_u8(RawSkill::join(velocity, heading));
-        writer.write_u8(RawSkill::join(tackling, control));
-        writer.write_u8(RawSkill::join(speed, finishing));
+        writer.write_u8(Nibble::join(passing_high, Nibble::from(passing)));
+        writer.write_u8(Skill::join(velocity, heading));
+        writer.write_u8(Skill::join(tackling, control));
+        writer.write_u8(Skill::join(speed, finishing));
         writer.write_u8(price);
         writer.write_bytes(&[league, domestic_cup, league_cup, continental_cup]);
-        writer.write_i8(form);
+        writer.write_i8(i8::from(form));
     }
 }
 
@@ -381,8 +366,8 @@ mod tests {
         bytes
     }
 
-    fn skill(value: u8) -> RawSkill {
-        RawSkill::try_from(value).expect("a nibble")
+    fn skill(value: u8) -> Skill {
+        Skill::try_from(value).expect("a nibble")
     }
 
     #[test]
@@ -404,7 +389,7 @@ mod tests {
                 control: skill(15),
                 speed: skill(8),
                 finishing: skill(1),
-                passing_high: skill(0),
+                passing_high: Nibble::ZERO,
             }
         );
         assert_eq!(player.price, PriceId(49));
@@ -420,7 +405,7 @@ mod tests {
                     league_cup: 3,
                     continental_cup: 4,
                 },
-                form: -101,
+                form: Form::Trialist,
             }
         );
     }
@@ -445,15 +430,6 @@ mod tests {
     }
 
     #[test]
-    fn skills_keep_bit_3_but_the_engine_ignores_it() {
-        assert_eq!(skill(12).value(), 12);
-        assert_eq!(skill(12).effective(), 4);
-        assert_eq!(skill(7).effective(), 7);
-        assert_eq!(RawSkill::try_from(16), Err(InvalidSkill(16)));
-        assert_eq!(u8::from(skill(15)), 15);
-    }
-
-    #[test]
     fn faces_follow_their_codes() {
         for (code, face) in (0u8..).zip(Face::ALL.iter().copied()) {
             assert_eq!(Face::try_from(code), Ok(face));
@@ -470,19 +446,53 @@ mod tests {
         assert_eq!(json["name"], "LEONARD HASA");
         assert_eq!(json["position"], "striker");
         assert_eq!(json["face"], "black");
-        assert_eq!(json["skills"]["heading"], 12);
+        assert_eq!(
+            json["skills"]["heading"],
+            serde_json::json!({ "level": 4, "marked": true })
+        );
         assert_eq!(json["runtime"]["flags"], "IN_FORM | TRIALIST");
+        assert_eq!(json["runtime"]["form"], -101);
         let back: Player = serde_json::from_value(json).expect("deserializes");
         assert_eq!(back, player);
     }
 
     #[test]
-    fn json_rejects_skills_beyond_a_nibble() {
-        assert!(serde_json::from_str::<RawSkill>("16").is_err());
-        assert_eq!(serde_json::from_str::<RawSkill>("15").ok(), Some(skill(15)));
+    fn flags_are_the_low_3_bits() {
+        assert_eq!(
+            PlayerFlags::try_from(0b101),
+            Ok(PlayerFlags::IN_FORM | PlayerFlags::TRIALIST)
+        );
+        assert_eq!(u8::from(PlayerFlags::ON_LOAN), 0b010);
+        assert_eq!(
+            PlayerFlags::try_from(0b1000),
+            Err(InvalidPlayerFlags(0b1000))
+        );
+        assert_eq!(
+            InvalidPlayerFlags(0b1000).to_string(),
+            "0x08 holds bits that are not player flags"
+        );
+    }
+
+    #[test]
+    fn the_form_byte_is_a_level_or_a_status() {
+        assert_eq!(Form::from(-101), Form::Trialist);
+        assert_eq!(Form::from(-102), Form::Reserve);
+        let level = FormLevel::try_from(-100).expect("a level");
+        assert_eq!(level.value(), -100);
+        assert_eq!(Form::from(-100), Form::Level(level));
+        assert_eq!(FormLevel::try_from(-101), Err(NotAFormLevel(-101)));
+        assert_eq!(
+            NotAFormLevel(-102).to_string(),
+            "-102 is a player status, not a form level"
+        );
     }
 
     proptest! {
+        #[test]
+        fn any_form_byte_survives(value: i8) {
+            prop_assert_eq!(i8::from(Form::from(value)), value);
+        }
+
         #[test]
         fn any_record_round_trips(bytes: [u8; PLAYER_RECORD_LEN]) {
             let player = Player::read(&mut ByteReader::new(&bytes)).expect("a whole record");

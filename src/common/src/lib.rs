@@ -2,6 +2,7 @@
 // This crate parses untrusted bytes: every access is checked.
 #![deny(clippy::indexing_slicing)]
 
+pub mod byte_enum;
 pub mod bytes;
 pub mod format;
 pub mod name;

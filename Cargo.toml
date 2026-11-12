@@ -25,6 +25,7 @@ openswos_test_utils = { path = "src/test_utils" }
 
 # Resources
 openswos_poolplyr_resource = { path = "src/resources/poolplyr", version = "0.1.0" }
+openswos_team_json_resource = { path = "src/resources/team_json", version = "0.1.0" }
 openswos_team_resource = { path = "src/resources/team", version = "0.1.0" }
 openswos_tmd_resource = { path = "src/resources/tmd", version = "0.1.0" }
 
@@ -36,6 +37,8 @@ globset = "0.4"
 proptest = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# The team checksums of the team JSON (upstream docs/TEAM_IDS.md).
+sha1 = "0.11"
 # Verifies downloaded test data (test_utils' download cache).
 sha2 = "0.11"
 tempfile = "3"
@@ -45,6 +48,10 @@ toml = "1"
 toml_edit = "0.25"
 # HTTP client of test_utils' download cache (docs/PLAN.md §6, D8).
 ureq = "3"
+# The team and player ids of the team JSON: derived ones are UUID v5.
+uuid = { version = "1", features = ["serde", "v5"] }
+# Reads world package zips (World 2026-27's download); decompression only.
+zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

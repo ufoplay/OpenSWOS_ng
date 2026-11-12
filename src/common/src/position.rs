@@ -32,37 +32,20 @@ pub enum Position {
 #[error("{0} is not a player position")]
 pub struct InvalidPosition(pub u8);
 
-impl Position {
-    /// Every position, in code order.
-    pub const ALL: &[Self] = &[
-        Self::Goalkeeper,
-        Self::RightBack,
-        Self::LeftBack,
-        Self::CentreDefender,
-        Self::RightWing,
-        Self::LeftWing,
-        Self::Midfielder,
-        Self::Striker,
-    ];
-}
-
-impl From<Position> for u8 {
-    fn from(position: Position) -> Self {
-        position as Self
-    }
-}
-
-impl TryFrom<u8> for Position {
-    type Error = InvalidPosition;
-
-    fn try_from(code: u8) -> Result<Self, Self::Error> {
-        Self::ALL
-            .iter()
-            .copied()
-            .find(|position| u8::from(*position) == code)
-            .ok_or(InvalidPosition(code))
-    }
-}
+crate::byte_enum!(
+    Position,
+    InvalidPosition,
+    [
+        Goalkeeper,
+        RightBack,
+        LeftBack,
+        CentreDefender,
+        RightWing,
+        LeftWing,
+        Midfielder,
+        Striker,
+    ]
+);
 
 #[cfg(test)]
 mod tests {

@@ -48,14 +48,35 @@
           },
           "shirt_number": 1,
           "skills": {
-            "control": 0,
-            "finishing": 0,
-            "heading": 0,
-            "passing": 0,
+            "control": {
+              "level": 0,
+              "marked": false
+            },
+            "finishing": {
+              "level": 0,
+              "marked": false
+            },
+            "heading": {
+              "level": 0,
+              "marked": false
+            },
+            "passing": {
+              "level": 0,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 0,
-            "tackling": 0,
-            "velocity": 0
+            "speed": {
+              "level": 0,
+              "marked": false
+            },
+            "tackling": {
+              "level": 0,
+              "marked": false
+            },
+            "velocity": {
+              "level": 0,
+              "marked": false
+            }
           }
         },
         {
@@ -78,14 +99,35 @@
           },
           "shirt_number": 12,
           "skills": {
-            "control": 0,
-            "finishing": 0,
-            "heading": 0,
-            "passing": 0,
+            "control": {
+              "level": 0,
+              "marked": false
+            },
+            "finishing": {
+              "level": 0,
+              "marked": false
+            },
+            "heading": {
+              "level": 0,
+              "marked": false
+            },
+            "passing": {
+              "level": 0,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 0,
-            "tackling": 0,
-            "velocity": 0
+            "speed": {
+              "level": 0,
+              "marked": false
+            },
+            "tackling": {
+              "level": 0,
+              "marked": false
+            },
+            "velocity": {
+              "level": 0,
+              "marked": false
+            }
           }
         },
         {
@@ -108,14 +150,35 @@
           },
           "shirt_number": 2,
           "skills": {
-            "control": 3,
-            "finishing": 3,
-            "heading": 1,
-            "passing": 1,
+            "control": {
+              "level": 3,
+              "marked": false
+            },
+            "finishing": {
+              "level": 3,
+              "marked": false
+            },
+            "heading": {
+              "level": 1,
+              "marked": false
+            },
+            "passing": {
+              "level": 1,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 10,
-            "tackling": 15,
-            "velocity": 1
+            "speed": {
+              "level": 2,
+              "marked": true
+            },
+            "tackling": {
+              "level": 7,
+              "marked": true
+            },
+            "velocity": {
+              "level": 1,
+              "marked": false
+            }
           }
         },
         {
@@ -138,14 +201,35 @@
           },
           "shirt_number": 3,
           "skills": {
-            "control": 2,
-            "finishing": 2,
-            "heading": 1,
-            "passing": 2,
+            "control": {
+              "level": 2,
+              "marked": false
+            },
+            "finishing": {
+              "level": 2,
+              "marked": false
+            },
+            "heading": {
+              "level": 1,
+              "marked": false
+            },
+            "passing": {
+              "level": 2,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 14,
-            "tackling": 10,
-            "velocity": 2
+            "speed": {
+              "level": 6,
+              "marked": true
+            },
+            "tackling": {
+              "level": 2,
+              "marked": true
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         },
         {
@@ -168,14 +252,35 @@
           },
           "shirt_number": 4,
           "skills": {
-            "control": 1,
-            "finishing": 1,
-            "heading": 13,
-            "passing": 3,
+            "control": {
+              "level": 1,
+              "marked": false
+            },
+            "finishing": {
+              "level": 1,
+              "marked": false
+            },
+            "heading": {
+              "level": 5,
+              "marked": true
+            },
+            "passing": {
+              "level": 3,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 1,
-            "tackling": 12,
-            "velocity": 2
+            "speed": {
+              "level": 1,
+              "marked": false
+            },
+            "tackling": {
+              "level": 4,
+              "marked": true
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         },
         {
@@ -198,14 +303,35 @@
           },
           "shirt_number": 5,
           "skills": {
-            "control": 1,
-            "finishing": 3,
-            "heading": 13,
-            "passing": 1,
+            "control": {
+              "level": 1,
+              "marked": false
+            },
+            "finishing": {
+              "level": 3,
+              "marked": false
+            },
+            "heading": {
+              "level": 5,
+              "marked": true
+            },
+            "passing": {
+              "level": 1,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 1,
-            "tackling": 14,
-            "velocity": 2
+            "speed": {
+              "level": 1,
+              "marked": false
+            },
+            "tackling": {
+              "level": 6,
+              "marked": true
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         },
         {
@@ -228,14 +354,35 @@
           },
           "shirt_number": 13,
           "skills": {
-            "control": 4,
-            "finishing": 0,
-            "heading": 10,
-            "passing": 1,
+            "control": {
+              "level": 4,
+              "marked": false
+            },
+            "finishing": {
+              "level": 0,
+              "marked": false
+            },
+            "heading": {
+              "level": 2,
+              "marked": true
+            },
+            "passing": {
+              "level": 1,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 2,
-            "tackling": 10,
-            "velocity": 2
+            "speed": {
+              "level": 2,
+              "marked": false
+            },
+            "tackling": {
+              "level": 2,
+              "marked": true
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         },
         {
@@ -258,14 +405,35 @@
           },
           "shirt_number": 6,
           "skills": {
-            "control": 10,
-            "finishing": 1,
-            "heading": 1,
-            "passing": 3,
+            "control": {
+              "level": 2,
+              "marked": true
+            },
+            "finishing": {
+              "level": 1,
+              "marked": false
+            },
+            "heading": {
+              "level": 1,
+              "marked": false
+            },
+            "passing": {
+              "level": 3,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 11,
-            "tackling": 3,
-            "velocity": 1
+            "speed": {
+              "level": 3,
+              "marked": true
+            },
+            "tackling": {
+              "level": 3,
+              "marked": false
+            },
+            "velocity": {
+              "level": 1,
+              "marked": false
+            }
           }
         },
         {
@@ -288,14 +456,35 @@
           },
           "shirt_number": 7,
           "skills": {
-            "control": 12,
-            "finishing": 1,
-            "heading": 4,
-            "passing": 2,
+            "control": {
+              "level": 4,
+              "marked": true
+            },
+            "finishing": {
+              "level": 1,
+              "marked": false
+            },
+            "heading": {
+              "level": 4,
+              "marked": false
+            },
+            "passing": {
+              "level": 2,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 12,
-            "tackling": 1,
-            "velocity": 2
+            "speed": {
+              "level": 4,
+              "marked": true
+            },
+            "tackling": {
+              "level": 1,
+              "marked": false
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         },
         {
@@ -318,14 +507,35 @@
           },
           "shirt_number": 10,
           "skills": {
-            "control": 3,
-            "finishing": 3,
-            "heading": 0,
-            "passing": 10,
+            "control": {
+              "level": 3,
+              "marked": false
+            },
+            "finishing": {
+              "level": 3,
+              "marked": false
+            },
+            "heading": {
+              "level": 0,
+              "marked": false
+            },
+            "passing": {
+              "level": 2,
+              "marked": true
+            },
             "passing_high": 0,
-            "speed": 1,
-            "tackling": 15,
-            "velocity": 1
+            "speed": {
+              "level": 1,
+              "marked": false
+            },
+            "tackling": {
+              "level": 7,
+              "marked": true
+            },
+            "velocity": {
+              "level": 1,
+              "marked": false
+            }
           }
         },
         {
@@ -348,14 +558,35 @@
           },
           "shirt_number": 8,
           "skills": {
-            "control": 3,
-            "finishing": 2,
-            "heading": 4,
-            "passing": 12,
+            "control": {
+              "level": 3,
+              "marked": false
+            },
+            "finishing": {
+              "level": 2,
+              "marked": false
+            },
+            "heading": {
+              "level": 4,
+              "marked": false
+            },
+            "passing": {
+              "level": 4,
+              "marked": true
+            },
             "passing_high": 0,
-            "speed": 3,
-            "tackling": 9,
-            "velocity": 1
+            "speed": {
+              "level": 3,
+              "marked": false
+            },
+            "tackling": {
+              "level": 1,
+              "marked": true
+            },
+            "velocity": {
+              "level": 1,
+              "marked": false
+            }
           }
         },
         {
@@ -378,14 +609,35 @@
           },
           "shirt_number": 15,
           "skills": {
-            "control": 1,
-            "finishing": 10,
-            "heading": 11,
-            "passing": 2,
+            "control": {
+              "level": 1,
+              "marked": false
+            },
+            "finishing": {
+              "level": 2,
+              "marked": true
+            },
+            "heading": {
+              "level": 3,
+              "marked": true
+            },
+            "passing": {
+              "level": 2,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 2,
-            "tackling": 2,
-            "velocity": 1
+            "speed": {
+              "level": 2,
+              "marked": false
+            },
+            "tackling": {
+              "level": 2,
+              "marked": false
+            },
+            "velocity": {
+              "level": 1,
+              "marked": false
+            }
           }
         },
         {
@@ -408,14 +660,35 @@
           },
           "shirt_number": 14,
           "skills": {
-            "control": 1,
-            "finishing": 3,
-            "heading": 2,
-            "passing": 11,
+            "control": {
+              "level": 1,
+              "marked": false
+            },
+            "finishing": {
+              "level": 3,
+              "marked": false
+            },
+            "heading": {
+              "level": 2,
+              "marked": false
+            },
+            "passing": {
+              "level": 3,
+              "marked": true
+            },
             "passing_high": 0,
-            "speed": 1,
-            "tackling": 11,
-            "velocity": 2
+            "speed": {
+              "level": 1,
+              "marked": false
+            },
+            "tackling": {
+              "level": 3,
+              "marked": true
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         },
         {
@@ -438,14 +711,35 @@
           },
           "shirt_number": 9,
           "skills": {
-            "control": 2,
-            "finishing": 14,
-            "heading": 11,
-            "passing": 2,
+            "control": {
+              "level": 2,
+              "marked": false
+            },
+            "finishing": {
+              "level": 6,
+              "marked": true
+            },
+            "heading": {
+              "level": 3,
+              "marked": true
+            },
+            "passing": {
+              "level": 2,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 2,
-            "tackling": 2,
-            "velocity": 2
+            "speed": {
+              "level": 2,
+              "marked": false
+            },
+            "tackling": {
+              "level": 2,
+              "marked": false
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         },
         {
@@ -468,14 +762,35 @@
           },
           "shirt_number": 11,
           "skills": {
-            "control": 1,
-            "finishing": 0,
-            "heading": 3,
-            "passing": 14,
+            "control": {
+              "level": 1,
+              "marked": false
+            },
+            "finishing": {
+              "level": 0,
+              "marked": false
+            },
+            "heading": {
+              "level": 3,
+              "marked": false
+            },
+            "passing": {
+              "level": 6,
+              "marked": true
+            },
             "passing_high": 0,
-            "speed": 2,
-            "tackling": 12,
-            "velocity": 1
+            "speed": {
+              "level": 2,
+              "marked": false
+            },
+            "tackling": {
+              "level": 4,
+              "marked": true
+            },
+            "velocity": {
+              "level": 1,
+              "marked": false
+            }
           }
         },
         {
@@ -498,38 +813,59 @@
           },
           "shirt_number": 16,
           "skills": {
-            "control": 1,
-            "finishing": 13,
-            "heading": 14,
-            "passing": 1,
+            "control": {
+              "level": 1,
+              "marked": false
+            },
+            "finishing": {
+              "level": 5,
+              "marked": true
+            },
+            "heading": {
+              "level": 6,
+              "marked": true
+            },
+            "passing": {
+              "level": 1,
+              "marked": false
+            },
             "passing_high": 0,
-            "speed": 0,
-            "tackling": 2,
-            "velocity": 2
+            "speed": {
+              "level": 0,
+              "marked": false
+            },
+            "tackling": {
+              "level": 2,
+              "marked": false
+            },
+            "velocity": {
+              "level": 2,
+              "marked": false
+            }
           }
         }
       ],
       "primary_kit": {
-        "basic": 4,
+        "basic": "red",
         "shirt_type": "plain",
-        "shorts": 4,
-        "socks": 4,
-        "stripes": 4
+        "shorts": "red",
+        "socks": "red",
+        "stripes": "red"
       },
       "runtime": {
-        "controls": 0,
-        "match_flags": 0,
+        "controls": "not_selected",
+        "match_flags": "",
         "own_goals": 0,
-        "values_dirty": 0
+        "player_values": "clean"
       },
       "secondary_kit": {
-        "basic": 5,
+        "basic": "blue",
         "shirt_type": "plain",
-        "shorts": 5,
-        "socks": 5,
-        "stripes": 5
+        "shorts": "blue",
+        "socks": "blue",
+        "stripes": "blue"
       },
-      "tactics": 0
+      "tactics": "four_four_two"
     }
   ]
 }

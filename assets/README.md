@@ -31,4 +31,5 @@ Every committed file is listed here: where it comes from and under which license
 | `TEAM/TEAM.085` | PC SWOS 96/97 (GOG), `DATA/TEAM.085`: Oceania, 4 teams | Original game data © its rights holders; a small test excerpt (D2) |
 | `TEAM/TEAM.057.json`, `TEAM/TEAM.085.json` | Written by `openswos_team_resource`'s tests (`OPENSWOS_BLESS=1`), reviewed | The expected decoded models |
 | `TMD/EUROCUP.TMD` | PC SWOS 96/97 (GOG), `DATA/EUROCUP.TMD`: the 16 Champions' Cup teams | Original game data © its rights holders; a small test excerpt (D2) |
+| `TEAM_JSON/OCEANIA.json` | Written by `openswos_team_json_resource`'s tests (`OPENSWOS_BLESS=1`) from `TEAM/TEAM.085`, as World 1996-97's team JSON (World 2026-27's style: unsigned numbers, trailing newline) | Derived from original game data (D2); the expected team JSON of that file |
 | `POOLPLYR/POOLPLYR.DAT` | PC SWOS 96/97 (GOG), `DATA/POOLPLYR.DAT`: the 900-player transfer pool | Original game data © its rights holders; a small test excerpt (D2) |

@@ -274,9 +274,15 @@ The principles:
 - `rules/`, authored part: rules the original encodes in code (e.g. how the season end
   moves clubs, the European qualification order) are written by hand, each citing the
   upstream function.
-- `world_extract` also assembles the full package in `target/cache/worlds/1996-97/`. It
-  adds `teams/*.json` made from your PC game copy's `DATA/TEAM.nnn` (as OpenSWOS Setup
-  does) and computes `WORLD.ini`'s fingerprint.
+- `world_extract` also assembles the full package in `target/cache/worlds/1996-97/`.
+  - It adds `teams/*.json` made from your PC game copy's `DATA/TEAM.nnn`, as OpenSWOS
+    Setup does, written in the World 2026-27 package's style: unsigned numbers, a trailing
+    newline. Setup's signed files are still read.
+  - Team ids are mandatory in every package: the binary files have none, so they are
+    generated here. Every team and player gets `uuid5("96-97/team/<file>/<ordinal>[/player/
+    <index>]")` (upstream `docs/TEAM_IDS.md`, the same ids OpenSWOS gives them), and every
+    team its checksum.
+  - It computes `WORLD.ini`'s fingerprint.
 - Proof: the Rust engine + this package reproduces upstream's 96/97 path (an oracle test
   per function, golden careers end to end).
 
@@ -570,7 +576,7 @@ All binary formats are the PC (DOS) game's (D9).
 | # | Crate | File(s) | Notes |
 |---|---|---|---|
 | 1 ✅ | `team` | PC `DATA/TEAM.nnn`, `DATA/TEAM.CUS` | BE count + 684-byte `TeamFileEx` (76-byte header + 16 × 38-byte player). Not RNC-packed. Every team database of the PC game round-trips (79 files, 1,794 teams); `DATA/TEAM.248` is a stray file in another layout, rejected. |
-| 2 | `team_json` | `teams/<COUNTRY>.json` | Upstream's team JSON (uuids, checksums): the rosters of world packages, World 2026-27's included (up to 256 clubs per file, a country over several files). Cross-checked with `team` on the same rosters. |
+| 2 ✅ | `team_json` | `teams/<COUNTRY>.json` | Upstream's team JSON (uuids, checksums): the rosters of world packages. Two dialects, both round-tripped byte for byte: Setup's (signed numbers, no trailing newline) and World 2026-27's (unsigned, trailing newline). Ids are data (World 2026-27's come from the Mod's club ids, not derivable); derived 96/97 ids and checksums match upstream's documented values. All 101 World 2026-27 rosters (2,385 teams) and every PC team file convert both ways. |
 | 3 ✅ | `tmd` | PC `DATA/EUROCUP/EUROCWC/UEFACUP.TMD` | Bare `TeamFileEx[]` (16/32/32). All three round-trip; every pool team is the team its id names in `TEAM.nnn`. |
 | 4 ✅ | `poolplyr` | PC `DATA/POOLPLYR.DAT` | 900 58-byte `PoolPlayer` records. Round-trips; every record is a copy of a squad player: the player at its ordinal in the team its id names. |
 | 5 | `edt` | `CUSTOMS.EDT` | BE count + `TeamFile[]`. |

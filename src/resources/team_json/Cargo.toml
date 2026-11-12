@@ -1,0 +1,27 @@
+[package]
+name = "openswos_team_json_resource"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Reader and writer for OpenSWOS's team JSON (teams/<COUNTRY>.json), the rosters of world packages"
+readme = "readme.md"
+
+[dependencies]
+openswos_common = { workspace = true }
+openswos_team_resource = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha1 = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+openswos_test_utils = { workspace = true }
+proptest = { workspace = true }
+zip = { workspace = true }
+
+[lints]
+workspace = true

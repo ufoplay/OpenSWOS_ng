@@ -17,6 +17,9 @@ tracked = [
     "tests/**",
     "third_party/swos-competition-engine/rules/**",
     "third_party/swos-competition-engine/tests/**",
+    "tools/swosdata/lib/**",
+    "scripts/world_import.py",
+    "scripts/assign_team_uuids.py",
 ]
 checkout = [
     "src",
@@ -25,6 +28,8 @@ checkout = [
     "tests",
     "docs",
     "third_party/swos-competition-engine",
+    "tools/swosdata/lib",
+    "scripts",
 ]
 
 [[submodule]]
@@ -234,7 +239,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/game_options.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/game_state.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/game_timers.h" = { area = "core", status = "todo", notes = "match engine" }
-"include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs", "src/resources/poolplyr/src/lib.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST", "PoolPlayer"], notes = "shared game types; the team and player records are in resources/team" }
+"include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs", "src/resources/poolplyr/src/lib.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST", "PoolPlayer", "PLAYER_FORM_TRIALIST", "PLAYER_FORM_RESERVE", "TEAM_VALUES_CLEAN", "TEAM_VALUES_DIRTY", "TACTIC_DEFAULT..TACTIC_USER_F"], notes = "shared game types; the team and player records are in resources/team" }
 "include/game_utils.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/general_data.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/gfx.h" = { area = "view", status = "todo", notes = "rendering" }
@@ -306,7 +311,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/pitch.h" = { area = "view", status = "todo", notes = "pitch rendering; check sim_state.c for the fan tile slots the match reads" }
 "include/pixel_filter.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
 "include/platform_sdl.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
-"include/play_match_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/play_match_menu.h" = { area = "view", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs"], functions_done = ["TEAM_COMPUTER", "TEAM_PLAYER_COACH", "TEAM_COACH"], notes = "menus/UI; the team controls are the team record's TeamControls" }
 "include/player_anim.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/player_data.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/player_face3.h" = { area = "view", status = "todo", notes = "rendering" }
@@ -362,13 +367,13 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/tackle_foul.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/tactics_data.h" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
 "include/tactics_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
-"include/team_colors.h" = { area = "view", status = "todo", notes = "rendering" }
+"include/team_colors.h" = { area = "view", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs"], functions_done = ["SHIRT_ORDINARY..SHIRT_HORIZONTAL_STRIPES", "KIT_COLOURS"], notes = "rendering; the shirt types and kit colours are the team record's enums" }
 "include/team_control.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/team_db.h" = { area = "core", status = "todo", notes = "career" }
 "include/team_packs.h" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
 "include/team_pool.h" = { area = "core", status = "todo", notes = "career" }
 "include/team_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
-"include/team_uuid.h" = { area = "resource", status = "todo", notes = "team_json: team uuids and checksums" }
+"include/team_uuid.h" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/ids.rs"], notes = "derived ids and checksums: resources/team_json ids.rs" }
 "include/teamdb.h" = { area = "core", status = "todo", notes = "career" }
 "include/teams.h" = { area = "core", status = "todo", notes = "teams; their file loading goes to resources/team" }
 "include/test_rules.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
@@ -388,6 +393,8 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/world_cups.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "include/world_playoff.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
 "include/world_winners.h" = { area = "core", status = "todo", notes = "World 2026-27 rules: behaviour components (D6)" }
+"scripts/assign_team_uuids.py" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/ids.rs"], notes = "derived ids and checksums: resources/team_json ids.rs" }
+"scripts/world_import.py" = { area = "world_data", status = "todo", notes = """builds World 2026-27's package and world_data.c: the completion step mirrors it (M4); its ids are uuid5("2627/team/<club id>")""" }
 "src/SWOS.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/adverts.c" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
 "src/ai.c" = { area = "core", status = "todo", notes = "match engine" }
@@ -676,7 +683,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/team_packs.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope; rule-changing mods become world data)" }
 "src/team_packs_menu.c" = { area = "out_of_scope", status = "not_ported", notes = "mod system (out of scope)" }
 "src/team_pool.c" = { area = "core", status = "todo", notes = "career" }
-"src/team_uuid.c" = { area = "resource", status = "todo", notes = "team_json: team uuids and checksums" }
+"src/team_uuid.c" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/ids.rs"], notes = "derived ids and checksums: resources/team_json ids.rs" }
 "src/teamdb.c" = { area = "core", status = "todo", notes = "career" }
 "src/teams.c" = { area = "core", status = "todo", notes = "teams; their file loading goes to resources/team" }
 "src/test_rules.c" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
@@ -839,3 +846,27 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "third_party/swos-competition-engine/tests/specs/ok-openswos/accents.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
 "third_party/swos-competition-engine/tests/specs/ok/mini.json" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
 "third_party/swos-competition-engine/tests/test_format.c" = { area = "out_of_scope", status = "not_ported", notes = "upstream test harness" }
+"tools/swosdata/lib/adf.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/adf.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/amiga_mod.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/cd_image.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/cd_image.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/credits_aga.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/credits_aga.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/fat_image.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/fat_image.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/jag_tier.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/jag_tier.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/lha.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/lha.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/rnc_archive.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/rnc_archive.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga/installer/Jaguar formats (D9)" }
+"tools/swosdata/lib/sd_json.c" = { area = "out_of_scope", status = "not_ported", notes = "Setup: finding and reading the player's copies (our tools take paths)" }
+"tools/swosdata/lib/sd_manifest.c" = { area = "out_of_scope", status = "not_ported", notes = "Setup: finding and reading the player's copies (our tools take paths)" }
+"tools/swosdata/lib/sd_manifest.h" = { area = "out_of_scope", status = "not_ported", notes = "Setup: finding and reading the player's copies (our tools take paths)" }
+"tools/swosdata/lib/sd_sources.c" = { area = "out_of_scope", status = "not_ported", notes = "Setup: finding and reading the player's copies (our tools take paths)" }
+"tools/swosdata/lib/sd_sources.h" = { area = "out_of_scope", status = "not_ported", notes = "Setup: finding and reading the player's copies (our tools take paths)" }
+"tools/swosdata/lib/swosdata.c" = { area = "world_data", status = "todo", notes = "Setup's steps; its world step (package install, WORLD.ini) -> world_package (M2) and world_extract (M4)" }
+"tools/swosdata/lib/swosdata.h" = { area = "world_data", status = "todo", notes = "Setup's steps; its world step (package install, WORLD.ini) -> world_package (M2) and world_extract (M4)" }
+"tools/swosdata/lib/team_json.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/model.rs", "src/resources/team_json/src/text.rs", "src/resources/team_json/src/convert.rs", "src/resources/team_json/src/ids.rs"], functions_done = ["Sd_TeamFileToJson", "emit_team", "emit_player", "team_checksum"], notes = "the team JSON (type team): resources/team_json. Its tmd/pool dialects are not ported (world packages carry neither); kCountries (country names) is world data" }
+"tools/swosdata/lib/team_json.h" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team_json/src/model.rs", "src/resources/team_json/src/text.rs", "src/resources/team_json/src/convert.rs", "src/resources/team_json/src/ids.rs"], functions_done = ["Sd_TeamFileToJson", "emit_team", "emit_player", "team_checksum"], notes = "the team JSON (type team): resources/team_json. Its tmd/pool dialects are not ported (world packages carry neither); kCountries (country names) is world data" }

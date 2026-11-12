@@ -123,6 +123,33 @@ mod tests {
         );
     }
 
+    /// A submodule's path in the sparse set: on a second fetch the index holds it as a
+    /// gitlink, which `git sparse-checkout set` refuses without `--skip-checks`.
+    #[test]
+    fn a_submodule_path_can_be_checked_out_again() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let origin = dir.path().join("origin");
+        init(&origin);
+        commit(&origin, &[("src/a.c", "1")], "first");
+        let cacheinfo = "160000,87b65278a15007223ec4f387f1027eb4d5cd7625,third_party/engine";
+        crate::git::test_repo::git(
+            &origin,
+            &["update-index", "--add", "--cacheinfo", cacheinfo],
+        );
+        let pinned = commit(&origin, &[], "add a submodule");
+        let mut ledger = ledger_for(&origin, &pinned);
+        ledger
+            .upstream
+            .checkout
+            .push("third_party/engine".to_owned());
+        let checkout = dir.path().join("upstream");
+
+        fetch(&ledger, &checkout).expect("first fetch");
+        fetch(&ledger, &checkout).expect("second fetch, with the gitlink in the index");
+
+        assert_eq!(Git::new(&checkout).head().expect("head"), pinned);
+    }
+
     #[test]
     fn a_checkout_is_required_for_the_other_commands() {
         let dir = tempfile::tempdir().expect("temp dir");

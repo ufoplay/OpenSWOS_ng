@@ -3,7 +3,8 @@
 
 use openswos_common::{Position, TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_team_resource::{
-    Division, Face, Nationality, PLAYERS_PER_TEAM, ShirtType, TeamFileFormat,
+    Division, Face, Form, MatchFlags, Nationality, Nibble, PLAYERS_PER_TEAM, PlayerValues,
+    ShirtType, TeamControls, TeamFileFormat, TeamRuntime,
 };
 use openswos_test_utils::assets_path;
 use openswos_test_utils::fixtures::{assert_round_trip, assert_sidecar, fixtures};
@@ -83,22 +84,21 @@ fn england_decodes() {
 fn runtime_fields_are_zero_in_the_original_files() {
     for name in ["TEAM.008", "TEAM.057", "TEAM.085"] {
         for team in assert_round_trip::<TeamFileFormat>(&read(name)).teams {
-            let runtime = team.runtime;
             assert_eq!(
-                [
-                    runtime.controls,
-                    runtime.own_goals,
-                    runtime.match_flags,
-                    runtime.values_dirty
-                ],
-                [0; 4],
+                team.runtime,
+                TeamRuntime {
+                    controls: TeamControls::NotSelected,
+                    own_goals: 0,
+                    match_flags: MatchFlags::empty(),
+                    player_values: PlayerValues::Clean,
+                },
                 "{}",
                 team.name
             );
             for player in team.players {
                 assert!(player.runtime.flags.is_empty(), "{}", player.name);
-                assert_eq!(player.runtime.form, 0, "{}", player.name);
-                assert_eq!(player.skills.passing_high.value(), 0, "{}", player.name);
+                assert_eq!(player.runtime.form, Form::from(0), "{}", player.name);
+                assert_eq!(player.skills.passing_high, Nibble::ZERO, "{}", player.name);
             }
         }
     }

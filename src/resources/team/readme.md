@@ -12,20 +12,34 @@ by 16 player records of 38 bytes. `team.rs` and `player.rs` document every field
 Names are fixed-size fields that keep every byte (`FixedName`), so every file round-trips
 byte for byte.
 
-Some fields are written by the game while it runs: own goals, form, cards, goal counters,
-flags. They are 0 in every file of the PC game, and in use in career saves, which store
-the same records. They are grouped as `TeamRuntime` and `PlayerRuntime`. Their meaning
-belongs to the game logic.
+Some fields are written by the game while it runs: team control, own goals, form, cards,
+goal counters, flags. They are unset in every file of the PC game, and in use in career
+saves, which store the same records. They are grouped as `TeamRuntime` and
+`PlayerRuntime`.
 
-What numbers such as nationalities, kit colours or tactics *mean* is world or view data,
-so they are plain newtypes here. Only values the format fixes are enums: position, face,
-shirt type and the player flags.
+**Enums and flags** hold every value whose set the format or the engine fixes: position,
+face, shirt type, kit colour (the kit-clash rules tell the colours apart), tactics (the
+engine's 18 slots; their formations are data), team control, the player-values state,
+form's two statuses (`Form`), and the player and match flags. A code outside its set does
+not decode; unnamed match-flag bits and any form level are kept as read.
+
+**Skills** (`skill.rs`) are stored as nibbles, two to a byte. Each one is a `Skill`: a
+`level` (bits 0-2, `0..=7`, all the match plays with) and `marked` (bit 3, the marker the
+transfer market's skill search reads). The passing byte's unused high nibble is kept as a
+raw `Nibble`.
+
+**Plain numbers** stay where the meaning is world data or a count: nationalities, prices
+(an index into the price table), divisions (World 2026-27 has up to 14 per country), own
+goals, the cards-and-injuries levels, goal counters.
 
 ## Sources
 
-Upstream OpenSWOS: `include/game_types.h` (`TeamFile`, `PlayerFile`, the `PF_*` and
-`PLAYER_FORM_*` defines), `include/team_colors.h` (shirt types), `include/mod_api.h`
-(faces), `docs/DATA_JSON.md` (layouts and byte-faithfulness notes).
+Upstream OpenSWOS: `include/game_types.h` (`TeamFile`, `PlayerFile`, the `PF_*`,
+`PLAYER_FORM_*`, `TEAM_VALUES_*` and `TACTIC_*` defines), `include/team_colors.h` (shirt
+types, `KIT_COLOURS`), `include/play_match_menu.h` and `src/teams.c` (team controls),
+`include/mod_api.h` (faces), `docs/CUSTOM_TEAMS.md` (kit colour names),
+`src/career_status.c` (the cards-and-injuries bits), `docs/DATA_JSON.md` (layouts and
+byte-faithfulness notes).
 
 ## Tests
 
