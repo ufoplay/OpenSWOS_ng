@@ -41,6 +41,12 @@ pub const TEAM_NAME_LEN: usize = 17;
 pub const COACH_NAME_LEN: usize = 23;
 
 /// A team's index across every team file of the game (upstream `globalTeamNumber`).
+///
+/// The game does not read it from a file: it sets it when it loads one, to its team file's
+/// base plus the team's ordinal (upstream `SetTeamGlobalNumbers`). So it is kept as stored.
+/// Faithful to the original: the PC game's `.EDT` files store it little-endian (the DOS
+/// game's own byte order), unlike every other team file, so read big-endian it is no
+/// index.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct GlobalTeamNumber(pub i16);

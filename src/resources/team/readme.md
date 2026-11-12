@@ -1,13 +1,19 @@
 # openswos_team_resource
 
-Reader and writer for the PC SWOS 96/97 team database files: `DATA/TEAM.nnn` (one per
-country, `nnn` being its number) and `DATA/TEAM.CUS` (the custom teams).
+Reader and writer for the PC SWOS 96/97 team files: the team databases `DATA/TEAM.nnn`
+(one per country, `nnn` being its number) and `DATA/TEAM.CUS` (the custom teams the game
+ships), and the edited custom teams `CUSTOMS.EDT` (what EDIT CUSTOM TEAMS saves and loads)
+and `SAFE.EDT` (the PC game's spare copy). All of them have the same layout.
 
 ## Format
 
 A big-endian `u16` team count, then that many 684-byte team records, and nothing after
 them. The PC game's files are not compressed. A team record is a 76-byte header followed
 by 16 player records of 38 bytes. `team.rs` and `player.rs` document every field's offset.
+
+Faithful to the original: the `.EDT` files store each team's global number little-endian,
+unlike every other team file. The game ignores the stored value (it sets it on load from
+the team's file and ordinal), so it is kept as stored.
 
 Names are fixed-size fields that keep every byte (`FixedName`), so every file round-trips
 byte for byte.
@@ -47,5 +53,6 @@ byte-faithfulness notes).
 - `assets/TEAM/`: original files of the PC game. `TEAM.057` and `TEAM.085` are checked
   against their JSON sidecars, and `TEAM.008` with targeted assertions. All of them must
   round-trip.
-- `just test_real_assets <game_dir>`: every `DATA/TEAM.*` team database of your copy
-  round-trips. `DATA/TEAM.248`, which is not a team database, is rejected.
+- `just test_real_assets <game_dir>`: every `DATA/TEAM.*` team database and every `*.EDT`
+  file of your copy round-trips, and the `.EDT` global numbers are the game's once swapped.
+  `DATA/TEAM.248`, which is not a team database, is rejected.

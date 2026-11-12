@@ -1,5 +1,7 @@
-//! The team database file: the PC game's `DATA/TEAM.nnn` (one file per country, `nnn`
-//! being its number) and `DATA/TEAM.CUS` (the custom teams).
+//! The team file: the PC game's `DATA/TEAM.nnn` (one file per country, `nnn` being its
+//! number), `DATA/TEAM.CUS` (the custom teams it ships), and the edited custom teams
+//! `CUSTOMS.EDT` (what the game's EDIT CUSTOM TEAMS saves and loads; upstream `LoadTeamFile`
+//! with extension 100) and `SAFE.EDT` (the PC game's spare copy).
 //!
 //! A big-endian `u16` count, then that many 684-byte team records ([`Team`]), and nothing
 //! after them. The PC game's files are not compressed (D9).

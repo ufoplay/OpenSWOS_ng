@@ -56,10 +56,6 @@ pub enum EntryError {
         /// The JSON field.
         field: &'static str,
     },
-    /// The passing byte's high nibble is set. It is unused (0 in every original file), and
-    /// the JSON keeps only the skill.
-    #[error("passing: the byte's unused high nibble is {0}, which JSON cannot keep")]
-    PassingHighNibble(u8),
 }
 
 /// The ids a team entry carries.
@@ -164,12 +160,12 @@ impl TeamEntry {
         })
     }
 
-    /// The entry of `team`, with `ids`, its numbers written unsigned.
+    /// The entry of `team`, with `ids`, its numbers written unsigned. The passing byte's
+    /// unused high nibble is not written: the JSON keeps only the skill.
     ///
     /// # Errors
     ///
-    /// When a name field holds bytes after its end, or the passing byte's unused high nibble
-    /// is set.
+    /// When a name field holds bytes after its end.
     pub fn from_team(team: &Team, ids: EntryIds) -> Result<Self, EntryError> {
         let Team {
             id,
@@ -308,7 +304,8 @@ fn player_entry(player: &Player, uuid: Uuid) -> Result<PlayerEntry, EntryError> 
                 control,
                 speed,
                 finishing,
-                passing_high,
+                // Unused by the game, 0 in every file; the JSON keeps only the skill.
+                passing_high: _,
             },
         price: PriceId(price),
         runtime:
@@ -326,9 +323,6 @@ fn player_entry(player: &Player, uuid: Uuid) -> Result<PlayerEntry, EntryError> 
                 form,
             },
     } = player;
-    if *passing_high != Nibble::ZERO {
-        return Err(EntryError::PassingHighNibble(passing_high.value()));
-    }
     Ok(PlayerEntry {
         uuid,
         nationality: JsonByte::from(*nationality),
@@ -527,16 +521,14 @@ mod tests {
     }
 
     #[test]
-    fn the_unused_passing_nibble_cannot_be_written() {
-        let mut team = oceania().remove(0);
+    fn the_unused_passing_nibble_is_not_written() {
+        let clean = oceania().remove(0);
+        let mut team = clean.clone();
         team.players[2].skills.passing_high = Nibble::try_from(3).expect("a nibble");
-        let ids = EntryIds::derived(WORLD_1996_97_TAG, &team);
-        let error = TeamEntry::from_team(&team, ids).expect_err("a high nibble");
-        assert_eq!(error, EntryError::PassingHighNibble(3));
-        assert_eq!(
-            error.to_string(),
-            "passing: the byte's unused high nibble is 3, which JSON cannot keep"
-        );
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team))
+            .expect("converts");
+        assert_eq!(entry.players[2].passing, clean.players[2].skills.passing);
+        assert_eq!(entry.to_team(), Ok(clean));
     }
 
     #[test]

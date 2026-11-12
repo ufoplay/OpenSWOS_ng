@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
-description = "Reader and writer for the PC SWOS 96/97 team database files (DATA/TEAM.nnn)"
+description = "Reader and writer for the PC SWOS 96/97 team files (DATA/TEAM.nnn, CUSTOMS.EDT)"
 readme = "readme.md"
 
 [dependencies]

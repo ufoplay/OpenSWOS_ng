@@ -68,8 +68,8 @@ A skill value has two parts, which the typed model keeps as a `Skill { level, ma
 Passing has byte 28 to itself; its high nibble is unused, 0 in every original file and
 never set by the game. Upstream's writer writes the whole byte (signed, as the C struct
 declares it), but with that nibble 0 the number is the skill's, so this port reads and
-writes `passing` as a nibble like the others. A team whose high nibble is set cannot be
-written (`EntryError::PassingHighNibble`).
+writes `passing` as a nibble like the others. A typed team whose high nibble is set (the
+binary reader keeps it) is written without it.
 
 So `"speed": 0` is level 0, `"tackling": 7` is level 7 unmarked, `"tackling": 15` is level 7
 marked (8 + 7), and `"control": 14` is level 6 marked. To change a level, edit bits 0-2;
