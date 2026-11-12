@@ -24,7 +24,9 @@ openswos_core = { path = "src/core", version = "0.1.0" }
 openswos_test_utils = { path = "src/test_utils" }
 
 # Resources
+openswos_poolplyr_resource = { path = "src/resources/poolplyr", version = "0.1.0" }
 openswos_team_resource = { path = "src/resources/team", version = "0.1.0" }
+openswos_tmd_resource = { path = "src/resources/tmd", version = "0.1.0" }
 
 # The player flags of the team records.
 bitflags = { version = "2", features = ["serde"] }

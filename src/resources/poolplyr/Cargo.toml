@@ -1,0 +1,23 @@
+[package]
+name = "openswos_poolplyr_resource"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Reader and writer for the PC SWOS 96/97 transfer pool (DATA/POOLPLYR.DAT)"
+readme = "readme.md"
+
+[dependencies]
+openswos_common = { workspace = true }
+openswos_team_resource = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+openswos_test_utils = { workspace = true }
+proptest = { workspace = true }
+
+[lints]
+workspace = true

@@ -571,8 +571,8 @@ All binary formats are the PC (DOS) game's (D9).
 |---|---|---|---|
 | 1 ✅ | `team` | PC `DATA/TEAM.nnn`, `DATA/TEAM.CUS` | BE count + 684-byte `TeamFileEx` (76-byte header + 16 × 38-byte player). Not RNC-packed. Every team database of the PC game round-trips (79 files, 1,794 teams); `DATA/TEAM.248` is a stray file in another layout, rejected. |
 | 2 | `team_json` | `teams/<COUNTRY>.json` | Upstream's team JSON (uuids, checksums): the rosters of world packages, World 2026-27's included (up to 256 clubs per file, a country over several files). Cross-checked with `team` on the same rosters. |
-| 3 | `tmd` | PC `DATA/EUROCUP/EUROCWC/UEFACUP.TMD` | Bare `TeamFileEx[]`. |
-| 4 | `poolplyr` | PC `DATA/POOLPLYR.DAT` | 58-byte `PoolPlayer[]`. |
+| 3 ✅ | `tmd` | PC `DATA/EUROCUP/EUROCWC/UEFACUP.TMD` | Bare `TeamFileEx[]` (16/32/32). All three round-trip; every pool team is the team its id names in `TEAM.nnn`. |
+| 4 ✅ | `poolplyr` | PC `DATA/POOLPLYR.DAT` | 900 58-byte `PoolPlayer` records. Round-trips; every record is a copy of a squad player: the player at its ordinal in the team its id names. |
 | 5 | `edt` | `CUSTOMS.EDT` | BE count + `TeamFile[]`. |
 | 6 | `tac` | `.TAC` | 370-byte tactics record, binary + JSON variant. |
 | 7 | `competitions_json` | `competitions/*.json` | Upstream's competition JSON family (`competition_leagues`, cups, tournaments, playoffs, qualifying, league blocks, seed buckets, countries, country competitions, career). One crate, because the files are sections of one schema and share their records. |

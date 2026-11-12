@@ -234,7 +234,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/game_options.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/game_state.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/game_timers.h" = { area = "core", status = "todo", notes = "match engine" }
-"include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST"], notes = "shared game types; the team and player records are in resources/team" }
+"include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs", "src/resources/poolplyr/src/lib.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST", "PoolPlayer"], notes = "shared game types; the team and player records are in resources/team" }
 "include/game_utils.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/general_data.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/gfx.h" = { area = "view", status = "todo", notes = "rendering" }
