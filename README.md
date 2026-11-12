@@ -17,7 +17,7 @@ Every step goes through [just](https://github.com/casey/just):
 ```sh
 just build        # release build
 just test         # all tests
-just check_code   # fmt, clippy, magic-number lint
+just check_code   # fmt and clippy
 just              # every recipe
 ```
 

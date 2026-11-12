@@ -13,9 +13,10 @@ Each fixture is the file itself plus a JSON sidecar with the expected decoded mo
 
 ## What must never be committed
 
-- The full original game data. It lives in your own copy: `assets/local/` (gitignored),
-  or the folders named by `OPENSWOS_GAME_DIR` (the PC game) / `OPENSWOS_ASSETS_DIR` (an
-  OpenSWOS Setup output folder).
+- The full original game data. It stays in your own copy, outside the repository. Its
+  folder is passed as a command-line argument or through `OPENSWOS_GAME_DIR` (the PC game)
+  / `OPENSWOS_ASSETS_DIR` (an OpenSWOS Setup output folder). Anything derived from it goes
+  to `target/cache/`.
 - World 2026-27's data and the swos-port `.RGD` recordings. They are downloaded on demand
   into `target/cache/` (their data is not ours to redistribute).
 

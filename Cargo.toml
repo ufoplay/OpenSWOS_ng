@@ -26,17 +26,12 @@ openswos_test_utils = { path = "src/test_utils" }
 clap = { version = "4", features = ["derive"] }
 # Glob patterns over upstream paths (the migration ledger tool).
 globset = "0.4"
-# `span-locations` gives lint_magic the line and column of each finding.
-proc-macro2 = { version = "1", features = ["span-locations"] }
 serde = { version = "1", features = ["derive"] }
-# Rust parser used by lint_magic.
-syn = { version = "3", features = ["full", "visit"] }
 tempfile = "3"
 thiserror = "2"
 toml = "1"
 # Writes upstream.toml with one inline table per file.
 toml_edit = "0.25"
-walkdir = "2"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

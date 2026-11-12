@@ -85,7 +85,7 @@ OpenSWOS_ng/
 ├── justfile                # imports just/*.just
 ├── just/
 │   ├── build.just          # build, clean
-│   ├── code_check.just     # fmt, clippy, lint_magic, check_code
+│   ├── code_check.just     # fmt, clippy, check_code
 │   ├── test.just           # test, test_oracle, test_oracle_long, test_real_assets, test_golden, coverage
 │   ├── upstream.just       # upstream_fetch, upstream_status, upstream_diff, upstream_bump
 │   └── worlds.just         # world_extract_9697, world_fetch_2627, world_validate, fetch_test_data
@@ -93,8 +93,7 @@ OpenSWOS_ng/
 ├── data/
 │   └── worlds/1996-97/     # the World 1996-97 package, without rosters (committed, GPL) — §5.2
 ├── assets/                 # test fixtures, one folder per format (§6)
-│   ├── README.md           # provenance + license of every file
-│   └── local/              # gitignored: your full game copy
+│   └── README.md           # provenance + license of every file
 ├── docs/
 └── src/
     ├── common/             # openswos_common
@@ -105,8 +104,7 @@ OpenSWOS_ng/
     ├── oracle/             # publish = false; dev-dependency only; compiles upstream C; the ONLY crate with unsafe (D3)
     └── tools/
         ├── upstream/       # migration ledger tool (§8)
-        ├── world_extract/  # builds/completes world packages from upstream's tables (§5.2)
-        └── lint_magic/     # magic-number / undocumented-constant checker (§5.4)
+        └── world_extract/  # builds/completes world packages from upstream's tables (§5.2)
 
 target/cache/               # all temporary data lives under target/ (`cargo clean` removes it)
 ├── upstream/OpenSWOS/      # the upstream checkout at the pin (`just upstream_fetch`, §8)
@@ -319,9 +317,9 @@ The principles:
 - Values that differ per game style live in the `GameStyle` impls (§5.3). Values that
   differ per world live in world packages (§5.2). Neither is a `const` in engine code.
 - Data tables (random table, sine table…) are documented `const`/`static` arrays.
-- `src/tools/lint_magic` (a `syn`-based checker, run by `just check_code`) flags integer
-  literals other than `0`/`1` outside `const`/`static` items and test code, and flags any
-  `const` without a doc comment.
+- Checked during code review (no automated lint): a numeric literal other than `0`/`1`
+  outside a documented `const`/`static` item, or a `const` without a doc comment, is a
+  review finding.
 
 ```rust
 /// X of the left touchline, in game units (≈ original pixels).
@@ -380,9 +378,11 @@ every upstream JSON file. In practice:
   tools). `just fetch_test_data` pre-fetches everything. If the network is off and the
   cache is empty, the dependent tests are skipped, and the run says which ones and why.
   `cargo clean` empties the cache.
-- **Local only (`assets/local/`, gitignored, or env vars `OPENSWOS_GAME_DIR` for the GOG
-  install and `OPENSWOS_ASSETS_DIR` for an OpenSWOS Setup output folder).** Your full game
-  copy, needed for World 1996-97's rosters and for `just test_real_assets`.
+- **Your own game copy, outside the repository.** Its folder is passed as a command-line
+  argument or an environment variable (`OPENSWOS_GAME_DIR` for the GOG install,
+  `OPENSWOS_ASSETS_DIR` for an OpenSWOS Setup output folder). It is needed for World
+  1996-97's rosters and for `just test_real_assets`. Anything derived from it goes to
+  `target/cache/`. Nothing local lives in the repository tree outside `target/`.
 - **Ground truth for a format** is (a) a byte-identical round-trip of every original and
   upstream file, and (b) where it exists, a field-by-field match against upstream's own
   export (e.g. the `teams/*.json` that OpenSWOS Setup writes from the same copy, compared
@@ -525,12 +525,12 @@ milestone are done **one at a time**, each finished (§10) before the next start
 ### M0 — Bootstrap ✅ (2026-11-12)
 
 Done. 807 upstream files classified: 192 core, 19 resource, 44 world_data, 14 test_data,
-207 view, 331 out of scope. Also delivered: `lint_magic`, and the ledger tool's
+207 view, 331 out of scope. Also delivered: the ledger tool's
 `sync`/`mark`. Note: `src/codecs/*` and `src/resources/*` join the workspace members with
 their first crate (cargo refuses a glob that matches nothing).
 
-- Cargo workspace, `justfile` + `just/*`, workspace lints, `.gitignore` (`assets/local/`;
-  every temporary file lives under `target/`).
+- Cargo workspace, `justfile` + `just/*`, workspace lints, `.gitignore` (nothing beyond
+  `target/`: every temporary or local file lives there).
 - GitHub Actions: fmt, clippy `-D warnings`, test. A separate oracle job installs libclang
   and fetches upstream. CI caches `target/cache/` between runs.
 - `CLAUDE.md` with these conventions.

@@ -6,7 +6,7 @@ starting a task.
 
 ## Commands (everything goes through `just`)
 
-- `just check_code`: fmt check, clippy `-D warnings`, `lint_magic`. Must pass.
+- `just check_code`: fmt check, clippy `-D warnings`. Must pass.
 - `just test`: all tests.
 - `just upstream_fetch`: the upstream checkout at the pinned commit, in `target/cache/upstream/OpenSWOS`.
 - `just upstream_status` / `just upstream_check` / `just upstream_sync`.
@@ -17,7 +17,7 @@ starting a task.
 - Tools are written in Rust only (`src/tools/`).
 - **No `unsafe`**, except in the test-only `src/oracle` crate (FFI to upstream C).
 - **No magic numbers.** Every literal other than `0`/`1` is a `const` with a doc comment
-  giving its meaning, unit and upstream provenance. `just lint_magic` enforces it.
+  giving its meaning, unit and upstream provenance. Checked during review.
 - **Idiomatic port.** Enums with `TryFrom<u8>` instead of ints, exhaustive matches (no
   `_` arm on enums), newtypes. In `core`: no globals, no floats, no `HashMap`/`HashSet`.
 - **Bit-exact with upstream.** Integer widths mirror the C and wrap only where the C wraps.
