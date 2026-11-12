@@ -108,8 +108,9 @@ OpenSWOS_ng/
         ├── world_extract/  # builds/completes world packages from upstream's tables (§5.2)
         └── lint_magic/     # magic-number / undocumented-constant checker (§5.4)
 
-target/cache/               # D8: downloaded + derived test data, never committed
-├── downloads/              # OpenSWOS-World-2627.zip, *.RGD.gz (as fetched)
+target/cache/               # all temporary data lives under target/ (`cargo clean` removes it)
+├── upstream/OpenSWOS/      # the upstream checkout at the pin (`just upstream_fetch`, §8)
+├── downloads/              # D8: OpenSWOS-World-2627.zip, *.RGD.gz (as fetched)
 └── worlds/
     ├── 1996-97/            # data/worlds/1996-97 + rosters from your game copy
     └── 2026-27/            # the download, verified, then completed (§5.2)
@@ -413,7 +414,7 @@ is optional (`just mutants`).
 rules library submodule). The oracle contains no handwritten C.
 
 - `build.rs`:
-  - finds the checkout (`OPENSWOS_UPSTREAM_DIR`, default `.upstream/OpenSWOS`, created by
+  - finds the checkout (`OPENSWOS_UPSTREAM_DIR`, default `target/cache/upstream/OpenSWOS`, created by
     `just upstream_fetch`);
   - compiles the `.c` units listed in `oracle/units.toml` with `cc` (`-DSWOS_SDL_BUILD`,
     upstream include dirs);
@@ -496,7 +497,7 @@ migrated against that submodule's commits.
 
 | Command | What it does |
 |---|---|
-| `fetch` | Clone (blobless) or update the checkout in `.upstream/OpenSWOS`, sparse-checked-out to `checkout`, at the pinned commit, with the ledger's submodules. |
+| `fetch` | Clone (blobless) or update the checkout in `target/cache/upstream/OpenSWOS`, sparse-checked-out to `checkout`, at the pinned commit, with the ledger's submodules. |
 | `sync` | Add the tracked upstream files the ledger lacks as `untriaged`. Drop entries of removed files that hold no ported work, and keep (and report) the others. |
 | `mark <globs>… [--area] [--status] [--migrated-at] [--rust]… [--function]… [--note]` | Update the matching entries. A pattern matching nothing is an error. `partial`/`done` without `--migrated-at` record the pin. |
 | `status` | Counts per area × status, migrated files upstream changed since their `migrated_at`, and "fully migrated at X" once every in-scope file is `done` at the pin or `not_ported`. |
@@ -528,8 +529,8 @@ Done. 807 upstream files classified: 192 core, 19 resource, 44 world_data, 14 te
 `sync`/`mark`. Note: `src/codecs/*` and `src/resources/*` join the workspace members with
 their first crate (cargo refuses a glob that matches nothing).
 
-- Cargo workspace, `justfile` + `just/*`, workspace lints, `.gitignore` (`.upstream/`,
-  `assets/local/`).
+- Cargo workspace, `justfile` + `just/*`, workspace lints, `.gitignore` (`assets/local/`;
+  every temporary file lives under `target/`).
 - GitHub Actions: fmt, clippy `-D warnings`, test. A separate oracle job installs libclang
   and fetches upstream. CI caches `target/cache/` between runs.
 - `CLAUDE.md` with these conventions.

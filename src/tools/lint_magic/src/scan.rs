@@ -129,7 +129,7 @@ mod tests {
         write(dir.path(), "crate/tests/it.rs", "");
         write(dir.path(), "crate/benches/b.rs", "");
         write(dir.path(), "target/debug/build.rs", "");
-        write(dir.path(), ".upstream/x.rs", "");
+        write(dir.path(), ".hidden/x.rs", "");
         write(dir.path(), "crate/readme.md", "");
         let files: Vec<PathBuf> = rust_files(dir.path())
             .expect("walked")

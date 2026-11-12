@@ -8,8 +8,9 @@ use crate::ledger::LEDGER_FILE_NAME;
 /// Environment variable that overrides the upstream checkout directory.
 pub const CHECKOUT_DIR_ENV: &str = "OPENSWOS_UPSTREAM_DIR";
 
-/// The default upstream checkout directory, relative to the workspace root.
-pub const DEFAULT_CHECKOUT_DIR: &str = ".upstream/OpenSWOS";
+/// The default upstream checkout directory, relative to the workspace root: inside
+/// `target/`, with every other generated or downloaded file (`cargo clean` removes it).
+pub const DEFAULT_CHECKOUT_DIR: &str = "target/cache/upstream/OpenSWOS";
 
 /// The workspace this tool works on.
 #[derive(Debug, Clone, PartialEq, Eq)]

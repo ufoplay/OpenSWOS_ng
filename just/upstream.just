@@ -1,4 +1,4 @@
-# The migration ledger tool (docs/PLAN.md §8). The checkout lives in .upstream/OpenSWOS
+# The migration ledger tool (docs/PLAN.md §8). The checkout lives in target/cache/upstream/OpenSWOS
 # (override: OPENSWOS_UPSTREAM_DIR).
 
 UPSTREAM_TOOL := "cargo run --quiet -p openswos_upstream --"

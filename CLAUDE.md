@@ -8,7 +8,7 @@ starting a task.
 
 - `just check_code`: fmt check, clippy `-D warnings`, `lint_magic`. Must pass.
 - `just test`: all tests.
-- `just upstream_fetch`: the upstream checkout at the pinned commit, in `.upstream/OpenSWOS`.
+- `just upstream_fetch`: the upstream checkout at the pinned commit, in `target/cache/upstream/OpenSWOS`.
 - `just upstream_status` / `just upstream_check` / `just upstream_sync`.
 - `just upstream_mark <globs...> [--area A] [--status S] [--rust PATH]... [--function F]... [--note TEXT]`.
 
