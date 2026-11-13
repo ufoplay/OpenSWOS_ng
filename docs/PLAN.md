@@ -639,7 +639,7 @@ All binary formats are the PC (DOS) game's (D9).
 | 2a ✅ | `rng` | The crate `openswos_rng` (random.c, and `Randomize2` from game_utils.c): both generators, the second one's save stack (the save that fills it halts the original: an error), a recording's fixed value. Checked against the C by random sequences of draws, reseeds, saves and restores. |
 | 2b ✅ | `math` | The crate `openswos_math` (math68k.c/h): `CalculateDeltaXAndY`, its movement scale a `DeltaScale` parameter (41/64 DOS, done with shifts; none Amiga) instead of two globals; the 68k shifts. Checked against the C on every angle in every quadrant, on any two points at any speed and scale, and on upstream's known answers. The oracle reaches a header's `static inline` functions through bindgen's wrappers. |
 | 2c ✅ | `game_style` | The crate `openswos_game_style` (dos_gameplay.c): the trait, its inventory taken from `ApplyGameStyle` (the frame rate, the `DeltaScale`, the releases whose code runs, the goalkeepers' constants, the ball's physics, the clock and stoppage timers), the five styles upstream plays and the registry (by the settings' id and by upstream's number). Checked against the C for every style, with and without the stronger keepers tweak. |
-| 3 | `core::world` | The typed, validated world built from a package (validation errors name the file and field). `core::data::GameData`. |
+| 3 ✅ | `core::world` | The typed, validated world built from a package: its identity, countries (by number and `CN_*` name, the list in its order) and competitions with the tables that tie them (qualifying groups, league blocks, career index, competition table slots, UEFA Cup berths), each record as read, its references typed handles. Checked whole, every problem reported naming its file and field: upstream's ten files at their paths, one definition per id, every reference of the right kind, every country the world's, each record of a type its file holds. `core::data::GameData`: the world, its rosters (by identity and id, the canonical check of src/team_db.c), the pool and the built-in tactics, checked together (every country's roster, no identity or id twice, every seeded team and pool player's team in the rosters). Upstream's 96/97 competition files are a valid world; with the PC game's teams, pool and upstream's tactics, valid game data. |
 | 4 | inventory | The 76 upstream world branch points and the 96/97 hardcoded facts found in the competition/career code, each mapped to a package field (`rules/…`) or a behaviour component. |
 | 5 | `world_extract` v0 | `data/worlds/1996-97/` (upstream competition JSON + the extracted tables); the assembled `target/cache/worlds/1996-97/`; the fetched, verified and completed `target/cache/worlds/2026-27/`; the re-extraction diff tests. |
 
@@ -775,3 +775,8 @@ the view's files when the view comes. It keeps its name, which notes elsewhere u
 
 None blocking. The `rules/` schemas are designed as the inventory (M4) and the
 competition/career ports (M5, M7) find each hardcoded rule.
+
+- Which team file a competition plays with (`comp.team_number`: a country's, `0xFF` for a
+  `.TMD` pool, 72 for the custom teams) is not checked by `core::world` yet: the pools and
+  the custom teams are not in packages. The inventory (M4 #4) and `world_extract` (M4 #5)
+  give them files.

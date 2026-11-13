@@ -701,6 +701,16 @@ name = "openswos_core"
 version = "0.1.0"
 dependencies = [
  "openswos_common",
+ "openswos_competitions_json_resource",
+ "openswos_poolplyr_resource",
+ "openswos_tac_resource",
+ "openswos_tactics_json_resource",
+ "openswos_team_json_resource",
+ "openswos_team_resource",
+ "openswos_test_utils",
+ "openswos_world_package_resource",
+ "thiserror",
+ "uuid",
 ]
 
 [[package]]
