@@ -1,0 +1,5 @@
+# Iteration order must be deterministic in the game logic: use BTreeMap/BTreeSet or Vec.
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "iteration order is not deterministic; use BTreeMap" },
+    { path = "std::collections::HashSet", reason = "iteration order is not deterministic; use BTreeSet" },
+]

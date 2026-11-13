@@ -275,7 +275,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/match_setup.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/match_sim.h" = { area = "core", status = "todo", notes = "results of matches nobody plays" }
 "include/match_step.h" = { area = "core", status = "todo", notes = "match engine" }
-"include/math68k.h" = { area = "core", status = "todo", notes = "determinism primitives" }
+"include/math68k.h" = { area = "core", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/math/src/lib.rs", "src/math/src/delta.rs", "src/math/src/m68k.rs", "src/math/src/tables.rs"], functions_done = ["CalculateDeltaXAndY", "M68kShiftLeft32", "M68kShiftLeft16"], notes = "openswos_math (M4 #2b): the movement scale a DeltaScale parameter (the game style's, D1) instead of _gMoveDeltaScaleNum/Den; the tables' unread sentinels left out" }
 "include/menu_baked.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/menu_data.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/menu_dialog.h" = { area = "view", status = "todo", notes = "menus/UI" }
@@ -319,7 +319,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/player_positioning.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/player_sprites.h" = { area = "view", status = "todo", notes = "rendering" }
 "include/project_identity.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
-"include/random.h" = { area = "core", status = "todo", notes = "determinism primitives" }
+"include/random.h" = { area = "core", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/rng/src/lib.rs", "src/rng/src/generator.rs", "src/rng/src/rng.rs", "src/rng/src/table.rs"], functions_done = ["Rand", "Rand2", "GetRandomWord", "SaveRand2State", "RestoreRand2State"], notes = "openswos_rng (M4 #2a): both generators, the save stack (its halt an error), the fixed value; the 257th table byte, never read, left out; the Amiga-only DETERMINISTIC_MODE and RNG dump are not ported" }
 "include/raster_bars.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "include/record_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/referee.h" = { area = "core", status = "todo", notes = "match engine" }
@@ -491,7 +491,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/game_loop.c" = { area = "core", status = "todo", notes = "match loop; mixed with frame pacing and drawing (view)" }
 "src/game_state.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/game_timers.c" = { area = "core", status = "todo", notes = "match engine" }
-"src/game_utils.c" = { area = "core", status = "todo", notes = "match engine" }
+"src/game_utils.c" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/rng/src/rng.rs"], functions_done = ["Randomize2"], notes = "Randomize2 in openswos_rng (Rng::randomize2, the seed a parameter: _randomSeed is career data); the rest is the view's" }
 "src/general_data.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/gfx.c" = { area = "view", status = "todo", notes = "rendering" }
 "src/goal_scored.c" = { area = "core", status = "todo", notes = "match engine" }
@@ -528,7 +528,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/match_setup.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/match_sim.c" = { area = "core", status = "todo", notes = "results of matches nobody plays" }
 "src/match_step.c" = { area = "core", status = "todo", notes = "match engine" }
-"src/math68k.c" = { area = "core", status = "todo", notes = "determinism primitives" }
+"src/math68k.c" = { area = "core", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/math/src/lib.rs", "src/math/src/delta.rs", "src/math/src/m68k.rs", "src/math/src/tables.rs"], functions_done = ["CalculateDeltaXAndY", "M68kShiftLeft32", "M68kShiftLeft16"], notes = "openswos_math (M4 #2b): the movement scale a DeltaScale parameter (the game style's, D1) instead of _gMoveDeltaScaleNum/Den; the tables' unread sentinels left out" }
 "src/menu_bg_image_script_cmds.inc" = { area = "view", status = "todo", notes = "menus/UI" }
 "src/menu_color_text_script_cmds.inc" = { area = "view", status = "todo", notes = "menus/UI" }
 "src/menu_data.c" = { area = "view", status = "todo", notes = "menus/UI" }
@@ -610,7 +610,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/player_positioning.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/player_sprites.c" = { area = "view", status = "todo", notes = "rendering" }
 "src/quick_access.c" = { area = "view", status = "todo", notes = "menus/UI" }
-"src/random.c" = { area = "core", status = "todo", notes = "determinism primitives" }
+"src/random.c" = { area = "core", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/rng/src/lib.rs", "src/rng/src/generator.rs", "src/rng/src/rng.rs", "src/rng/src/table.rs"], functions_done = ["Rand", "Rand2", "GetRandomWord", "SaveRand2State", "RestoreRand2State"], notes = "openswos_rng (M4 #2a): both generators, the save stack (its halt an error), the fixed value; the 257th table byte, never read, left out; the Amiga-only DETERMINISTIC_MODE and RNG dump are not ported" }
 "src/referee.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/render_data.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/replay_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }

@@ -1,0 +1,19 @@
+[package]
+name = "openswos_rng"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "The OpenSWOS_ng random numbers: the original game's two generators, bit-exact"
+readme = "readme.md"
+
+[dependencies]
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+
+[lints]
+workspace = true

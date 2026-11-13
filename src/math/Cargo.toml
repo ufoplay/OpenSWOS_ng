@@ -1,0 +1,19 @@
+[package]
+name = "openswos_math"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "The OpenSWOS_ng integer math: the original game's 68000 arithmetic and movement directions, bit-exact"
+readme = "readme.md"
+
+[dependencies]
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+
+[lints]
+workspace = true

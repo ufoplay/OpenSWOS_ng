@@ -1,0 +1,86 @@
+# The upstream C the oracle compiles (docs/PLAN.md §7.3): files of the pinned checkout,
+# unchanged, built as upstream's SDL build builds them (its Makefile's `CFLAGS` and defaults,
+# 64-bit as its `X86_64=1`, macOS and aarch64 builds).
+
+[build]
+# The dialect and code generation (`CFLAGS`). `-fexceptions` is the oracle's own: a Rust
+# panic (the stub of `PanicHaltLoop`) unwinds through the C frames.
+flags = ["-std=gnu11", "-fno-strict-aliasing", "-fno-builtin", "-fexceptions"]
+# `-O2`, as upstream.
+optimization = 2
+# The defines at the Makefile's defaults (`DEBUG_FLAGS`, `DATA_FLAGS`).
+defines = [
+    "_FILE_OFFSET_BITS=64",
+    "SWOS_TEST_RULES=1",
+    "SWOS_WORLDS=1",
+    "SWOS_ONLINE_CLIENT=0",
+    "SWOS_SAVE_FORMAT_JSON=1",
+    "SWOS_SAVE_FORMAT_JSON_VERIFY=1",
+    "COMPETITION_DATA_C=1",
+    "TACTICS_DATA_C=1",
+    "FIXTURE_DATA_C=1",
+    "SIMULATION_DATA_C=1",
+    "PLAYER_DATA_C=1",
+    "RENDER_DATA_C=1",
+    "PALETTE_DATA_C=1",
+    "STRINGS_DATA_C=1",
+    "GENERAL_DATA_C=1",
+]
+# Force-included before every unit (`-include`): it defines `SWOS_SDL_BUILD`.
+include = "include/swos_platform.h"
+include_dirs = ["src", "include"]
+
+# The units the tests call: their functions and the globals they read and write, bound by
+# bindgen into `ffi::<file stem>`.
+
+[[unit]]
+path = "src/random.c"
+functions = ["Rand", "Rand2", "GetRandomWord", "SaveRand2State", "RestoreRand2State"]
+variables = [
+    "_kRandomTable",
+    "_seed",
+    "_randXorIndex",
+    "_randXorKey",
+    "_savedRandState",
+    "_savedRandStatePtr",
+]
+
+# `Randomize2` only: the file's other functions are the view's.
+[[unit]]
+path = "src/game_utils.c"
+functions = ["Randomize2"]
+variables = []
+
+[[unit]]
+path = "src/math68k.c"
+functions = ["CalculateDeltaXAndY"]
+variables = []
+
+# The headers whose `static inline` functions the tests call, through the wrappers bindgen
+# writes for them (compiled with the units).
+
+[[header]]
+path = "include/math68k.h"
+functions = ["M68kShiftLeft32", "M68kShiftLeft16"]
+
+# Upstream's data: its globals and tables (the SWOS2.s data section, in C), linked as the units
+# need them. What they reference and the oracle does not compile is defined in Rust
+# (`ffi::stubs`).
+
+[[data]]
+path = "src/swos_data_bulk_imports.c"
+
+[[data]]
+path = "src/swos_data_typed_stubs.c"
+
+[[data]]
+path = "src/swos_globals.c"
+
+[[data]]
+path = "src/strings_data.c"
+
+[[data]]
+path = "src/swos_amiga_strings.c"
+
+[[data]]
+path = "src/swos_amiga_data_imports.c"

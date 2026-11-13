@@ -98,10 +98,12 @@ OpenSWOS_ng/
 ├── docs/
 └── src/
     ├── common/             # openswos_common
+    ├── rng/                # openswos_rng — the original's two generators (random.c)
+    ├── math/               # openswos_math — 68k arithmetic, directions and steps (math68k.c)
     ├── resources/<fmt>/    # openswos_<fmt>_resource — one crate per file format
     ├── core/               # openswos_core
     ├── test_utils/         # publish = false; includes the download cache (§6)
-    ├── oracle/             # publish = false; dev-dependency only; compiles upstream C; the ONLY crate with unsafe (D3)
+    ├── oracle/             # publish = false; test-only; compiles upstream C; the ONLY crate with unsafe (D3)
     └── tools/
         ├── upstream/       # migration ledger tool (§8)
         └── world_extract/  # builds/completes world packages from upstream's tables (§5.2)
@@ -116,12 +118,14 @@ target/cache/               # all temporary data lives under target/ (`cargo cle
 
 **Dependency rules**
 
-- `common` has no workspace dependencies.
+- `common`, `rng` and `math` have no workspace dependencies.
 - `resources/*` depend on `common` (a resource may also depend on another resource for a
   shared record such as `TeamFile`).
-- `core` depends on `common` and `resources/*`.
-- `oracle` and `test_utils` appear only in `[dev-dependencies]` (and in `world_extract`).
-  No shipped crate depends on `oracle`.
+- `core` depends on `common`, `rng`, `math` and `resources/*`. `rng` and `math` follow
+  `core`'s rules (no globals, no floats, no hash-ordered collections).
+- `test_utils` appears only in `[dev-dependencies]` (and in `world_extract`). `oracle` is
+  never shipped: the differential tests live in its own `tests/` and depend on the port
+  (§7.3), and `world_extract` links it to read upstream's compiled tables (§5.2).
 
 ### `common`
 
@@ -136,10 +140,12 @@ target/cache/               # all temporary data lives under target/ (`cargo cle
 
 ### `core` (module map)
 
+The RNG (`Rand`/`Rand2`, the save stack: random.c) and the math (68k arithmetic, the sine
+and angle tables, `CalculateDeltaXAndY`: math68k.c) are the crates `openswos_rng` and
+`openswos_math`. The 16.16 fixed-point type joins `math` with its first user, the sprites.
+
 ```
 core/src/
-  rng.rs                Rand / Rand2 + saved state             (random.c)
-  math/                 fixed point 16.16, sine table, 68k arithmetic semantics (math68k.c)
   game_style/           trait GameStyle + Amiga50Hz, Dos70Hz   (ApplyGameStyle, dos_gameplay.c)
   world/                the typed, validated World built from a world package: countries,
                         clubs, competitions, stages, outcomes, calendar, season-end steps,
@@ -344,8 +350,8 @@ pub const LEFT_TOUCHLINE_X: GameUnits = GameUnits(81);
 - Integer widths mirror the C. Values wrap only where the original wraps, and only through
   explicit `wrapping_*` calls or a `Word` newtype. Any other overflow is a bug: debug
   builds panic on it, and the oracle catches the difference.
-- 68k semantics (DIVS truncation, ASR, sign extension, SWAP…) live in `math::m68k`, with
-  tests.
+- 68k semantics (DIVS truncation, ASR, sign extension, SWAP…) live in `openswos_math`,
+  with tests.
 - RNG call order is behaviour, including the crowd, advert and animation consumers (§3).
 - **Quirks are preserved.** Original bugs stay, commented `Faithful to the original:` with
   a reference. If a quirk depends on the world, it becomes a named behaviour component or
@@ -424,15 +430,27 @@ rules library submodule). The oracle contains no handwritten C.
 - `build.rs`:
   - finds the checkout (`OPENSWOS_UPSTREAM_DIR`, default `target/cache/upstream/OpenSWOS`, created by
     `just upstream_fetch`);
-  - compiles the `.c` units listed in `oracle/units.toml` with `cc` (`-DSWOS_SDL_BUILD`,
-    upstream include dirs);
-  - generates FFI types with `bindgen`. bindgen needs libclang on dev machines and CI.
+  - compiles the `.c` units listed in `oracle/units.toml` with `cc`, as upstream's SDL build
+    does (its Makefile's flags and defaults, `-include include/swos_platform.h` for
+    `SWOS_SDL_BUILD`, LP64), plus upstream's data files, which the linker pulls in as the
+    units need them;
+  - generates FFI types with `bindgen` (every function `C-unwind`). bindgen needs libclang
+    on dev machines and CI;
+  - binds the headers listed in `units.toml` without compiling them: their `static inline`
+    functions are reached through the wrappers bindgen generates, compiled with the units;
+  - without the checkout, builds the crate unavailable (`cfg(oracle_unavailable)`): its API
+    and tests are compiled out and a test reports the skip (a failure in strict mode), so
+    the main CI job builds on every OS without C.
 - Every extern a compiled unit references but we do not compile is defined in Rust
-  (`#[unsafe(no_mangle)]` statics/functions in `oracle/src/stubs/`). `unsafe` stays inside
+  (`#[unsafe(no_mangle)]` statics/functions in `oracle/src/ffi/stubs.rs`). `unsafe` stays inside
   the crate's FFI module, and the crate exposes only safe functions.
 - C globals are process-wide. Each oracle test takes a global `Mutex` guard, which resets
   the touched globals.
-- Each ported function gets `core/tests/oracle_<unit>.rs`:
+- Upstream's halt (`PanicHaltLoop`) is a Rust panic unwinding through the C (compiled with
+  `-fexceptions`); the safe wrapper returns its reason code. A wrapper never makes a call
+  upstream would make undefined: it returns an error instead.
+- Each ported function gets `src/oracle/tests/<unit>.rs` (the oracle dev-depends on the
+  port: the unavailable cfg is visible to the oracle's own targets only):
   1. generate the state and arguments;
   2. write them into the C globals;
   3. call the C function and read back the resulting state;
@@ -486,7 +504,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 
 [files]
 "src/netplay.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
-"src/random.c" = { area = "core", status = "done", migrated_at = "ec2ed2be…", rust = ["src/core/src/rng.rs"] }
+"src/random.c" = { area = "core", status = "done", migrated_at = "ec2ed2be…", rust = ["src/rng/src/rng.rs"] }
 ```
 
 - `area`: `untriaged | core | resource | world_data | test_data | view | out_of_scope`.
@@ -604,35 +622,18 @@ All binary formats are the PC (DOS) game's (D9).
 | 14a ✅ | `settings_ini` | the file | The file kept whole (its bytes: the game's reader and its writer read lines by different rules). What the game reads: inih's rules ported (comments, inline comments after whitespace, `=`/`:`, continuation lines, the byte order mark, its 199-byte reads and 49-byte names, errors read past). How it saves (`Settings_Save`), from a table of settings (section, key, comment, value, kept by the player or not): the writer's own line rules (256-byte reads, 400 lines, `=` only), a file left alone when nothing differs, changed values rewritten after their `key=`, second occurrences dropped, missing keys at the end of their section's first block, missing sections after a comment; the fresh file (`settings_write_full`). Your `SWOS.ini` round-trips, reads without an error and saves unchanged with its own values. |
 | 14b ✅ | `settings_ini` | the settings | The game's sections typed (`[gameplay]`, `[replays]`, `[testing]`, `[general]`, `[mods]`, `[tweaks]`, `[options]`), their defaults `main.c`'s: the handler's reading (case-insensitive but the tweaks' keys, values the game ignores left in the file, texts cut to its buffers), upstream's table for them (`settings_build`'s 36 rows in order, comments verbatim, guarded against the checkout) and `Settings_Save`'s baseline. The view's, netplay's and the arcade's sections stay in the file as read. Upstream's self-tests pass; your `SWOS.ini` (an older build's: 22 of the keys missing) saves as upstream would, every line kept and the missing keys added. |
 
-### M3 — View resources (readers/writers only)
-
-This milestone can move after M5–M7 if you want the logic sooner.
-
-| Crate | File(s) |
-|---|---|
-| `dos_image_256` | `*.256` (title, stadium, fill, loader screens + palette) |
-| `dos_sprite_bank` | sprite `.DAT` banks (`CHARSET`, `SPRITE`, `SCORE`, `TEAM1-3`, `BENCH`, `GOAL1`) |
-| `pitch_blk`, `pitch_dat` | `PITCHn.BLK` tiles / `PITCHn.DAT` map (SWOS 2020's pitches use the same formats) |
-| `dos_sample` | `sound_dos/**.raw` |
-| `xmi`, `adlib_bank` | `.xmi` music, `.ad` instrument bank |
-| `menus_json`, `translations_json` | upstream UI JSON |
-
 ### M4 — Oracle, foundations, world packages v0
 
-- The `oracle` crate (build.rs, bindgen, Rust stubs, global lock), proven on simple
-  self-contained units first.
-- `rng`, `math`, and `game_style`: the trait, `Amiga50Hz`, `Dos70Hz` and the registry, with
-  the trait's method inventory taken from `ApplyGameStyle`.
-- `core::world`: the typed, validated world built from a package (validation errors name
-  the file and field). `core::data::GameData`.
-- Inventory: the 76 upstream world branch points and the 96/97 hardcoded facts found in
-  the competition/career code, each mapped to a package field (`rules/…`) or a behaviour
-  component.
-- `world_extract` v0:
-  - `data/worlds/1996-97/` (upstream competition JSON + the extracted tables);
-  - the assembled `target/cache/worlds/1996-97/`;
-  - the fetched, verified and completed `target/cache/worlds/2026-27/`;
-  - the re-extraction diff tests.
+| # | Unit | Notes |
+|---|---|---|
+| 1 ✅ | `oracle` | The crate (build.rs: `units.toml`, cc with upstream's SDL flags, bindgen; Rust stubs; the global lock; halts unwinding back through the C), proven on `src/random.c`: its two generators, the save stack and its halt, with upstream's data files linked as needed. Unavailable without the checkout, so CI's main job builds on every OS; a CI job of its own runs `just test_oracle`. |
+| 2 | `rng`, `math`, `game_style` | The foundations, with their oracle proptests. In steps: |
+| 2a ✅ | `rng` | The crate `openswos_rng` (random.c, and `Randomize2` from game_utils.c): both generators, the second one's save stack (the save that fills it halts the original: an error), a recording's fixed value. Checked against the C by random sequences of draws, reseeds, saves and restores. |
+| 2b ✅ | `math` | The crate `openswos_math` (math68k.c/h): `CalculateDeltaXAndY`, its movement scale a `DeltaScale` parameter (41/64 DOS, done with shifts; none Amiga) instead of two globals; the 68k shifts. Checked against the C on every angle in every quadrant, on any two points at any speed and scale, and on upstream's known answers. The oracle reaches a header's `static inline` functions through bindgen's wrappers. |
+| 2c | `game_style` | The trait, `Amiga50Hz`, `Dos70Hz` and the registry, with the trait's method inventory taken from `ApplyGameStyle`; each style supplies its `DeltaScale`. |
+| 3 | `core::world` | The typed, validated world built from a package (validation errors name the file and field). `core::data::GameData`. |
+| 4 | inventory | The 76 upstream world branch points and the 96/97 hardcoded facts found in the competition/career code, each mapped to a package field (`rules/…`) or a behaviour component. |
+| 5 | `world_extract` v0 | `data/worlds/1996-97/` (upstream competition JSON + the extracted tables); the assembled `target/cache/worlds/1996-97/`; the fetched, verified and completed `target/cache/worlds/2026-27/`; the re-extraction diff tests. |
 
 ### M5 — Competitions (generic engine)
 
@@ -693,6 +694,20 @@ This milestone can move after M5–M7 if you want the logic sooner.
 Order rationale: competitions (mostly pure functions) mature the oracle tooling and the
 world model before the stateful match engine. The career needs both. Swapping M5 and M6
 also works.
+
+### M3 — View resources (readers/writers only)
+
+Done last (decided 2026-11-13): the game logic and its headless integration first (M4–M8),
+the view's files when the view comes. It keeps its name, which notes elsewhere use.
+
+| Crate | File(s) |
+|---|---|
+| `dos_image_256` | `*.256` (title, stadium, fill, loader screens + palette) |
+| `dos_sprite_bank` | sprite `.DAT` banks (`CHARSET`, `SPRITE`, `SCORE`, `TEAM1-3`, `BENCH`, `GOAL1`) |
+| `pitch_blk`, `pitch_dat` | `PITCHn.BLK` tiles / `PITCHn.DAT` map (SWOS 2020's pitches use the same formats) |
+| `dos_sample` | `sound_dos/**.raw` |
+| `xmi`, `adlib_bank` | `.xmi` music, `.ad` instrument bank |
+| `menus_json`, `translations_json` | upstream UI JSON |
 
 ---
 

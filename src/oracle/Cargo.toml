@@ -1,0 +1,40 @@
+[package]
+name = "openswos_oracle"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Test-only: upstream OpenSWOS's C, compiled unchanged, behind a safe API (docs/PLAN.md §7.3)"
+readme = "readme.md"
+publish = false
+
+[dependencies]
+thiserror = { workspace = true }
+
+[build-dependencies]
+bindgen = { workspace = true }
+cc = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+
+[dev-dependencies]
+# The port, checked against upstream's C in `tests/`.
+openswos_math = { workspace = true }
+openswos_rng = { workspace = true }
+openswos_test_utils = { workspace = true }
+proptest = { workspace = true }
+
+# The workspace's lints, but `unsafe_code` denied rather than forbidden: the FFI module, and
+# only it, allows it (D3).
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+unwrap_used = "deny"
+wildcard_enum_match_arm = "deny"
+cast_possible_truncation = "deny"
+cast_sign_loss = "deny"
+cast_possible_wrap = "deny"

@@ -3,7 +3,10 @@
 members = [
     "src/common",
     "src/core",
+    "src/math",
+    "src/oracle",
     "src/resources/*",
+    "src/rng",
     "src/test_utils",
     "src/tools/*",
 ]
@@ -21,6 +24,8 @@ repository = "https://github.com/ufoplay/OpenSWOS_ng"
 # Core
 openswos_common = { path = "src/common", version = "0.1.0" }
 openswos_core = { path = "src/core", version = "0.1.0" }
+openswos_math = { path = "src/math", version = "0.1.0" }
+openswos_rng = { path = "src/rng", version = "0.1.0" }
 openswos_test_utils = { path = "src/test_utils" }
 
 # Resources
@@ -43,7 +48,9 @@ openswos_tmd_resource = { path = "src/resources/tmd", version = "0.1.0" }
 openswos_world_package_resource = { path = "src/resources/world_package", version = "0.1.0" }
 
 # The player flags of the team records.
+bindgen = "0.72"
 bitflags = { version = "2", features = ["serde"] }
+cc = "1"
 clap = { version = "4", features = ["derive"] }
 # Decompresses the swos-port match recordings (.RGD.gz); the zip crate's backend.
 flate2 = { version = "1", default-features = false, features = ["zlib-rs"] }

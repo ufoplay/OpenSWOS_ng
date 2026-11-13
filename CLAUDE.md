@@ -19,7 +19,7 @@ starting a task.
 - **No magic numbers.** Every literal other than `0`/`1` is a `const` with a doc comment
   giving its meaning, unit and upstream provenance. Checked during review.
 - **Idiomatic port.** Enums with `TryFrom<u8>` instead of ints, exhaustive matches (no
-  `_` arm on enums), newtypes. In `core`: no globals, no floats, no `HashMap`/`HashSet`.
+  `_` arm on enums), newtypes. In `core`, `rng` and `math`: no globals, no floats, no `HashMap`/`HashSet`.
 - **Bit-exact with upstream.** Integer widths mirror the C and wrap only where the C wraps.
   RNG call order is preserved. Quirks are kept and commented `Faithful to the original:`.
 - **Rules are data (D6).** `core` holds no world ids and no `if original` branches. A rule
