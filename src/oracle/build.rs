@@ -60,7 +60,11 @@ struct Build {
 struct Unit {
     path: String,
     functions: Vec<String>,
+    /// Its globals, by name: bound as `static mut`.
     variables: Vec<String>,
+    /// The constants it sees (enumerators, macros), by pattern.
+    #[serde(default)]
+    constants: Vec<String>,
 }
 
 /// A header whose `static inline` functions the tests call: bound, not compiled (its
@@ -135,6 +139,7 @@ fn main() {
             path: &unit.path,
             functions: &unit.functions,
             variables: &unit.variables,
+            constants: &unit.constants,
             wrapped: false,
         };
         bind(&upstream, &units.build, &binding, &out);
@@ -144,6 +149,7 @@ fn main() {
             path: &header.path,
             functions: &header.functions,
             variables: &[],
+            constants: &[],
             wrapped: true,
         };
         let wrappers = bind(&upstream, &units.build, &binding, &out)
@@ -158,6 +164,7 @@ struct Binding<'a> {
     path: &'a str,
     functions: &'a [String],
     variables: &'a [String],
+    constants: &'a [String],
     /// Whether its `static` functions are wrapped: a header's are (the wrappers include the
     /// file, so a unit's cannot be).
     wrapped: bool,
@@ -228,13 +235,39 @@ fn bind(upstream: &Path, build: &Build, binding: &Binding<'_>, out: &Path) -> Op
     for function in binding.functions {
         builder = builder.allowlist_function(format!("^{function}$"));
     }
-    for variable in binding.variables {
+    for variable in binding.variables.iter().chain(binding.constants) {
         builder = builder.allowlist_var(format!("^{variable}$"));
     }
-    builder
+    let code = builder
         .generate()
         .unwrap_or_else(|error| panic!("bindgen on {}: {error}", source.display()))
-        .write_to_file(out.join(format!("{name}.rs")))
-        .expect("the bindings written");
+        .to_string();
+    let code = as_statics(&code, binding.variables)
+        .unwrap_or_else(|variable| panic!("{variable} is not a global of {}", source.display()));
+    fs::write(out.join(format!("{name}.rs")), code).expect("the bindings written");
     Some(wrappers.with_extension("c")).filter(|wrappers| binding.wrapped && wrappers.is_file())
+}
+
+/// `code` with each of `variables` declared a `static mut`. bindgen declares a global the
+/// unit defines with a value it can evaluate as a Rust `const` holding that value; it is
+/// redeclared as the global it is, bindgen's type kept. Each variable must be declared one
+/// way or the other: its name is returned otherwise.
+fn as_statics(code: &str, variables: &[String]) -> Result<String, String> {
+    let mut code = code.to_owned();
+    for variable in variables {
+        let constant = format!("pub const {variable}: ");
+        let declared = format!("pub static mut {variable}: ");
+        if let Some(start) = code.find(&constant) {
+            let end = start + code[start..].find(';').ok_or_else(|| variable.clone())?;
+            let declaration = &code[start + constant.len()..end];
+            let (ty, _value) = declaration
+                .split_once(" = ")
+                .ok_or_else(|| variable.clone())?;
+            let global = format!("unsafe extern \"C\" {{\n    {declared}{ty};\n}}");
+            code.replace_range(start..=end, &global);
+        } else if !code.contains(&declared) {
+            return Err(variable.clone());
+        }
+    }
+    Ok(code)
 }

@@ -1,6 +1,6 @@
 //! The externs the compiled units reference that the oracle does not compile, defined in Rust
-//! with their upstream values (docs/PLAN.md §7.3). Each global is reset by [`reset`]; the
-//! functions are never called by the functions the tests call.
+//! with their upstream values (docs/PLAN.md §7.3). Each global is reset by [`reset`]. A
+//! function stub records what the tests need to see, or panics as upstream halts.
 
 use std::ffi::c_int;
 use std::panic::panic_any;
@@ -31,14 +31,20 @@ pub(crate) static mut _randomSeed: u16 = 0;
 #[unsafe(no_mangle)]
 pub(crate) static mut _replayFixedRandom: c_int = NO_FIXED_RANDOM;
 
-/// The movement scale's numerator (upstream src/dos_gameplay.c `_gMoveDeltaScaleNum`: 1, the
-/// Amiga's, until `ApplyGameStyle`).
+/// Whether the DOS release's code runs (upstream src/dos_graphics.c `_gDosGameplay`, set by
+/// `Gameplay_SetStyle`).
 #[unsafe(no_mangle)]
-pub(crate) static mut _gMoveDeltaScaleNum: i16 = 1;
+pub(crate) static mut _gDosGameplay: c_int = 0;
 
-/// The movement scale's denominator (`_gMoveDeltaScaleDen`).
-#[unsafe(no_mangle)]
-pub(crate) static mut _gMoveDeltaScaleDen: i16 = 1;
+/// [`FORMATIONS`] before `TacticsData_SelectRelease` is called.
+pub(crate) const NO_FORMATIONS: c_int = -1;
+
+/// The argument `TacticsData_SelectRelease` was last called with: 1 for the DOS release's
+/// formations, 0 for the Amiga's, or [`NO_FORMATIONS`].
+pub(crate) static mut FORMATIONS: c_int = NO_FORMATIONS;
+
+/// The tweaks `Tweaks_On` says are on (upstream include/tweaks.h's bits).
+pub(crate) static mut TWEAKS: u32 = 0;
 
 /// Why the game halted (upstream `_panicReasonCode`, read by `PanicHaltLoop`).
 #[unsafe(no_mangle)]
@@ -56,6 +62,22 @@ pub(crate) extern "C-unwind" fn PanicHaltLoop() -> ! {
     panic_any(UpstreamPanic(unsafe { _panicReasonCode }))
 }
 
+/// Upstream points the formations the DOS release re-tuned at its coverage or the Amiga's
+/// (src/tactics_data.c): the stub records which.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn TacticsData_SelectRelease(dos: c_int) {
+    // SAFETY: a plain write to a global the lock's holder owns.
+    unsafe { FORMATIONS = dos };
+}
+
+/// Whether `tweak` is on (upstream src/tweaks.c, which also turns every tweak off online and
+/// in the rigs): as [`TWEAKS`] says.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn Tweaks_On(tweak: u32) -> i32 {
+    // SAFETY: a plain read of a global the lock's holder owns.
+    i32::from(unsafe { TWEAKS } & tweak != 0)
+}
+
 /// Resets the stubbed globals to upstream's values.
 pub(crate) fn reset() {
     // SAFETY: plain writes to globals the lock's holder owns.
@@ -65,8 +87,9 @@ pub(crate) fn reset() {
         _randXorKey2 = 0;
         _randomSeed = 0;
         _replayFixedRandom = NO_FIXED_RANDOM;
-        _gMoveDeltaScaleNum = 1;
-        _gMoveDeltaScaleDen = 1;
+        _gDosGameplay = 0;
+        FORMATIONS = NO_FORMATIONS;
+        TWEAKS = 0;
         _panicReasonCode = 0;
     }
 }

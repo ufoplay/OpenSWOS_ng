@@ -13,8 +13,11 @@ differential tests live in its own `tests/`, which depend on the port.
   `-std=gnu11 -fno-strict-aliasing -fno-builtin -O2`, the data modules, `SWOS_TEST_RULES`,
   `SWOS_WORLDS`, the JSON saves, `-include include/swos_platform.h`), 64-bit as upstream's
   `X86_64=1`, macOS and aarch64 builds, plus `-fexceptions` (below);
-- the units the tests call, each with the functions and globals bindgen binds (every
-  function with the `C-unwind` ABI);
+- the units the tests call, each with the functions bindgen binds (every one with the
+  `C-unwind` ABI), its globals by name and the constants it sees (enumerators, macros) by
+  pattern. A global the unit defines with a value bindgen can evaluate would come out a
+  Rust `const`: `build.rs` declares it the `static mut` it is, bindgen's type kept, and
+  fails on a listed global that is not there;
 - the headers whose `static inline` functions the tests call: bound, not compiled. bindgen
   writes a wrapper for each function, compiled with the units;
 - upstream's data files (its globals and tables), which the linker pulls in as the units need
@@ -42,7 +45,7 @@ reports a skip (a failure under `OPENSWOS_STRICT_TEST_DATA=1`).
 
 ## The units
 
-The FFI module has one module a unit (`ffi::rng`, `ffi::math`) over bindgen's declarations
+The FFI module has one module a unit (`ffi::rng`, `ffi::math`, `ffi::style`) over bindgen's declarations
 (`ffi::bindings::<file name>`, e.g. `random_c`, `math68k_h`).
 
 | unit | API | what |
@@ -51,6 +54,7 @@ The FFI module has one module a unit (`ffi::rng`, `ffi::math`) over bindgen's de
 | `src/game_utils.c` | `rng` | `Randomize2`, the session's seed in `_randomSeed` |
 | `src/math68k.c` | `math` | `CalculateDeltaXAndY`, the movement scale in its two globals |
 | `include/math68k.h` (header) | `math` | `M68kShiftLeft32`, `M68kShiftLeft16` |
+| `src/dos_gameplay.c` | `style` | `Gameplay_SetStyle`, `ApplyGameStyle`, and everything they set: the style's flags, frame rate and name, the formations selected (the stub of `TacticsData_SelectRelease` records it), the keepers', ball's and timers' constants, the movement scale; the tweaks `Tweaks_On` reports (stubbed) |
 
 ## Tests
 
@@ -63,3 +67,6 @@ The FFI module has one module a unit (`ffi::rng`, `ffi::math`) over bindgen's de
   all.
 - `tests/math.rs`, `openswos_math`: every angle of the table in every quadrant, at several
   speeds and the styles' scales; any two points at any speed and scale; both shifts.
+- `tests/game_style.rs`, `openswos_game_style`: every style, with and without the stronger
+  keepers, sets what upstream sets; a number upstream does not know plays the default; the
+  lock resets to the Amiga's style.

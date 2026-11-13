@@ -1,9 +1,9 @@
 //! src/math68k.c and include/math68k.h. The unit has no globals of its own: the movement
-//! scale it reads is stubbed.
+//! scale it reads is src/dos_gameplay.c's.
 
+use super::bindings::dos_gameplay_c::{_gMoveDeltaScaleDen, _gMoveDeltaScaleNum};
 use super::bindings::math68k_c::CalculateDeltaXAndY;
 use super::bindings::math68k_h::{M68kShiftLeft16, M68kShiftLeft32};
-use super::stubs;
 use crate::math::{DeltaCall, Movement, Undefined};
 
 /// The largest numerator of the movement scale the oracle calls with: a step is at most 2²²
@@ -34,8 +34,8 @@ pub(crate) fn calculate_delta_x_and_y(call: DeltaCall) -> Result<Movement, Undef
     // SAFETY: writes the scale, globals the lock's holder owns; the call is defined for these
     // arguments, its tables indexed within them, and writes the two steps it is given.
     let direction = unsafe {
-        stubs::_gMoveDeltaScaleNum = scale_numerator;
-        stubs::_gMoveDeltaScaleDen = scale_denominator;
+        _gMoveDeltaScaleNum = scale_numerator;
+        _gMoveDeltaScaleDen = scale_denominator;
         CalculateDeltaXAndY(
             dest_x,
             dest_y,

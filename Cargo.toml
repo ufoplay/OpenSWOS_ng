@@ -3,6 +3,7 @@
 members = [
     "src/common",
     "src/core",
+    "src/game_style",
     "src/math",
     "src/oracle",
     "src/resources/*",
@@ -24,6 +25,7 @@ repository = "https://github.com/ufoplay/OpenSWOS_ng"
 # Core
 openswos_common = { path = "src/common", version = "0.1.0" }
 openswos_core = { path = "src/core", version = "0.1.0" }
+openswos_game_style = { path = "src/game_style", version = "0.1.0" }
 openswos_math = { path = "src/math", version = "0.1.0" }
 openswos_rng = { path = "src/rng", version = "0.1.0" }
 openswos_test_utils = { path = "src/test_utils" }

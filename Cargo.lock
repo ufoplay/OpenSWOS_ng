@@ -704,6 +704,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "openswos_game_style"
+version = "0.1.0"
+dependencies = [
+ "openswos_math",
+ "openswos_settings_ini_resource",
+]
+
+[[package]]
 name = "openswos_hil_resource"
 version = "0.1.0"
 dependencies = [
@@ -741,6 +749,7 @@ version = "0.1.0"
 dependencies = [
  "bindgen",
  "cc",
+ "openswos_game_style",
  "openswos_math",
  "openswos_rng",
  "openswos_test_utils",

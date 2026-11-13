@@ -11,7 +11,7 @@ later.
 
 | # | Decision |
 |---|---|
-| D1 | Both game styles are ported: Amiga 50 Hz and DOS 70 Hz. They are modelled as a **`GameStyle` trait with two implementations**, not as constant tables, so new styles can be added later (§5.3). |
+| D1 | The game styles are ported: the Amiga's 50 Hz and the DOS game's 70 Hz, and the three SWOS 2020 styles upstream plays (XBOX and Amiga at 60 Hz, Moon). They are modelled as a **`GameStyle` trait with an implementation each**, not as constant tables, so new styles can be added later (§5.3). |
 | D2 | A **small, curated set of original game files** may be committed under `assets/` for tests (§6). |
 | D3 | The test-only `oracle` crate is the **only** crate allowed to contain `unsafe` (FFI to upstream C). Every other crate is `forbid(unsafe_code)`. |
 | D4 | Saves are **compatible with OpenSWOS's JSON saves**: we read them, and we write them byte-identically, so upstream's golden careers become an oracle (§7.4). |
@@ -100,6 +100,7 @@ OpenSWOS_ng/
     ├── common/             # openswos_common
     ├── rng/                # openswos_rng — the original's two generators (random.c)
     ├── math/               # openswos_math — 68k arithmetic, directions and steps (math68k.c)
+    ├── game_style/         # openswos_game_style — trait GameStyle and the styles (dos_gameplay.c)
     ├── resources/<fmt>/    # openswos_<fmt>_resource — one crate per file format
     ├── core/               # openswos_core
     ├── test_utils/         # publish = false; includes the download cache (§6)
@@ -118,11 +119,12 @@ target/cache/               # all temporary data lives under target/ (`cargo cle
 
 **Dependency rules**
 
-- `common`, `rng` and `math` have no workspace dependencies.
+- `common`, `rng` and `math` have no workspace dependencies; `game_style` depends on `math`.
 - `resources/*` depend on `common` (a resource may also depend on another resource for a
   shared record such as `TeamFile`).
-- `core` depends on `common`, `rng`, `math` and `resources/*`. `rng` and `math` follow
-  `core`'s rules (no globals, no floats, no hash-ordered collections).
+- `core` depends on `common`, `rng`, `math`, `game_style` and `resources/*`. `rng`, `math`
+  and `game_style` follow `core`'s rules (no globals, no floats, no hash-ordered
+  collections).
 - `test_utils` appears only in `[dev-dependencies]` (and in `world_extract`). `oracle` is
   never shipped: the differential tests live in its own `tests/` and depend on the port
   (§7.3), and `world_extract` links it to read upstream's compiled tables (§5.2).
@@ -140,13 +142,14 @@ target/cache/               # all temporary data lives under target/ (`cargo cle
 
 ### `core` (module map)
 
-The RNG (`Rand`/`Rand2`, the save stack: random.c) and the math (68k arithmetic, the sine
-and angle tables, `CalculateDeltaXAndY`: math68k.c) are the crates `openswos_rng` and
-`openswos_math`. The 16.16 fixed-point type joins `math` with its first user, the sprites.
+The RNG (`Rand`/`Rand2`, the save stack: random.c), the math (68k arithmetic, the sine
+and angle tables, `CalculateDeltaXAndY`: math68k.c) and the game styles (trait `GameStyle`
+and its implementations: `ApplyGameStyle`, dos_gameplay.c) are the crates `openswos_rng`,
+`openswos_math` and `openswos_game_style`. The 16.16 fixed-point type joins `math` with its
+first user, the sprites.
 
 ```
 core/src/
-  game_style/           trait GameStyle + Amiga50Hz, Dos70Hz   (ApplyGameStyle, dos_gameplay.c)
   world/                the typed, validated World built from a world package: countries,
                         clubs, competitions, stages, outcomes, calendar, season-end steps,
                         access lists, coefficients, career rules, national teams, limits
@@ -309,14 +312,16 @@ The principles:
 
 ### 5.3 Variation points are traits (D1)
 
-- `trait GameStyle` holds every constant and behaviour that differs between Amiga 50 Hz
-  and DOS 70 Hz. Examples: ball physics, goalkeeper timings, match-clock thresholds, the
-  per-frame movement speed factor, formation selection. The inventory comes from
-  `ApplyGameStyle` and `docs/DOS_GAMEPLAY.md`.
-- The trait is object-safe. The match holds a `&'static dyn GameStyle`. `Amiga50Hz` and
-  `Dos70Hz` are stateless unit structs in `core/src/game_style/`. A registry maps a
-  stable string id (stored in settings and saves) to an implementation, so a new style
-  means a new impl plus one registry line.
+- `trait GameStyle` holds every constant and behaviour that differs between the styles.
+  Examples: ball physics, goalkeeper timings, match-clock thresholds, the per-frame
+  movement speed factor, formation selection. The inventory comes from `ApplyGameStyle`
+  and `docs/DOS_GAMEPLAY.md`; the match engine's units add the behaviour methods they need
+  as they are ported (§10).
+- The trait is object-safe. The match holds a `&'static dyn GameStyle`. The styles
+  (`Amiga50Hz`, `Dos70Hz`, `Xbox60Hz`, `Amiga60Hz`, `Moon50Hz`) are stateless unit structs
+  in `openswos_game_style`. A registry maps a stable string id (stored in settings) and
+  upstream's number (carried by recordings) to an implementation, so a new style means a
+  new impl plus one registry line.
 - Each method has a doc comment on the trait (meaning, unit). Each impl returns
   module-level documented constants with their provenance, so §5.4 still holds.
 - Both styles are oracle-tested: the C side runs with the corresponding upstream game
@@ -438,6 +443,9 @@ rules library submodule). The oracle contains no handwritten C.
     on dev machines and CI;
   - binds the headers listed in `units.toml` without compiling them: their `static inline`
     functions are reached through the wrappers bindgen generates, compiled with the units;
+  - declares every global a unit lists (by name) as the global it is: bindgen would make a
+    global the unit defines with an evaluable value a Rust `const`. Enumerators and macros
+    are listed apart, by pattern;
   - without the checkout, builds the crate unavailable (`cfg(oracle_unavailable)`): its API
     and tests are compiled out and a test reports the skip (a failure in strict mode), so
     the main CI job builds on every OS without C.
@@ -630,7 +638,7 @@ All binary formats are the PC (DOS) game's (D9).
 | 2 | `rng`, `math`, `game_style` | The foundations, with their oracle proptests. In steps: |
 | 2a ✅ | `rng` | The crate `openswos_rng` (random.c, and `Randomize2` from game_utils.c): both generators, the second one's save stack (the save that fills it halts the original: an error), a recording's fixed value. Checked against the C by random sequences of draws, reseeds, saves and restores. |
 | 2b ✅ | `math` | The crate `openswos_math` (math68k.c/h): `CalculateDeltaXAndY`, its movement scale a `DeltaScale` parameter (41/64 DOS, done with shifts; none Amiga) instead of two globals; the 68k shifts. Checked against the C on every angle in every quadrant, on any two points at any speed and scale, and on upstream's known answers. The oracle reaches a header's `static inline` functions through bindgen's wrappers. |
-| 2c | `game_style` | The trait, `Amiga50Hz`, `Dos70Hz` and the registry, with the trait's method inventory taken from `ApplyGameStyle`; each style supplies its `DeltaScale`. |
+| 2c ✅ | `game_style` | The crate `openswos_game_style` (dos_gameplay.c): the trait, its inventory taken from `ApplyGameStyle` (the frame rate, the `DeltaScale`, the releases whose code runs, the goalkeepers' constants, the ball's physics, the clock and stoppage timers), the five styles upstream plays and the registry (by the settings' id and by upstream's number). Checked against the C for every style, with and without the stronger keepers tweak. |
 | 3 | `core::world` | The typed, validated world built from a package (validation errors name the file and field). `core::data::GameData`. |
 | 4 | inventory | The 76 upstream world branch points and the 96/97 hardcoded facts found in the competition/career code, each mapped to a package field (`rules/…`) or a behaviour component. |
 | 5 | `world_extract` v0 | `data/worlds/1996-97/` (upstream competition JSON + the extracted tables); the assembled `target/cache/worlds/1996-97/`; the fetched, verified and completed `target/cache/worlds/2026-27/`; the re-extraction diff tests. |

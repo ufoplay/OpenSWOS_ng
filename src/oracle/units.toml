@@ -30,8 +30,8 @@ defines = [
 include = "include/swos_platform.h"
 include_dirs = ["src", "include"]
 
-# The units the tests call: their functions and the globals they read and write, bound by
-# bindgen into `ffi::<file stem>`.
+# The units the tests call: their functions, the globals they read and write (by name) and the
+# constants they see (by pattern), bound by bindgen into `ffi::bindings::<file name>`.
 
 [[unit]]
 path = "src/random.c"
@@ -55,6 +55,47 @@ variables = []
 path = "src/math68k.c"
 functions = ["CalculateDeltaXAndY"]
 variables = []
+
+# The game styles. The `_k*` constants it writes are upstream's data
+# (src/swos_amiga_data_imports.c).
+[[unit]]
+path = "src/dos_gameplay.c"
+functions = ["ApplyGameStyle", "Gameplay_SetStyle", "Gameplay_StyleName", "DosGameplay_TargetFps"]
+variables = [
+    "_gGameplayStyle",
+    "_gDosKeepers",
+    "_gameplayStyleOption",
+    "_gMoveDeltaScaleNum",
+    "_gMoveDeltaScaleDen",
+    "_gsKeeperLooseBallMinDeltaZ",
+    "_gsFramesPerGameSecond",
+    "_gsEndGameCounter",
+    "_gsBallDefensiveZ",
+    "_gsPenaltyTimer",
+    "_gsPenaltiesKeeperFree",
+    "_gsHalftimeStoppage",
+    "_gsBallOutOfGameTimer",
+    "_gsResultAutoAdvance",
+    "_gsKickoffStoppage",
+    "_gsStoppageEventReload",
+    "_gsResultHalftimeLength",
+    "_gsResultBreakLength",
+    "_gsSubsMovementDelay",
+    "_gsCameraLeavingSubs",
+    "_gsPlayerDownTimer",
+    "_gsThrowInHideResult",
+    "_gsStoppageShowerPan",
+    "_gsStoppageHalfEnded",
+    "_gsStoppageHalftime",
+    "_gsStoppageGameOver",
+    "_kKeeperSaveDistance",
+    "_kGoalkeeperDiveDeltas",
+    "_kBallGroundConstant",
+    "_kBallAirConstant",
+    "_kGravityConstant",
+    "_kPitchBallSpeedInfluence",
+]
+constants = ["GAMEPLAY_.*", "TWEAK_STRONGER_GOALKEEPER_AI"]
 
 # The headers whose `static inline` functions the tests call, through the wrappers bindgen
 # writes for them (compiled with the units).

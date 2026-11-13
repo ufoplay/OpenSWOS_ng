@@ -21,6 +21,7 @@ toml = { workspace = true }
 
 [dev-dependencies]
 # The port, checked against upstream's C in `tests/`.
+openswos_game_style = { workspace = true }
 openswos_math = { workspace = true }
 openswos_rng = { workspace = true }
 openswos_test_utils = { workspace = true }

@@ -1,7 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc 037c37703e738a39cdff762d2323c612944238dbe32aaffda11a76a96d90117b # shrinks to from = (0, 0), to = (0, 1), speed = 1, scale = DeltaScale { numerator: 41, denominator: 64 }

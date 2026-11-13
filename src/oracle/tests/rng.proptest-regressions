@@ -1,7 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc d25569faaee43120c6b0884a8821d3228ad1b1870ed46803f5af029f6ba47427 # shrinks to primary = RandState { seed: 0, xor_index: 0, xor_key: 0 }, secondary = RandState { seed: 0, xor_index: 0, xor_key: 0 }, calls = [Rand]

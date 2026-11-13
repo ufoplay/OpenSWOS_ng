@@ -7,6 +7,7 @@
 pub(crate) mod math;
 pub(crate) mod rng;
 mod stubs;
+pub(crate) mod style;
 
 use std::hint::black_box;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
@@ -17,6 +18,7 @@ use stubs::UpstreamPanic;
 /// underscore).
 #[allow(
     non_upper_case_globals,
+    non_camel_case_types,
     non_snake_case,
     dead_code,
     missing_docs,
@@ -43,6 +45,11 @@ mod bindings {
     pub(crate) mod math68k_h {
         include!(concat!(env!("OUT_DIR"), "/math68k_h.rs"));
     }
+
+    /// src/dos_gameplay.c.
+    pub(crate) mod dos_gameplay_c {
+        include!(concat!(env!("OUT_DIR"), "/dos_gameplay_c.rs"));
+    }
 }
 
 /// Calls `call`, turning upstream's halt into its reason code.
@@ -57,7 +64,10 @@ fn halting(call: impl FnOnce()) -> Result<(), u16> {
 
 /// Resets the globals the units touch to upstream's values, and keeps every stub linked.
 pub(crate) fn reset() {
-    rng::reset();
     stubs::reset();
+    rng::reset();
+    style::reset();
     black_box(stubs::PanicHaltLoop as extern "C-unwind" fn() -> !);
+    black_box(stubs::TacticsData_SelectRelease as extern "C-unwind" fn(_));
+    black_box(stubs::Tweaks_On as extern "C-unwind" fn(_) -> _);
 }

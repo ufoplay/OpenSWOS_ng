@@ -6,6 +6,8 @@ mod ffi;
 pub mod math;
 #[cfg(not(oracle_unavailable))]
 pub mod rng;
+#[cfg(not(oracle_unavailable))]
+pub mod style;
 
 #[cfg(not(oracle_unavailable))]
 pub use oracle::Oracle;

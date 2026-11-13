@@ -1,0 +1,20 @@
+[package]
+name = "openswos_game_style"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "The OpenSWOS_ng game styles: how a match plays at the Amiga's 50 Hz, the DOS game's 70 Hz, and SWOS 2020's styles"
+readme = "readme.md"
+
+[dependencies]
+openswos_math = { workspace = true }
+
+[dev-dependencies]
+# The settings' style spellings are the registry's ids.
+openswos_settings_ini_resource = { workspace = true }
+
+[lints]
+workspace = true
