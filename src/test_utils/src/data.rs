@@ -45,6 +45,29 @@ pub fn saves_dir() -> Result<PathBuf, Skip> {
     dir_from(SAVES_DIR_ENV, std::env::var_os(SAVES_DIR_ENV))
 }
 
+/// The name of OpenSWOS's settings file (upstream src/swos_io.c `swos_ini_path`).
+pub const SETTINGS_FILE_NAME: &str = "SWOS.ini";
+
+/// OpenSWOS's settings file: `SWOS.ini` beside the saves folder, in the user's game folder
+/// that holds it (upstream src/swos_io.c `swos_ini_path`).
+///
+/// # Errors
+///
+/// A [`Skip`] when the saves folder is not given or has no settings file beside it.
+pub fn settings_file() -> Result<PathBuf, Skip> {
+    let saves = saves_dir()?;
+    saves
+        .parent()
+        .map(|folder| folder.join(SETTINGS_FILE_NAME))
+        .filter(|path| path.is_file())
+        .ok_or_else(|| {
+            Skip::new(format!(
+                "{} has no {SETTINGS_FILE_NAME} beside it",
+                saves.display()
+            ))
+        })
+}
+
 /// A file of the installed PC game, by its path in the game folder (`/`-separated),
 /// matched without regard to case: installs spell `DATA/TEAM.008` differently.
 ///

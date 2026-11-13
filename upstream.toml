@@ -223,7 +223,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/diy_import_dos.h" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/competition_save/src/dos.rs"], functions_done = ["DiyImportDos_IsDosFile", "header_from_dos"], notes = "the DOS .DIY's layout: competition_save's DosDiyFormat reads and writes it (M2 #11i). Loading it into the competition's state (ex_from_dos, team_identity, DiyImportDos_LoadData) and --convert-diy are the competitions' (M5/M7)" }
 "include/dos_gameplay.h" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
 "include/dos_graphics.h" = { area = "resource", status = "todo", notes = "dos_sprite_bank (M3)" }
-"include/dos_mode.h" = { area = "core", status = "todo", notes = "game style differences: GameStyle trait (D1)" }
+"include/dos_mode.h" = { area = "core", status = "todo", rust = ["src/resources/settings_ini/src/settings/values.rs"], functions_done = ["GAMEPLAY_AMIGA"], notes = "game style differences: GameStyle trait (D1). GAMEPLAY_*'s names: settings_ini's GameplayStyle (M2 #14b)" }
 "include/dos_music.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
 "include/dos_sound.h" = { area = "view", status = "todo", notes = "audio playback; the core emits sound events" }
 "include/easing.h" = { area = "view", status = "todo", notes = "rendering" }
@@ -237,7 +237,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/game_hud.h" = { area = "view", status = "todo", notes = "rendering" }
 "include/game_init.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/game_loop.h" = { area = "core", status = "todo", notes = "match loop; mixed with frame pacing and drawing (view)" }
-"include/game_options.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/game_options.h" = { area = "view", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/settings_ini/src/settings/tests.rs"], notes = "the values OpenSWOS Setup writes: settings_ini's tests read and write back those of the game's sections (Settings_GameOptionsSelfTest); the setup's rows and labels are the view's" }
 "include/game_state.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/game_timers.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/game_types.h" = { area = "core", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/team/src/team.rs", "src/resources/team/src/player.rs", "src/resources/poolplyr/src/lib.rs", "src/resources/tac/src/tactics.rs", "src/common/src/tactics.rs", "src/resources/national_teams_json/src/record.rs", "src/resources/career_save/src/season.rs", "src/resources/career_save/src/player.rs", "src/resources/career_save/src/offers.rs", "src/resources/career_save/src/competitions.rs", "src/resources/career_save/src/slots.rs"], functions_done = ["TeamFile", "PlayerFile", "TeamFileEx", "PF_POSITION_MASK", "PF_FACE_MASK", "PF_INFORM", "PF_LOAN", "PF_TRIALIST", "PoolPlayer", "PLAYER_FORM_TRIALIST", "PLAYER_FORM_RESERVE", "TEAM_VALUES_CLEAN", "TEAM_VALUES_DIRTY", "TACTIC_DEFAULT..TACTIC_USER_F", "TeamTactics", "PlayerPositions", "NationalTeamRecord", "SeasonInformations", "MarketPlayer", "TransferOfferEntry", "JobOffer", "DIYTeamStats", "LeagueSplitState", "DIYCompetition", "DIYCompetitionEx", "DIYCompetitionEx_CupView", "DIYCompetitionEx_LeagueView", "DIYCompetitionEx_LeagueSectionState", "DIYTournamentSlot"], notes = "shared game types; the team and player records are in resources/team" }
@@ -253,7 +253,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/highlight.h" = { area = "core", status = "todo", notes = "highlights ring (SIM_TIER_VIEW); the .HIL format goes to resources/hil" }
 "include/highlights_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/image_cmd.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
-"include/ini.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"include/ini.h" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/settings_ini/src/reader.rs", "src/resources/settings_ini/src/text.rs"], functions_done = ["ini_parse_stream", "ini_parse", "ini_parse_file", "ini_rstrip", "ini_lskip", "ini_find_chars_or_comment", "ini_strncpy0", "INI_MAX_LINE", "MAX_SECTION", "MAX_NAME"], notes = "inih (BSD-3-Clause, Ben Hoyt): its rules as include/ini.h configures them, ported in settings_ini's reader.rs, which keeps its notice (M2 #14a). The other configurations (multiline off, realloc, a string reader) are not upstream's" }
 "include/input.h" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
 "include/input_text.h" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
 "include/interrupts.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
@@ -327,14 +327,14 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/render_data.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "include/replay_menu.h" = { area = "view", status = "todo", notes = "menus/UI" }
 "include/replay_test.h" = { area = "out_of_scope", status = "not_ported", notes = "upstream test rig: the port has its own replay test (M6)" }
-"include/replay_v2.h" = { area = "resource", status = "todo", notes = "srp (OpenSWOS replay v2)" }
+"include/replay_v2.h" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/srp/src/container.rs"], notes = "the API of recording (M6) and playback (view); the file it writes and reads (.SRP, LATEST.SRP) is the srp crate's (M2 #13b)" }
 "include/report_proto.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "include/resload.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "include/rjp1.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "include/rnc.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga data packing: the installed PC game's files are not RNC-packed (D9)" }
 "include/rnc_magic.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga data packing: the installed PC game's files are not RNC-packed (D9)" }
 "include/rollback_rig.h" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
-"include/save_format_json.h" = { area = "resource", status = "todo", notes = "career_save / competition_save (D4)" }
+"include/save_format_json.h" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/save_json/src/document.rs", "src/resources/career_save/src/save.rs", "src/resources/competition_save/src/save.rs", "src/resources/hil/src/json/mod.rs", "src/resources/tac/src/json.rs"], notes = "the JSON saves' and data_json loaders' entry points: their formats are the save_json, career_save, competition_save, hil, tac and competitions_json crates' (M2 #7, #11, #13c); loading into the game's state is the competitions', the match's and the career's (M5-M7)" }
 "include/scroll_blit.h" = { area = "view", status = "todo", notes = "rendering" }
 "include/sfx_crowd.h" = { area = "core", status = "todo", notes = "Rand()-consuming crowd/advert/animation state (sim_state.c)" }
 "include/sfx_debug.h" = { area = "out_of_scope", status = "not_ported", notes = "build/debug/diagnostics (out of scope)" }
@@ -362,7 +362,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/swos_io.h" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
 "include/swos_platform.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
 "include/swos_sections.h" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
-"include/swos_settings.h" = { area = "view", status = "todo", notes = "menus/UI" }
+"include/swos_settings.h" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/settings_ini/src/reader.rs", "src/resources/settings_ini/src/writer.rs", "src/resources/settings_ini/src/file.rs", "src/resources/settings_ini/src/settings/mod.rs", "src/resources/settings_ini/src/settings/table.rs", "src/resources/settings_ini/src/settings/values.rs", "src/resources/settings_ini/src/settings/tweaks.rs", "src/resources/settings_ini/src/settings/comments.rs"], notes = "SWOS.ini's API: settings_ini (M2 #14a, #14b); PlatformInitOptions' fields of the game's sections are its Settings, the view's are the view's" }
 "include/swos_types.h" = { area = "core", status = "todo", notes = "shared game types" }
 "include/swos_window_icon.h" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
 "include/tackle_foul.h" = { area = "core", status = "todo", notes = "match engine" }
@@ -383,7 +383,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "include/training_match.h" = { area = "core", status = "todo", notes = "match engine" }
 "include/transfer_market.h" = { area = "core", status = "todo", notes = "career; mixed with the transfer screens (view)" }
 "include/translations.h" = { area = "view", status = "todo", notes = "text and strings" }
-"include/tweaks.h" = { area = "world_data", status = "todo", notes = "tweaks become package rules (D6)" }
+"include/tweaks.h" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/settings_ini/src/settings/tweaks.rs"], functions_done = ["TWEAK_CPU_CARDS", "TWEAKS_DEFAULT_ON", "Tweaks_Bit", "Tweaks_Built", "kTweaks"], notes = "the [tweaks] keys, bits and defaults: settings_ini's Tweaks (M2 #14b; every tweak built, PROJECT_TWEAKS). What each tweak does becomes package rules or behaviour components (D6, M4-M7); a mod's tweaks are the mod system's (out of scope)" }
 "include/uefa_access.h" = { area = "core", status = "todo", notes = "competitions; its state's save format: career_save uefa.rs (M2 #11d)" }
 "include/uefa_coef.h" = { area = "core", status = "todo", notes = "competitions; its state's save format: career_save uefa.rs (M2 #11d)" }
 "include/uniform.h" = { area = "view", status = "todo", notes = "menus/UI" }
@@ -504,7 +504,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/highlight.c" = { area = "core", status = "todo", notes = "highlights ring (SIM_TIER_VIEW); the .HIL format goes to resources/hil" }
 "src/highlights_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }
 "src/image_cmd.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
-"src/ini.c" = { area = "out_of_scope", status = "not_ported", notes = "I/O and asset loading layer: the core does no I/O; formats live in resource crates" }
+"src/ini.c" = { area = "resource", status = "done", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/settings_ini/src/reader.rs", "src/resources/settings_ini/src/text.rs"], functions_done = ["ini_parse_stream", "ini_parse", "ini_parse_file", "ini_rstrip", "ini_lskip", "ini_find_chars_or_comment", "ini_strncpy0", "INI_MAX_LINE", "MAX_SECTION", "MAX_NAME"], notes = "inih (BSD-3-Clause, Ben Hoyt): its rules as include/ini.h configures them, ported in settings_ini's reader.rs, which keeps its notice (M2 #14a). The other configurations (multiline off, realloc, a string reader) are not upstream's" }
 "src/input.c" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
 "src/input_sdl.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
 "src/input_text.c" = { area = "view", status = "todo", notes = "input layer: the core takes PlayerInput" }
@@ -520,7 +520,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/live_cast.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "src/loader_bootstrap.c" = { area = "out_of_scope", status = "not_ported", notes = "Amiga target/hardware (out of scope)" }
 "src/loader_intro.c" = { area = "view", status = "todo", notes = "menus/UI" }
-"src/main.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope)" }
+"src/main.c" = { area = "out_of_scope", status = "not_ported", notes = "platform/render/audio/input backend (out of scope). Its defaults of SWOS.ini's game sections (opts.* before Settings_Load) are settings_ini's Settings::default (M2 #14b)" }
 "src/match_chat.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
 "src/match_prediction.c" = { area = "core", status = "todo", notes = "results of matches nobody plays" }
 "src/match_record.c" = { area = "out_of_scope", status = "not_ported", notes = "netplay/online (out of scope)" }
@@ -672,7 +672,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/swos_rules_gplay.c" = { area = "core", status = "todo", notes = "competitions" }
 "src/swos_rules_groups.c" = { area = "core", status = "todo", notes = "competitions" }
 "src/swos_rules_post.c" = { area = "core", status = "todo", notes = "competitions" }
-"src/swos_settings.c" = { area = "view", status = "todo", notes = "menus/UI" }
+"src/swos_settings.c" = { area = "resource", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/settings_ini/src/reader.rs", "src/resources/settings_ini/src/writer.rs", "src/resources/settings_ini/src/file.rs", "src/resources/settings_ini/src/settings/mod.rs", "src/resources/settings_ini/src/settings/table.rs", "src/resources/settings_ini/src/settings/values.rs", "src/resources/settings_ini/src/settings/tweaks.rs", "src/resources/settings_ini/src/settings/comments.rs"], functions_done = ["Settings_Save", "Settings_AppendMissing", "settings_write_full", "flush_section_missing", "copy_value", "eqi", "IniEntry", "SETTINGS_MAX", "handler", "handler_launcher", "parse_bool", "settings_build", "section_intro", "Settings_Load", "s_baseline", "Settings_GameOptionsSelfTest", "Settings_LauncherSelfTest"], notes = "SWOS.ini: settings_ini. M2 #14a: the file, inih's reading, Settings_Save's non-destructive save and the fresh file. M2 #14b: the game's sections typed ([gameplay], [replays], [testing], [general], [mods], [tweaks], [options]: the handler's reading, settings_build's rows and comments, the baseline); the self-tests ported as tests. The view's ([video], [audio], [input], [graphics]), netplay's ([netplay], [chat]) and the arcade's sections are not typed: they stay in the file as read (view M8; netplay and arcade out of scope)" }
 "src/tackle_foul.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/tactics_data.c" = { area = "world_data", status = "todo", notes = "built-in tactics: package data" }
 "src/tactics_expert.c" = { area = "core", status = "todo", notes = "match engine" }
@@ -695,7 +695,7 @@ commit = "87b65278a15007223ec4f387f1027eb4d5cd7625"
 "src/training_match.c" = { area = "core", status = "todo", notes = "match engine" }
 "src/transfer_market.c" = { area = "core", status = "todo", notes = "career; mixed with the transfer screens (view)" }
 "src/translations.c" = { area = "view", status = "todo", notes = "text and strings" }
-"src/tweaks.c" = { area = "world_data", status = "todo", notes = "tweaks become package rules (D6)" }
+"src/tweaks.c" = { area = "world_data", status = "partial", migrated_at = "ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b", rust = ["src/resources/settings_ini/src/settings/tweaks.rs"], functions_done = ["TWEAK_CPU_CARDS", "TWEAKS_DEFAULT_ON", "Tweaks_Bit", "Tweaks_Built", "kTweaks"], notes = "the [tweaks] keys, bits and defaults: settings_ini's Tweaks (M2 #14b; every tweak built, PROJECT_TWEAKS). What each tweak does becomes package rules or behaviour components (D6, M4-M7); a mod's tweaks are the mod system's (out of scope)" }
 "src/uefa_access.c" = { area = "core", status = "todo", notes = "competitions" }
 "src/uefa_coef.c" = { area = "core", status = "todo", notes = "competitions" }
 "src/uniform_menu.c" = { area = "view", status = "todo", notes = "menus/UI" }

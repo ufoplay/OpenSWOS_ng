@@ -678,6 +678,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openswos_settings_ini_resource"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "openswos_common",
+ "openswos_test_utils",
+ "proptest",
+]
+
+[[package]]
 name = "openswos_srp_resource"
 version = "0.1.0"
 dependencies = [

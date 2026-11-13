@@ -30,6 +30,7 @@ openswos_competition_save_resource = { path = "src/resources/competition_save", 
 openswos_competitions_json_resource = { path = "src/resources/competitions_json", version = "0.1.0" }
 openswos_national_teams_json_resource = { path = "src/resources/national_teams_json", version = "0.1.0" }
 openswos_hil_resource = { path = "src/resources/hil", version = "0.1.0" }
+openswos_settings_ini_resource = { path = "src/resources/settings_ini", version = "0.1.0" }
 openswos_poolplyr_resource = { path = "src/resources/poolplyr", version = "0.1.0" }
 openswos_rgd_resource = { path = "src/resources/rgd", version = "0.1.0" }
 openswos_srp_resource = { path = "src/resources/srp", version = "0.1.0" }
