@@ -1,16 +1,20 @@
-//! `assets/COMPETITIONS_JSON/`: upstream's ten competition files (`bin/data_json/
-//! competitions/`). Each one round-trips byte for byte, is the file its name says, and
-//! names only competitions the files define.
+//! World 1996-97's competitions (`data/worlds/1996-97/competitions/`): upstream's ten
+//! competition files (`bin/data_json/competitions/`). Each one round-trips byte for byte,
+//! is the file its name says, and names only competitions the files define.
 
 use std::collections::BTreeSet;
+use std::path::PathBuf;
 
 use openswos_common::json::TrailingNewline;
 use openswos_competitions_json_resource::{
     CompCupEntry, CompetitionType, CompetitionsDocument, CompetitionsFile, CompetitionsJsonFormat,
     SymbolId,
 };
-use openswos_test_utils::assets_path;
-use openswos_test_utils::fixtures::{assert_round_trip, fixtures};
+use openswos_test_utils::fixtures::{assert_round_trip, list_fixtures};
+use openswos_test_utils::world_1996_97_path;
+
+/// The competition files' folder in a world package.
+const COMPETITIONS_DIR: &str = "competitions";
 
 /// The ten files and the `type` each one has.
 const FILES: [(&str, &str); 10] = [
@@ -26,8 +30,13 @@ const FILES: [(&str, &str); 10] = [
     ("tournaments.json", "competition_tournaments"),
 ];
 
+/// World 1996-97's competition files.
+fn dir() -> PathBuf {
+    world_1996_97_path().join(COMPETITIONS_DIR)
+}
+
 fn read(name: &str) -> CompetitionsFile {
-    let path = assets_path().join("COMPETITIONS_JSON").join(name);
+    let path = dir().join(name);
     let bytes = std::fs::read(&path)
         .unwrap_or_else(|error| panic!("cannot read {}: {error}", path.display()));
     let document: CompetitionsDocument = assert_round_trip::<CompetitionsJsonFormat>(&bytes);
@@ -49,7 +58,7 @@ fn kind(file: &CompetitionsFile) -> String {
 
 #[test]
 fn every_file_round_trips_and_is_what_its_name_says() {
-    let found = fixtures("COMPETITIONS_JSON", |name| name.ends_with(".json"));
+    let found = list_fixtures(&dir(), |name| name.ends_with(".json"));
     assert_eq!(found.len(), FILES.len(), "{found:?}");
     for (name, expected) in FILES {
         assert_eq!(kind(&read(name)), expected, "{name}");

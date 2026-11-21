@@ -1,4 +1,4 @@
-//! Upstream's `career_params.json` (`assets/CAREER_PARAMS_JSON/`, GPL): it round-trips,
+//! Upstream's `career_params.json` (`data/career_params.json`, GPL): it round-trips,
 //! sets every knob once, and states the original's values. When upstream's checkout is in
 //! the cache (`just upstream_fetch`), the knobs are the ones its loader reads.
 
@@ -7,7 +7,7 @@ use std::collections::BTreeSet;
 use openswos_career_params_json_resource::{
     CareerParamsDocument, CareerParamsJsonFormat, Member, PerDivisionKnob, SignedKnob, UnsignedKnob,
 };
-use openswos_test_utils::assets_path;
+use openswos_test_utils::career_params_path;
 use openswos_test_utils::fixtures::assert_round_trip;
 use openswos_test_utils::skip::{Skip, report};
 
@@ -18,9 +18,7 @@ const UPSTREAM_NOTES: usize = 11;
 const LOADER_KEY_PREFIX: &str = "(\"$.";
 
 fn upstream() -> CareerParamsDocument {
-    let path = assets_path()
-        .join("CAREER_PARAMS_JSON")
-        .join("career_params.json");
+    let path = career_params_path();
     let bytes = std::fs::read(&path).expect("the committed career_params.json");
     assert_round_trip::<CareerParamsJsonFormat>(&bytes)
 }

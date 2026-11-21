@@ -36,8 +36,11 @@ starting a task.
 
 ## Data
 
+- Files the game loads at runtime (upstream's GPL data, our World 1996-97 package) go in
+  `data/`, listed in `data/README.md`. Files only the tests read go in `assets/`, listed
+  in `assets/README.md`. Tests read runtime data from `data/`, never from a copy.
 - Commit no original game data beyond the small curated test set in `assets/`, and list
-  every file there in `assets/README.md` with its provenance.
+  every file there in `assets/README.md` with its provenance. Never in `data/`.
 - Never commit World 2026-27 data or the RGD recordings. They are downloaded into
   `target/cache/`.
 - Upstream is GPL-3.0-or-later, and so is this repo. Code ported from MIT sources

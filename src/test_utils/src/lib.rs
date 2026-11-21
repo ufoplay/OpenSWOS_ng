@@ -1,6 +1,7 @@
 //! Test helpers shared by the OpenSWOS_ng crates:
 //!
-//! - where the workspace, its committed test assets and its build output live;
+//! - where the workspace, its committed test assets, the game's committed runtime data
+//!   and its build output live;
 //! - [`fixtures`]: listing a format's fixtures, JSON sidecars, byte-for-byte round trips;
 //! - [`data`]: your own copy of the game, outside the repository;
 //! - [`cache`]: test data downloaded once into `target/cache/` (D8);
@@ -15,6 +16,21 @@ pub mod skip;
 
 /// The folder for temporary data, under `target/`: every cache, download and checkout.
 const CACHE_DIR: &str = "cache";
+
+/// The game's committed runtime data, under the root (docs/PLAN.md §3).
+const DATA_DIR: &str = "data";
+
+/// The world packages, under [`DATA_DIR`].
+const WORLDS_DIR: &str = "worlds";
+
+/// World 1996-97's package, under [`WORLDS_DIR`].
+const WORLD_1996_97_DIR: &str = "1996-97";
+
+/// The built-in tactics, under [`DATA_DIR`] (upstream `bin/data_json/tactics/`).
+const TACTICS_DIR: &str = "tactics";
+
+/// The career params, under [`DATA_DIR`] (upstream `bin/data_json/career_params.json`).
+const CAREER_PARAMS_FILE: &str = "career_params.json";
 
 /// The workspace root: the nearest ancestor of this crate that holds `Cargo.lock`.
 ///
@@ -33,10 +49,35 @@ pub fn root_path() -> PathBuf {
         .expect("openswos_test_utils always lives inside the workspace, which has a Cargo.lock")
 }
 
-/// The committed test assets: `<root>/assets`.
+/// The committed test assets: `<root>/assets`. Only tests read them.
 #[must_use]
 pub fn assets_path() -> PathBuf {
     root_path().join("assets")
+}
+
+/// The game's committed runtime data: `<root>/data`. The game loads these files; tests
+/// read them where they are, never from a copy.
+#[must_use]
+pub fn data_path() -> PathBuf {
+    root_path().join(DATA_DIR)
+}
+
+/// World 1996-97's package as committed, without rosters: `<root>/data/worlds/1996-97`.
+#[must_use]
+pub fn world_1996_97_path() -> PathBuf {
+    data_path().join(WORLDS_DIR).join(WORLD_1996_97_DIR)
+}
+
+/// The built-in tactics: `<root>/data/tactics`.
+#[must_use]
+pub fn tactics_path() -> PathBuf {
+    data_path().join(TACTICS_DIR)
+}
+
+/// The career params: `<root>/data/career_params.json`.
+#[must_use]
+pub fn career_params_path() -> PathBuf {
+    data_path().join(CAREER_PARAMS_FILE)
 }
 
 /// The build output directory: `<root>/target`.
@@ -85,6 +126,14 @@ mod tests {
     fn assets_path_is_under_the_root() {
         assert_eq!(assets_path(), root_path().join("assets"));
         assert!(assets_path().is_dir());
+    }
+
+    #[test]
+    fn the_runtime_data_is_under_the_root() {
+        assert_eq!(data_path(), root_path().join("data"));
+        assert!(world_1996_97_path().join("competitions").is_dir());
+        assert!(tactics_path().is_dir());
+        assert!(career_params_path().is_file());
     }
 
     #[test]

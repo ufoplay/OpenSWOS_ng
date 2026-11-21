@@ -1,23 +1,20 @@
-//! Upstream's built-in tactics (`assets/TACTICS_JSON/`, GPL): they round-trip, name their
-//! presets, and hold the releases upstream describes.
+//! The built-in tactics (`data/tactics/`: upstream's `bin/data_json/tactics/`, GPL): they
+//! round-trip, name their presets, and hold the releases upstream describes.
 
 use std::collections::BTreeMap;
 
 use openswos_common::{Importer, Tactics};
 use openswos_tac_resource::{TacFileFormat, TeamTactics};
 use openswos_tactics_json_resource::{Preset, PresetFile, Release, TacticsJson, TacticsJsonFormat};
-use openswos_test_utils::assets_path;
-use openswos_test_utils::fixtures::{assert_round_trip, fixtures};
-
-/// The format's fixture folder.
-const FOLDER: &str = "TACTICS_JSON";
+use openswos_test_utils::fixtures::{assert_round_trip, list_fixtures};
+use openswos_test_utils::{assets_path, tactics_path};
 
 /// The files upstream ships: the twelve presets, and two more releases of four of them.
 const UPSTREAM_FILES: usize = 20;
 
-/// Every fixture, by file.
+/// Every built-in tactics file, by file.
 fn all() -> BTreeMap<PresetFile, TacticsJson> {
-    fixtures(FOLDER, |name| name.ends_with(".json"))
+    list_fixtures(&tactics_path(), |name| name.ends_with(".json"))
         .into_iter()
         .map(|path| {
             let name = path
@@ -25,7 +22,7 @@ fn all() -> BTreeMap<PresetFile, TacticsJson> {
                 .and_then(|name| name.to_str())
                 .expect("a UTF-8 file name");
             let file = PresetFile::parse(name).unwrap_or_else(|| panic!("{name} is a preset file"));
-            let bytes = std::fs::read(&path).expect("readable fixture");
+            let bytes = std::fs::read(&path).expect("a readable tactics file");
             (file, assert_round_trip::<TacticsJsonFormat>(&bytes))
         })
         .collect()

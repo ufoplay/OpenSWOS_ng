@@ -42,7 +42,7 @@ defaults), `src/save_format_json.c` (`DataJson_LoadCareerParams`),
 
 - Unit tests: layout, order, errors, per-division arrays, and a property test (any knobs
   and notes, in any order).
-- `tests/fixtures.rs`: upstream's file (`assets/CAREER_PARAMS_JSON/`, GPL) round-trips byte
-  for byte, sets each knob once, and states the original's values. With upstream's
+- `tests/fixtures.rs`: upstream's file, as the game ships it (`data/career_params.json`,
+  GPL), round-trips byte for byte, sets each knob once, and states the original's values. With upstream's
   checkout in the cache, the knobs are exactly the keys its loader reads, the signed ones
   included.

@@ -4,12 +4,16 @@ Fixtures for the tests: one folder per file format (`assets/TEAM/`, `assets/TMD/
 Each fixture is the file itself plus a JSON sidecar with the expected decoded model
 (`name.ext` + `name.json`). See `docs/PLAN.md` §6.
 
+Only the tests read these files. The files the game loads (upstream's GPL data: World
+1996-97's competitions, the built-in tactics, the career params) are in `data/` (see
+`data/README.md`), and the tests read them there.
+
 ## What may be committed
 
 - A **small, curated set of original game files**, only where a test needs real data.
   Keep it small.
 - Synthetic fixtures for edge cases.
-- Upstream OpenSWOS's GPL data files (e.g. `bin/data_json/...`).
+- The expected outputs of the tests (sidecars, files written from a fixture).
 
 ## What must never be committed
 
@@ -36,9 +40,6 @@ Every committed file is listed here: where it comes from and under which license
 | `TAC/01_442DOS.TAC` | SWOS 2020 (community release of the PC game), `swos/tactics/dos/01_442DOS.TAC`: a DOS 4-4-2, 370 bytes | Game data © its rights holders; a small test excerpt (D2) |
 | `TAC/06_433.TAC` | SWOS 2020, `swos/tactics/common/06_433.TAC`: a 4-3-3 whose name keeps bytes after its end | Game data © its rights holders; a small test excerpt (D2) |
 | `TAC/04_5-3-2.tac` | SWOS 2020, `tactics/cpu-tactics/tactics/04_5-3-2.tac`: a CPU 5-3-2, 376 bytes (six trailing zeros) | Game data © its rights holders; a small test excerpt (D2) |
-| `COMPETITIONS_JSON/*.json` (10 files) | Upstream OpenSWOS `bin/data_json/competitions/` at commit `ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b` (`just upstream_fetch`), unchanged | GPL-3.0-or-later (upstream's data) |
-| `TACTICS_JSON/*.json` (20 files) | Upstream OpenSWOS `bin/data_json/tactics/` at commit `ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b` (`just upstream_fetch`), unchanged: the 12 built-in tactics, and the Amiga original's and DOS release's 4-4-2, 4-3-3, 3-4-3 and Sweep | GPL-3.0-or-later (upstream's data) |
-| `CAREER_PARAMS_JSON/career_params.json` | Upstream OpenSWOS `bin/data_json/career_params.json` at the same commit, unchanged | GPL-3.0-or-later (upstream's data) |
 | `DIY/2005CLFINAL.DIY` | SWOS 2020, `swos/2005CLFINAL.DIY`: a DOS DIY cup, the 2005 Champions League final (2 teams), 6559 bytes | Game data © its rights holders; a small test excerpt (D2) |
 | `DIY/EC1964.diy` | SWOS 2020, `swos/EC1964.diy`: a DOS DIY cup, UEFA Euro 1964 (4 national teams), 7927 bytes | Game data © its rights holders; a small test excerpt (D2) |
 | `HIL/26-1111-1654-1-0.HIL` | SWOS 2020, `swos/highlights/26-1111-1654-1-0.HIL`: a DOS highlights file of one goal (Spain v Germany, World Cup), 64626 bytes | Game data © its rights holders; a small test excerpt (D2) |

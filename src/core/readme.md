@@ -88,11 +88,12 @@ registry, `dj_selftest_graph`), `src/team_db.c` (the team database, canonical te
 ## Tests
 
 - Unit tests: a small world (`src/fixture.rs`) builds, and each check reports what is
-  wrong where, all at once; its game data, with teams, pool and tactics from `assets/`.
-- `tests/world_1996_97.rs`: upstream's competition files (`assets/COMPETITIONS_JSON/`) are
-  a valid world: 66 leagues, 76 cups, 14 tournaments, 7 play-offs, 76 table slots, 71
-  countries (72 listed), every reference resolved.
+  wrong where, all at once; its game data, with teams and pool from `assets/` and the
+  game's tactics (`data/tactics/`).
+- `tests/world_1996_97.rs`: World 1996-97's committed package (`data/worlds/1996-97/`,
+  upstream's competition files) is a valid world: 66 leagues, 76 cups, 14 tournaments, 7
+  play-offs, 76 table slots, 71 countries (72 listed), every reference resolved.
 - `tests/real_assets.rs` (`just test_real_assets <game_dir>`): World 1996-97's game data,
   its rosters made from the PC game's `DATA/TEAM.nnn` as `world_extract` will make them,
-  with the game's pool and upstream's tactics, is valid: every seeded team and every pool
+  with the game's pool and the built-in tactics, is valid: every seeded team and every pool
   player's team is in the rosters, every team canonical.

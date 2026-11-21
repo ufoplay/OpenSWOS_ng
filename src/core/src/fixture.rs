@@ -1,7 +1,8 @@
 //! A small valid world and its game data, for the tests: three countries (one listed twice),
 //! two leagues linked to a play-off and a block, cups with seeds, a tournament, two
 //! qualifying groups, two blocks, a career index, four competition tables and a tier of
-//! UEFA Cup berths. The teams, the pool and the tactics come from `assets/`.
+//! UEFA Cup berths. The teams and the pool come from `assets/`, the tactics are the
+//! game's (`data/tactics/`).
 
 use std::collections::BTreeMap;
 
@@ -14,7 +15,7 @@ use openswos_team_json_resource::{
     EntryIds, TeamJsonDocument, TeamJsonFile, TrailingNewline, WORLD_1996_97_TAG,
 };
 use openswos_team_resource::{TeamFile, TeamFileFormat};
-use openswos_test_utils::assets_path;
+use openswos_test_utils::{assets_path, tactics_path};
 use openswos_world_package_resource::{WorldIdentity, WorldPackage, WorldTag};
 
 /// Albania's number.
@@ -199,11 +200,10 @@ pub(crate) fn pool() -> PoolFile {
     pool
 }
 
-/// Upstream's built-in tactics (`assets/TACTICS_JSON/`).
+/// The built-in tactics (`data/tactics/`).
 pub(crate) fn tactics() -> BTreeMap<PresetFile, TeamTactics> {
-    let dir = assets_path().join("TACTICS_JSON");
-    std::fs::read_dir(&dir)
-        .expect("the fixtures")
+    std::fs::read_dir(tactics_path())
+        .expect("the built-in tactics")
         .map(|entry| {
             let path = entry.expect("an entry").path();
             let name = path

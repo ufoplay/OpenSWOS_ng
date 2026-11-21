@@ -91,9 +91,12 @@ OpenSWOS_ng/
 │   ├── upstream.just       # upstream_fetch, upstream_status, upstream_diff, upstream_bump
 │   └── worlds.just         # world_extract_9697, world_fetch_2627, world_validate, fetch_test_data
 ├── upstream.toml           # pinned upstream commit + per-file migration ledger (§8)
-├── data/
-│   └── worlds/1996-97/     # the World 1996-97 package, without rosters (committed, GPL) — §5.2
-├── assets/                 # test fixtures, one folder per format (§6)
+├── data/                   # runtime data: the files the game loads (committed, GPL) — §6
+│   ├── worlds/1996-97/     # the World 1996-97 package, without rosters — §5.2
+│   ├── tactics/            # the built-in tactics (upstream bin/data_json/tactics/)
+│   ├── career_params.json  # the career params (upstream bin/data_json/career_params.json)
+│   └── README.md           # provenance + license of every file
+├── assets/                 # test-only fixtures, one folder per format (§6)
 │   └── README.md           # provenance + license of every file
 ├── docs/
 └── src/
@@ -380,12 +383,20 @@ every upstream JSON file. In practice:
 
 ## 6. Assets and test-data policy (D2, D8)
 
-- **Committed (`assets/<FORMAT>/`).** Each fixture is a file plus a JSON sidecar
-  (`name.ext` + `name.json`, the expected decoded model, as in infinitier):
+- **Runtime data, committed (`data/`).** The files the game loads, kept apart from the
+  test fixtures:
+  - upstream's GPL data: World 1996-97's competitions (`data/worlds/1996-97/`), the
+    built-in tactics and the career params, which upstream loads for every world;
+  - our own: World 1996-97's `rules/` (M4 #4–#5).
+
+  Never original game data. `data/README.md` records where every file comes from and its
+  license. Tests read these files where they are, never a copy in `assets/`.
+- **Test fixtures, committed (`assets/<FORMAT>/`).** Only the tests read them. Each fixture
+  is a file plus a JSON sidecar (`name.ext` + `name.json`, the expected decoded model, as
+  in infinitier):
   - a **small, curated set of original files** (e.g. two or three PC `DATA/TEAM.nnn`, one `.TMD`,
     `POOLPLYR.DAT`, one sprite bank, one pitch, a few samples), kept small;
-  - synthetic fixtures for edge cases;
-  - upstream's GPL JSON data.
+  - synthetic fixtures for edge cases.
 
   `assets/README.md` records where every file comes from and its license.
 - **Downloaded on demand, cached in `target/cache/` (D8):**

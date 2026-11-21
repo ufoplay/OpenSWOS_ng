@@ -51,7 +51,7 @@ Upstream OpenSWOS: `scripts/export_tactics.py` (the writer, `IDS`, `LABEL`),
 
 - Unit tests: spellings, layout, errors, presets and file names, and a property test (any
   record and strings round-trip).
-- `tests/fixtures.rs`: upstream's 20 files (`assets/TACTICS_JSON/`, GPL) round-trip byte
-  for byte; each names its preset in its id and label; the releases differ where
+- `tests/fixtures.rs`: the game's built-in tactics, upstream's 20 files (`data/tactics/`,
+  GPL), round-trip byte for byte; each names its preset in its id and label; the releases differ where
   upstream's notes say; SWOS 2020's CPU 5-3-2 (`assets/TAC/04_5-3-2.tac`) is the built-in
   one.

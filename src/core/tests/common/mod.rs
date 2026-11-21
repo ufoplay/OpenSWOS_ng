@@ -1,8 +1,8 @@
-//! World 1996-97's package as far as the repository holds it: upstream's competition files
-//! (`assets/COMPETITIONS_JSON/`, GPL), without rosters.
+//! World 1996-97's package as far as the repository holds it (`data/worlds/1996-97/`:
+//! upstream's competition files, GPL), without rosters.
 
-use openswos_test_utils::assets_path;
-use openswos_world_package_resource::{PackageFiles, WorldPackage};
+use openswos_test_utils::world_1996_97_path;
+use openswos_world_package_resource::{COMPETITIONS_FOLDER, PackageFiles, WorldPackage};
 
 /// World 1996-97's `WORLD.ini`, as `world_extract` will write it (M4 #5); the fingerprint
 /// is not checked here.
@@ -14,8 +14,8 @@ pub fn files() -> PackageFiles {
     files
         .insert("WORLD.ini", WORLD_INI.as_bytes().to_vec())
         .expect("a safe path");
-    let dir = assets_path().join("COMPETITIONS_JSON");
-    for entry in std::fs::read_dir(&dir).expect("the fixtures") {
+    let dir = world_1996_97_path().join(COMPETITIONS_FOLDER);
+    for entry in std::fs::read_dir(&dir).expect("the committed competition files") {
         let path = entry.expect("an entry").path();
         let name = path
             .file_name()
@@ -24,7 +24,7 @@ pub fn files() -> PackageFiles {
             .to_owned();
         let bytes = std::fs::read(&path).expect("readable");
         files
-            .insert(&format!("competitions/{name}"), bytes)
+            .insert(&format!("{COMPETITIONS_FOLDER}/{name}"), bytes)
             .expect("a safe path");
     }
     files

@@ -62,7 +62,8 @@ Upstream OpenSWOS: `scripts/export_competitions.py` (the writer), `include/game_
 ## Tests
 
 - Unit tests: every record, its optional keys, its codes and their errors.
-- `assets/COMPETITIONS_JSON/`: upstream's ten files round-trip byte for byte, are the files
+- World 1996-97's competitions (`data/worlds/1996-97/competitions/`): upstream's ten
+  files round-trip byte for byte, are the files
   their names say, define 180 distinct ids, and every competition they name is one of them.
 - World 2026-27 (downloaded into `target/cache/`, D8): its `leagues.json` round-trips byte
   for byte (91 leagues; Italy's 14 divisions; 26 new countries and their continents).

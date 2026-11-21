@@ -1,6 +1,6 @@
 //! Your own copy of the PC game (`just test_real_assets <game_dir>`): World 1996-97's game
 //! data is valid, its rosters made from the game's `DATA/TEAM.nnn` as `world_extract` will
-//! make them (M4 #5), with the game's pool and upstream's tactics. Every team a draw starts
+//! make them (M4 #5), with the game's pool and the built-in tactics. Every team a draw starts
 //! from and every pool player's team is in the rosters. Skipped without
 //! `OPENSWOS_GAME_DIR`.
 
@@ -16,9 +16,9 @@ use openswos_team_json_resource::{
     EntryIds, TeamJsonDocument, TeamJsonFile, TrailingNewline, WORLD_1996_97_TAG,
 };
 use openswos_team_resource::TeamFileFormat;
-use openswos_test_utils::assets_path;
 use openswos_test_utils::data::{find_ignoring_case, game_dir};
 use openswos_test_utils::require;
+use openswos_test_utils::tactics_path;
 
 #[test]
 fn world_1996_97_plays_with_the_pc_games_teams() {
@@ -67,11 +67,10 @@ fn world_1996_97_plays_with_the_pc_games_teams() {
     assert_eq!(data.pool().len(), 900);
 }
 
-/// Upstream's built-in tactics (`assets/TACTICS_JSON/`).
+/// The built-in tactics (`data/tactics/`).
 fn tactics() -> BTreeMap<PresetFile, openswos_tac_resource::TeamTactics> {
-    let dir = assets_path().join("TACTICS_JSON");
-    std::fs::read_dir(&dir)
-        .expect("the fixtures")
+    std::fs::read_dir(tactics_path())
+        .expect("the built-in tactics")
         .map(|entry| {
             let path = entry.expect("an entry").path();
             let name = path

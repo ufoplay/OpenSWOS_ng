@@ -1,5 +1,6 @@
-//! Upstream's competition files (`assets/COMPETITIONS_JSON/`) are a valid world: World
-//! 1996-97's competitions, countries and tables, every reference resolved.
+//! World 1996-97's committed package (`data/worlds/1996-97/`: upstream's competition
+//! files) is a valid world: its competitions, countries and tables, every reference
+//! resolved.
 
 mod common;
 
