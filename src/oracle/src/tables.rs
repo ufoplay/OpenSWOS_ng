@@ -37,8 +37,9 @@ pub struct BakedWorld {
     pub second_files: Vec<(u8, u8)>,
     /// Whether players keep their own squad numbers (`WorldData2627_SquadNumbers`).
     pub squad_numbers: bool,
-    /// Whether it installs real rounds for odd-sized leagues (`FixtureRounds_Install`).
-    pub fixture_rounds: bool,
+    /// The round robins of 2 to 24 clubs after it (`_fixtureSchedulePtrTable`: its odd ones
+    /// rewritten as real rounds, `FixtureRounds_Install`).
+    pub schedules: Vec<FixtureSchedule>,
     /// Whether it plays the European cups as league phases (`LeaguePhase_InstallCups`).
     pub league_phases: bool,
     /// Its European cups' league-phase records (`WorldData2627_LeaguePhaseCups`): the
@@ -47,6 +48,18 @@ pub struct BakedWorld {
     /// Its national and league cups (`WorldData2627_Cups`), in the order `WorldCups_Install`
     /// installs them.
     pub cups: Vec<WorldCupEntry>,
+}
+
+/// A round robin as upstream's table points at it (`_fixtureSchedulePtrTable[teams - 2]`): its
+/// clubs, whether it plays real rounds (`FixtureRounds_Real`), its pairs in playing order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FixtureSchedule {
+    /// Its clubs.
+    pub teams: u8,
+    /// Whether it plays real rounds: every club at most once a match day.
+    pub rounds: bool,
+    /// One cycle's pairs, `(home, away)` as places among its clubs.
+    pub pairs: Vec<(u8, u8)>,
 }
 
 /// The base every competition record starts with (include/game_types.h `Competition`, 9
@@ -201,6 +214,43 @@ pub fn season_countries() -> Result<Vec<u8>, Unavailable> {
     {
         let _held = crate::Oracle::lock();
         Ok(crate::ffi::tables::season_countries())
+    }
+    #[cfg(oracle_unavailable)]
+    {
+        Err(Unavailable)
+    }
+}
+
+/// The original's round robins of 2 to 24 clubs (src/fixture_data.c, through
+/// `_fixtureSchedulePtrTable`), each with whether it plays real rounds.
+///
+/// # Errors
+///
+/// [`Unavailable`] without the checkout.
+pub fn fixture_schedules() -> Result<Vec<FixtureSchedule>, Unavailable> {
+    #[cfg(not(oracle_unavailable))]
+    {
+        let _held = crate::Oracle::lock();
+        Ok(crate::ffi::tables::original_schedules())
+    }
+    #[cfg(oracle_unavailable)]
+    {
+        Err(Unavailable)
+    }
+}
+
+/// The bytes of `_euroChampFixtureData` (src/swos_data_bulk_imports.c): the European
+/// Championships' group pairs first (diy_competition.c `getCurrentFixtureTeamPtrs`), then data
+/// that is no pair.
+///
+/// # Errors
+///
+/// [`Unavailable`] without the checkout.
+pub fn euro_championship_fixtures() -> Result<Vec<u8>, Unavailable> {
+    #[cfg(not(oracle_unavailable))]
+    {
+        let _held = crate::Oracle::lock();
+        Ok(crate::ffi::tables::euro_championship_fixtures())
     }
     #[cfg(oracle_unavailable)]
     {

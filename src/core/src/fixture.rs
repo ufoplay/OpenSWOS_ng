@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use openswos_common::{Importer, TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_competitions_json_resource::CompetitionsJsonFormat;
 use openswos_competitions_json_resource::Continent;
+use openswos_competitions_json_resource::SymbolId;
 use openswos_poolplyr_resource::{PoolFile, PoolFileFormat};
 use openswos_tac_resource::TeamTactics;
 use openswos_tactics_json_resource::{PresetFile, TacticsJsonFormat};
@@ -20,8 +21,8 @@ use openswos_team_resource::{TeamFile, TeamFileFormat};
 use openswos_test_utils::{assets_path, tactics_path};
 use openswos_world_package_resource::{WorldIdentity, WorldPackage, WorldTag};
 use openswos_world_rules_resource::{
-    Calendar, CountryDetail, CountryDetails, Fixtures, OddRoundRobin, Rules, Season, SeasonEnd,
-    TeamFiles,
+    Calendar, CompetitionSchedule, CountryDetail, CountryDetails, Fixtures, Rules, Schedule,
+    Season, SeasonEnd, TeamFiles,
 };
 
 /// Albania's number.
@@ -168,11 +169,25 @@ pub(crate) const FIRST_YEAR: u16 = 1996;
 /// Each team file's first global team number: ten numbers a file.
 pub(crate) const NUMBERS_A_FILE: u16 = 10;
 
-/// The small world's fixture behaviours: real rounds, odd-sized tournament groups refused.
+/// The small world's round robins, no world's: 2 clubs the away club first (the sizes it
+/// plays: Albania's league, the friendly), 3 clubs in real rounds; its friendly plays its own
+/// 2 clubs' the home club first. Odd-sized tournament groups refused.
 pub(crate) fn fixtures() -> Fixtures {
+    let schedule = |teams: u8, pairs: Vec<[u8; 2]>| Schedule {
+        teams,
+        rounds: true,
+        pairs,
+    };
     Fixtures {
-        odd_round_robin: OddRoundRobin::RoundsWithRest,
         odd_tournament_groups: false,
+        schedules: vec![
+            schedule(2, vec![[1, 0]]),
+            schedule(3, vec![[1, 2], [0, 1], [2, 0]]),
+        ],
+        competition_schedules: vec![CompetitionSchedule {
+            competitions: vec![SymbolId("_friendly".to_owned())],
+            schedule: schedule(2, vec![[0, 1]]),
+        }],
     }
 }
 

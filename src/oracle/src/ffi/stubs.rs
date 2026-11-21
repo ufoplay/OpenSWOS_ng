@@ -87,8 +87,12 @@ pub(crate) const WORLD_2627: u32 = 1;
 /// The world `World_Current` answers (upstream src/world.c, which reads it from the settings).
 pub(crate) static mut WORLD: u32 = WORLD_9697;
 
-/// Whether `FixtureRounds_Install` was called: an odd-sized league then plays real rounds.
-pub(crate) static mut FIXTURE_ROUNDS: bool = false;
+/// The round robins of 2 to 24 clubs (upstream src/swos_amiga_ptr_imports.c
+/// `_fixtureSchedulePtrTable`, which the oracle does not link): `FixtureRounds_Install` points
+/// the odd ones at its rounds; `ffi::tables` points them all at the original's first.
+#[unsafe(no_mangle)]
+pub(crate) static mut _fixtureSchedulePtrTable: [*const u8; super::tables::SCHEDULE_SIZES] =
+    [std::ptr::null(); super::tables::SCHEDULE_SIZES];
 
 /// Whether `LeaguePhase_InstallCups` was called: the European cups then play league phases.
 pub(crate) static mut LEAGUE_PHASES: bool = false;
@@ -100,20 +104,114 @@ pub(crate) extern "C-unwind" fn World_Current() -> u32 {
     unsafe { WORLD }
 }
 
-/// Upstream installs real rounds for odd-sized leagues (src/fixture_rounds.c): the stub
-/// records it.
-#[unsafe(no_mangle)]
-pub(crate) extern "C-unwind" fn FixtureRounds_Install() {
-    // SAFETY: a plain write to a global the lock's holder owns.
-    unsafe { FIXTURE_ROUNDS = true };
-}
-
 /// Upstream puts a world's league-phase cups in the career's contest table
 /// (src/league_phase.c): the stub records it.
 #[unsafe(no_mangle)]
 pub(crate) extern "C-unwind" fn LeaguePhase_InstallCups(_cups: *mut std::ffi::c_void) {
     // SAFETY: a plain write to a global the lock's holder owns.
     unsafe { LEAGUE_PHASES = true };
+}
+
+/// A world's league phase sorts its own table (src/league_phase.c): none here, so upstream's
+/// sort runs.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeaguePhase_Sort() -> i32 {
+    0
+}
+
+/// A world league's split reorders its table after the sort (src/league_split.c): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeagueSplit_Sort() {}
+
+/// The selected teams `VerifyTeamLoaded` gives (upstream `SELECTED_TEAMS_MAX`).
+pub(crate) const SELECTED_TEAMS: usize = 160;
+
+/// The country of the team numbers `VerifyTeamLoaded` gives as the career club.
+pub(crate) const CAREER_COUNTRY: u8 = 0xFF;
+
+/// Upstream's team loader (src/career_teams.c `VerifyTeamLoaded`): the career club for a team
+/// of [`CAREER_COUNTRY`], otherwise the selected team of the number's ordinal, so the identity
+/// upstream derives from the record (`diy_team_to_identity`) is the ordinal.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn VerifyTeamLoaded(
+    team: u16,
+) -> *mut super::bindings::diy_competition_c::TeamFileEx {
+    let [country, ordinal] = team.to_be_bytes();
+    if country == CAREER_COUNTRY {
+        (&raw mut super::bindings::diy_competition_c::_careerTeam).cast()
+    } else {
+        (&raw mut super::bindings::diy_competition_c::_selectedTeams)
+            .cast::<super::bindings::diy_competition_c::TeamFileEx>()
+            .wrapping_add(usize::from(ordinal) % SELECTED_TEAMS)
+    }
+}
+
+/// The session's pitch type (upstream `_pitchType`, the settings': -2 the season's).
+#[unsafe(no_mangle)]
+pub(crate) static mut _pitchType: u16 = 0;
+
+/// The view's month (upstream `_viewRandomPhase`).
+#[unsafe(no_mangle)]
+pub(crate) static mut _viewRandomPhase: u8 = 0;
+
+/// The divisions' default names (upstream `_divisionStringTable`, src/swos_amiga_ptr_imports.c).
+pub(crate) const DIVISION_NAMES: usize = 4;
+
+/// The divisions' default names: the tests point them at theirs.
+#[unsafe(no_mangle)]
+pub(crate) static mut _divisionStringTable: [*const u8; DIVISION_NAMES] =
+    [std::ptr::null(); DIVISION_NAMES];
+
+/// What ends upstream's lists of records: a pointer-sized 0xFFFFFFFF.
+pub(crate) const LIST_END: usize = 0xFFFF_FFFF;
+
+/// The national teams' competitions (upstream `_nationalTeamCompetitionsAndQualifications1`, a
+/// list of records walked as 32-bit words): a record, or none, then the end.
+#[unsafe(no_mangle)]
+pub(crate) static mut _nationalTeamCompetitionsAndQualifications1: [usize; 2] = [LIST_END; 2];
+
+/// The contests on the continental suspensions' track (upstream
+/// `_europeanCupsandNationalTeamCompetitionsAndQualifications`): a record, or none, then the
+/// end.
+#[unsafe(no_mangle)]
+pub(crate) static mut _europeanCupsandNationalTeamCompetitionsAndQualifications: [usize; 2] =
+    [LIST_END; 2];
+
+/// A world league's split (src/league_split.c `LeagueSplit_Init`): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeagueSplit_Init(_country: u8, _division: u16, _after: i32) {}
+
+/// Whether a world's Super Cup is the UEFA's (src/world_supercup.c `SuperCup_UefaTie`): no
+/// world here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn SuperCup_UefaTie() -> i32 {
+    0
+}
+
+/// Upstream's string copy (src/string_utils.c `StringCopy`): `src` and its end into `dst`, the
+/// end's place returned; a null `src` copies only an end.
+///
+/// # Safety
+///
+/// `src` is null or a string ended by a 0; `dst` has room for it.
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "C-unwind" fn StringCopy(src: *const u8, dst: *mut u8) -> *mut u8 {
+    // SAFETY: the caller's.
+    unsafe {
+        if src.is_null() {
+            dst.write(0);
+            return dst;
+        }
+        let mut at = 0;
+        loop {
+            let byte = src.add(at).read();
+            dst.add(at).write(byte);
+            if byte == 0 {
+                return dst.add(at);
+            }
+            at += 1;
+        }
+    }
 }
 
 /// Upstream copies a country's table entries to its second team file (src/world.c): no
@@ -135,7 +233,6 @@ pub(crate) fn reset() {
         TWEAKS = 0;
         _panicReasonCode = 0;
         WORLD = WORLD_9697;
-        FIXTURE_ROUNDS = false;
         LEAGUE_PHASES = false;
     }
 }

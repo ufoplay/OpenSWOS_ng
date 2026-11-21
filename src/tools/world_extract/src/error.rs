@@ -116,6 +116,26 @@ pub enum ExtractError {
     /// A compiled name that is not ASCII.
     #[error("a compiled name is not ASCII: {0:?}")]
     NotAscii(Vec<u8>),
+    /// No tournament has an id upstream's code names.
+    #[error("no tournament has the competition id {0}")]
+    NoCompetitionOfId(u8),
+    /// Tournaments that play one round robin with groups of several sizes.
+    #[error("the groups of {0} are not all of one size")]
+    GroupSizes(String),
+    /// A compiled round robin shorter than its size's.
+    #[error("a round robin needs {needed} pairs, the compiled table holds {held}")]
+    ShortSchedule {
+        /// The pairs of a round robin of its size.
+        needed: usize,
+        /// The table's.
+        held: usize,
+    },
+    /// No round robin of a size.
+    #[error("no round robin of {0} clubs")]
+    NoSchedule(u8),
+    /// The package a world is laid over lacks a rules file.
+    #[error("the base package has no rules/{0}")]
+    NoBaseRules(&'static str),
     /// The upstream checkout has no table of the world's cups.
     #[error("{0}: no `kWorld2627Cups` table: run `just upstream_fetch`")]
     NoCupTable(PathBuf),

@@ -25,9 +25,14 @@ the PC game's rosters, and World 2026-27's data is the SWOS 96/97 Mod's (D8).
     - `country_details.json`: each country's continent, from `_countriesTable`;
     - `team_files.json`: the team files' bases, from `_teamsCountryNumbers`;
     - `season.json`: the season end's countries, from `_careerCompetitionIdRemapTable`;
+    - `fixtures.json`: each size's round robin (2 to 24 clubs, `_fixtureSchedulePtrTable`
+      over fixture_data.c, each with `FixtureRounds_Real` as its `rounds`), and the European
+      Championships' own (`_euroChampFixtureData`'s first pairs, as many as their groups of
+      4 play), the two records named by the competition ids upstream's code checks
+      (`src/schedules.rs`);
   - the facts upstream keeps in code, not in a table: `src/extract.rs`'s constants, each
     citing its source (the first year, a club coach's own country first, no second team
-    files or kept squad numbers, the original's fixture behaviours).
+    files or kept squad numbers, odd-sized tournament groups refused).
 
 The package is checked (a valid world, `openswos_core`) before it is written. Without the
 oracle (no checkout, `just upstream_fetch`; bindgen needs libclang) it cannot be extracted: the
@@ -115,7 +120,10 @@ so the package is self-contained:
     world's national teams as upstream's SDL build grows it (`fit_world_national_files`:
     Europe's 55); the second files and kept squad numbers the accessors give;
   - `season.json`: the season end's 91 countries;
-  - `fixtures.json`: real rounds, odd-sized tournament groups allowed.
+  - `fixtures.json`: the round robins the install leaves (`FixtureRounds_Install`: the odd
+    sizes 5 to 23 as real rounds), read through the oracle; the competitions that play their
+    own, as World 1996-97's (upstream picks them by id in every world); odd-sized tournament
+    groups allowed.
 
 The result is checked before it is written: a valid world with valid game data
 (`openswos_core`: its 107 rosters, its pool of 900, the built-in tactics; every seeded team of

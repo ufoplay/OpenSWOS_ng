@@ -13,6 +13,7 @@ readme = "readme.md"
 openswos_common = { workspace = true }
 openswos_competitions_json_resource = { workspace = true }
 openswos_poolplyr_resource = { workspace = true }
+openswos_rng = { workspace = true }
 openswos_tac_resource = { workspace = true }
 openswos_tactics_json_resource = { workspace = true }
 openswos_team_json_resource = { workspace = true }

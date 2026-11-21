@@ -38,6 +38,13 @@ const ENGLISH_CUP_CLUBS: usize = 64;
 /// The rule bytes of a cup record (include/game_types.h `CompetitionCup.roundRuleFlags`).
 const ROUND_RULES: usize = 6;
 
+/// The odd sizes `FixtureRounds_Install` rewrites (src/fixture_rounds.c `FIRST_ODD`,
+/// `LAST_ODD`).
+const FIRST_ROUNDS: u8 = 5;
+
+/// The last of them.
+const LAST_ROUNDS: u8 = 23;
+
 /// The countries of World 2026-27's season end (`kWorld2627SeasonCountries`: 96/97's 65 and
 /// its 26 new countries).
 const SEASON_COUNTRIES: usize = 91;
@@ -63,7 +70,20 @@ fn the_install_resizes_adds_renames_and_switches() {
     assert_eq!(entry(41).expect("renamed").name, b"SERBIA");
     assert_eq!(baked.season_countries.len(), SEASON_COUNTRIES);
     assert!(baked.second_files.is_empty(), "none at the pin");
-    assert!(baked.squad_numbers && baked.fixture_rounds && baked.league_phases);
+    assert!(baked.squad_numbers && baked.league_phases);
+    // `FixtureRounds_Install`: the odd sizes 5 to 23 as real rounds, the same pairs in another
+    // order; the even ones and 3 as they were.
+    for schedule in &baked.schedules {
+        let odd = schedule.teams % 2 == 1;
+        let rewritten = odd && (FIRST_ROUNDS..=LAST_ROUNDS).contains(&schedule.teams);
+        assert_eq!(schedule.rounds, !odd || rewritten, "{}", schedule.teams);
+    }
+    let five = baked.schedules.iter().find(|schedule| schedule.teams == 5);
+    assert_eq!(
+        five.map(|schedule| schedule.pairs.first().copied()),
+        Some(Some((4, 1))),
+        "the circle method: club 0 meets the dummy and rests, then 4 v 1, swapped by its place"
+    );
     // `kWorld2627LeaguePhases`: the Champions League first, 36 clubs in 2 groups of 18.
     let [champions, ..] = baked.league_phase_cups.as_slice() else {
         panic!("three league phases");

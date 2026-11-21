@@ -3,6 +3,7 @@
 // results must be bit-exact on every platform.
 #![deny(clippy::float_arithmetic)]
 
+pub mod competition;
 pub mod data;
 pub mod validation;
 pub mod world;

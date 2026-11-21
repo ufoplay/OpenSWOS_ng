@@ -238,10 +238,10 @@ Whole file under `#if SWOS_WORLDS` (l.25 / 381-396 stubs). Gate inside: `World_S
 | 7430-7440 | table_groups, table_per_group | Split league shown as zone pages. | original | yes | original | VIEW | — |
 | 7643-7645, 7684-7700, 7830-7842 | DIYLeagueTournament16BeforeDraw | League phase headers/colours; zone colours and legend. | original | yes | zones only | VIEW | — |
 | 9238-9240 | continental_record | A world's continental contests (Libertadores, UEFA ties, conti ties, UEFA Super Cup) count as European for suspensions. | 96/97 list only | yes | (unsure) | DATA (cups area) | A `continental` flag on competition records (owned by the cups inventory). |
-| 9328-9335 | InitDIYCompetitionFromTableEntry | Odd career league panics 0x1313 unless rounds are installed. | panic on odd (original) | allowed | allowed | COMPONENT | `OddRoundRobinSchedule`. |
+| 9328-9335 | InitDIYCompetitionFromTableEntry | Odd career league panics 0x1313 unless rounds are installed. | panic on odd (original) | allowed | allowed | DATA | `rules/fixtures.json` `schedules[].rounds` (M5 #1; was COMPONENT `OddRoundRobinSchedule`). |
 | 9424-9427 | InitDIYCompetitionFromTableEntry | Division's own meetings and split (`LeagueSplit_Init` before/after). | no-op | yes | no-op | DATA | `rules/league_splits.json`. |
 | 9513-9514 | InitDIYCupFromRecord | World cups' byes/draw, classic Europe's no same-country draw. | no-op | `WorldCups_CupMade` | `WorldEurope_DrawMade` | COMPONENT (cups area) | owned by the cups inventory. |
-| 9669-9677 | InitDIYLeagueFromRecord | `World_Current() == WORLD_9697`: a tournament's odd-sized league groups panic 0x1313; other worlds allow them (Poule Scudetto's groups of 3). | panic (original) | allowed | allowed | DATA | `rules/fixtures.json` `odd_tournament_groups: false/true`. Pairs with `OddRoundRobinSchedule`. |
+| 9669-9677 | InitDIYLeagueFromRecord | `World_Current() == WORLD_9697`: a tournament's odd-sized league groups panic 0x1313; other worlds allow them (Poule Scudetto's groups of 3). | panic (original) | allowed | allowed | DATA | `rules/fixtures.json` `odd_tournament_groups: false/true`. Pairs with the round robins' `rounds`. |
 | 10113-10118 | FindTeamInDIY | Career league's place = place in the club's zone, scaled. | league place | zones | league place | COMPONENT | `CareerLeaguePosition`. |
 | 10394-10419 | GetMoreExpensiveTeamsCount | Count of more expensive clubs within the zone, scaled. | whole league | zones | whole league | COMPONENT | `CareerLeaguePosition`. |
 | 10849-10856, 10877-10884 | ProcessDIYKnockoutMatchResultAndCareerUpdates | Level tie without penalties: the play-off's rule decides (else a draw/replay). | original | play-off | original | COMPONENT | `CareerPlayoffContest`. |
@@ -268,7 +268,7 @@ Whole file under `#if SWOS_WORLDS` (l.25 / 381-396 stubs). Gate inside: `World_S
 - `rules/league_groups.json` — per country `levels[{first, groups, sizes[], name}]`, `clubs[{slot, base_division, area[2]}]`. 2627: `kWorld2627Groups` (4).
 - `rules/states.json` — per country: states file, world byte, first state, `sim`, `pools`, `words_at`, `contests[]` (calendar, draws), `relegation_rule` 2, `first_season_year` 2026. 2627: `kWorld2627States46`.
 - `rules/europe.json` — European cups as league phases: the 3 records (or references into `competitions/tournaments.json`), `places[{country, cl, el, uecl}]`, which career contests 0..2 they replace. 2627: `kWorld2627LeaguePhases`, `kWorld2627EuropePlaces` (54). (8485's knockout Europe belongs to the cups inventory; merge there.)
-- `rules/fixtures.json` — `odd_round_robin: "original" | "rounds"` (96/97 original; 2627, 8485 rounds), `odd_tournament_groups: bool` (96/97 false).
+- `rules/fixtures.json` — `schedules` (each size's round robin; 96/97 the original's, 2627 and 8485 rounds for the odd sizes 5 to 23), `competition_schedules`, `odd_tournament_groups: bool` (96/97 false). M5 #1.
 - `rules/match_rules.json` (or only `mod.json` `settings`) — which Mod match rules the world offers, with defaults: `stoppage_time`, `cpu_red_cards`, `cpu_injuries`, `goalkeeper_injuries`, `bench_info`, `opponent_squad` (all on); 96/97 offers none.
 - `rules/limits.json` entries from this area: `league_levels_max` 8, `groups_per_level_max` 9, `states_max` 13, `clubs_per_state_max` 16, state-pool sizes (8/20/192/16/640), `clubs_per_team_file` (a country over two files: `WORLD_SLOTS` 512). These are engine caps today, sized for 2627.
 - `rules/cup_clubs.json` — `World_CupClubs` (8485 only). Owned by the cups inventory.
@@ -279,7 +279,7 @@ Whole file under `#if SWOS_WORLDS` (l.25 / 381-396 stubs). Gate inside: `World_S
 - `LevelPlacement`: `division_chain` (original); `parallel_groups` (`LeagueGroups_Apply` -> `sr_pg_season`).
 - `LeagueFixturePairing`: `schedule_tables` (original); `split_days` (`LeagueSplit_Pair`, `LeagueSplit_Count`); `league_phase_draw` (`LeaguePhase_StageStart`, `LeaguePhase_Pair`); `fixed_calendar` (`States_StageStart`, `States_Pair`).
 - `LeagueTableOrder`: `points_gd_goals_name` (`DIY_SortLeagueTableByStandings`); `split_groups` (`LeagueSplit_Sort`); `uefa_league_phase` (`LeaguePhase_Sort`, `LeaguePhase_Rank`).
-- `OddRoundRobinSchedule`: `original_pair_tables` (96/97, odd career league panics); `rounds_with_rest` (`FixtureRounds_Install`).
+- (`OddRoundRobinSchedule`: data since M5 #1, the round robins in `rules/fixtures.json`.)
 - `EuropeanCupFormat`: `original_cups`; `league_phase_36` (league_phase.c: pots, draw, discipline, `GroupsEnd`, `KnockoutDraw`); `classic_knockouts` (world_europe.c, 8485; cups inventory).
 - `CareerLeaguePosition`: `league_place` (original `FindTeamInDIY`, `GetMoreExpensiveTeamsCount`); `zone_place_scaled` (`LeagueSplit_ZoneFind`, `_ZoneOfTeam`, `_ZoneScale`, `_ZoneRecord`, `_InZones`, plus `WorldPlayoff_StageWins` in the season-end opinion).
 

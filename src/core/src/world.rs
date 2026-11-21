@@ -15,6 +15,7 @@ mod countries;
 mod files;
 mod ids;
 mod rules;
+mod schedules;
 mod tables;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -22,7 +23,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use openswos_common::TeamFileNumber;
 use openswos_competitions_json_resource::{Continent, SymbolId};
 use openswos_world_package_resource::{WorldPackage, WorldTag};
-use openswos_world_rules_resource::{Fixtures, SeasonEnd};
+use openswos_world_rules_resource::SeasonEnd;
 
 pub use competitions::{
     CompetitionRef, Cup, CupRef, League, LeagueLink, LeagueRef, Playoff, PlayoffRef, Tournament,
@@ -38,6 +39,7 @@ pub use tables::{
 use self::competitions::{Resolver, competition_ref};
 pub(crate) use self::files::Slot;
 use self::ids::Ids;
+use crate::competition::schedule::Schedules;
 use crate::validation::{Invalid, Problems};
 
 /// A world, valid.
@@ -77,8 +79,10 @@ pub struct World {
     team_numbering: TeamNumbering,
     /// How its seasons end.
     season_end: SeasonEnd,
-    /// Its fixture behaviours.
-    fixtures: Fixtures,
+    /// Its round robins.
+    schedules: Schedules,
+    /// Whether its tournaments' groups may hold an odd number of clubs.
+    odd_tournament_groups: bool,
     /// The competitions it plays: those its career index, its country tables or its
     /// qualifying groups name, and the play-offs and blocks their leagues lead to.
     played: BTreeSet<CompetitionRef>,
@@ -246,10 +250,17 @@ impl World {
         &self.season_end
     }
 
-    /// Its fixture behaviours (`rules/fixtures.json`).
+    /// Its round robins (`rules/fixtures.json`): each size's, and the competitions' own.
     #[must_use]
-    pub fn fixtures(&self) -> Fixtures {
-        self.fixtures
+    pub fn schedules(&self) -> &Schedules {
+        &self.schedules
+    }
+
+    /// Whether its tournaments' groups may hold an odd number of clubs (`rules/fixtures.json`;
+    /// upstream diy_competition.c `InitDIYLeagueFromRecord` refuses them in the original).
+    #[must_use]
+    pub fn odd_tournament_groups(&self) -> bool {
+        self.odd_tournament_groups
     }
 
     /// Whether it plays `competition`: its career index, a country table or a qualifying
@@ -371,6 +382,7 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
     let (career, country_tables, qualifying_groups) =
         (career?, country_tables?, qualifying_groups?);
     let (leagues, league_blocks) = (leagues?, league_blocks?);
+    let (cups, tournaments) = (cups?, tournaments?);
     let played = played(&Parts {
         career: &career,
         tables: &country_tables,
@@ -378,12 +390,25 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
         leagues: &leagues,
         blocks: &league_blocks,
     });
+    let schedules = schedules::schedules(
+        rules.fixtures,
+        &schedules::Records {
+            leagues: &leagues,
+            cups: &cups,
+            tournaments: &tournaments,
+        },
+        &mut Resolver {
+            ids: &ids,
+            countries: &countries,
+            problems,
+        },
+    );
     Some(World {
         tag: package.identity.tag.clone(),
         name: package.identity.name.clone(),
         leagues,
-        cups: cups?,
-        tournaments: tournaments?,
+        cups,
+        tournaments,
         playoffs: playoffs?,
         qualifying_groups,
         league_blocks,
@@ -394,7 +419,8 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
         continents: continents?,
         team_numbering: team_numbering?,
         season_end: season_end?,
-        fixtures: *rules.fixtures,
+        schedules: schedules?,
+        odd_tournament_groups: rules.fixtures.odd_tournament_groups,
         played,
         countries,
         ids,
@@ -408,6 +434,7 @@ mod tests {
     use openswos_world_package_resource::WorldPackage;
 
     use super::*;
+    use crate::competition::schedule::{Pair, Schedule};
     use crate::fixture::{ALBANIA, ENGLAND, package, package_with};
 
     fn id(text: &str) -> SymbolId {
@@ -460,7 +487,15 @@ mod tests {
             "England's base is 80"
         );
         assert_eq!(world.season_end().countries, [ENGLAND, ALBANIA]);
-        assert_eq!(world.fixtures(), crate::fixture::fixtures());
+        assert!(!world.odd_tournament_groups());
+        let schedules = world.schedules();
+        let first = |schedule: Option<&Schedule>| schedule.and_then(|s| s.pairs().first().copied());
+        let pair = |home, away| Some(Pair { home, away });
+        assert_eq!(first(schedules.of_size(2)), pair(1, 0));
+        let friendly = world.competition(&id("_friendly")).expect("the friendly");
+        let league = world.competition(&id("_albanianLeague")).expect("a league");
+        assert_eq!(first(schedules.of(friendly, 2)), pair(0, 1), "its own");
+        assert_eq!(first(schedules.of(league, 2)), pair(1, 0), "its size's");
     }
 
     #[test]

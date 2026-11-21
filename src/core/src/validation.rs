@@ -292,6 +292,70 @@ pub enum Problem {
     /// A second team file numbered as a country's own.
     #[error("file {} is a country's own", .0.0)]
     FileTaken(TeamFileNumber),
+    /// A round robin of fewer than two clubs.
+    #[error("a round robin of {0} clubs: it takes two or more")]
+    TooFewClubs(u8),
+    /// A round robin of a size given again.
+    #[error("a round robin of {teams} clubs again (first at {first})")]
+    RepeatedSchedule {
+        /// Its clubs.
+        teams: u8,
+        /// Where the size is given first.
+        first: Location,
+    },
+    /// A pair that is not two of the round robin's clubs.
+    #[error("[{home}, {away}] is no pair of {teams} clubs")]
+    NoPair {
+        /// The club at home.
+        home: u8,
+        /// The club away.
+        away: u8,
+        /// The round robin's clubs.
+        teams: u8,
+    },
+    /// A pair a round robin plays again, either way round.
+    #[error("[{home}, {away}] is played again (first at {first})")]
+    RepeatedPair {
+        /// The club at home.
+        home: u8,
+        /// The club away.
+        away: u8,
+        /// Where the pair is first.
+        first: Location,
+    },
+    /// A round robin without some of its pairs.
+    #[error("{missing} pairs of {teams} clubs are not played")]
+    MissingPairs {
+        /// Its clubs.
+        teams: u8,
+        /// The pairs it lacks.
+        missing: usize,
+    },
+    /// A round robin said to play real rounds where a match day has a club twice.
+    #[error("match day {day} has club {club} twice: no real rounds")]
+    NotRounds {
+        /// The match day, from 1.
+        day: usize,
+        /// The club.
+        club: u8,
+    },
+    /// A competition given a round robin of its own again.
+    #[error("the competition has a round robin of its own already (at {first})")]
+    RepeatedCompetition {
+        /// Where it is named first.
+        first: Location,
+    },
+    /// A competition given a round robin of another size than its groups'.
+    #[error("a round robin of {teams} clubs, where the competition plays {size}")]
+    ScheduleSize {
+        /// The round robin's clubs.
+        teams: u8,
+        /// A size the competition plays.
+        size: u8,
+    },
+    /// A knockout given a round robin.
+    #[error("the competition is a knockout: it plays no round robin")]
+    NoRoundRobin,
 }
 
 /// One problem and where it is.

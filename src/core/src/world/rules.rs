@@ -59,12 +59,12 @@ pub(crate) struct RulesFiles<'a> {
 }
 
 /// The path of a rules file.
-fn path<T: RulesFile>() -> String {
+pub(super) fn path<T: RulesFile>() -> String {
     format!("{RULES_FOLDER}/{}", T::FILE_NAME)
 }
 
 /// Where a field of a rules file is.
-fn at<T: RulesFile>(field: &Field) -> Location {
+pub(super) fn at<T: RulesFile>(field: &Field) -> Location {
     Location::field(&path::<T>(), field)
 }
 
@@ -216,7 +216,7 @@ pub(crate) fn season_end(
 mod tests {
     use openswos_common::{Importer, TeamOrdinal};
     use openswos_competitions_json_resource::{CompetitionsFile, CompetitionsJsonFormat};
-    use openswos_world_rules_resource::{CountryDetail, OddRoundRobin};
+    use openswos_world_rules_resource::CountryDetail;
 
     use super::*;
 
@@ -396,14 +396,12 @@ mod tests {
                 },
             }),
             fixtures: Some(Fixtures {
-                odd_round_robin: OddRoundRobin::RoundsWithRest,
                 odd_tournament_groups: true,
+                schedules: Vec::new(),
+                competition_schedules: Vec::new(),
             }),
         };
         let picked = checked(|problems| pick(&rules, problems)).expect("picked");
-        assert_eq!(
-            picked.fixtures.odd_round_robin,
-            OddRoundRobin::RoundsWithRest
-        );
+        assert!(picked.fixtures.odd_tournament_groups);
     }
 }

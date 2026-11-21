@@ -28,6 +28,33 @@ const LIBRARY: &str = "openswos_upstream";
 /// The list of units.
 const UNITS_FILE: &str = "units.toml";
 
+/// The folder of the SDL shim, in `OUT_DIR`.
+const SDL_SHIM_DIR: &str = "sdl_shim";
+
+/// The SDL shim: upstream's SDL build (`SWOS_SDL_BUILD`) has headers include `<SDL.h>` for the
+/// types they name (include/mod_api.h). The oracle compiles none of upstream's SDL code, so
+/// those types are declared here, opaque or as SDL's integers: no SDL install is needed.
+const SDL_SHIM: &str =
+    "/* The oracle's SDL shim (src/oracle/build.rs): the types upstream's headers name. */
+#ifndef OPENSWOS_ORACLE_SDL_SHIM
+#define OPENSWOS_ORACLE_SDL_SHIM
+#include <stdint.h>
+typedef struct SDL_Renderer SDL_Renderer;
+typedef struct SDL_Window SDL_Window;
+typedef struct SDL_Texture SDL_Texture;
+typedef int32_t SDL_Keycode;
+typedef uint8_t Uint8;
+typedef uint16_t Uint16;
+typedef uint32_t Uint32;
+typedef uint64_t Uint64;
+typedef int32_t Sint32;
+typedef int64_t Sint64;
+#endif
+";
+
+/// The shim's file name.
+const SDL_SHIM_FILE: &str = "SDL.h";
+
 /// What bindgen's wrappers of a header's `static` functions are called after: `<binding>`
 /// then this, in `OUT_DIR` (bindgen adds `.c`).
 const WRAPPERS_SUFFIX: &str = "_static";
@@ -141,6 +168,7 @@ fn main() {
         println!("cargo::rerun-if-changed={}", source.display());
     }
     let out = PathBuf::from(env::var_os("OUT_DIR").expect("set by cargo"));
+    let shim = sdl_shim(&out);
     for unit in &units.unit {
         let binding = Binding {
             path: &unit.path,
@@ -150,7 +178,7 @@ fn main() {
             types: &unit.types,
             wrapped: false,
         };
-        bind(&upstream, &units.build, &binding, &out);
+        bind(&upstream, &units.build, &binding, &out, &shim);
     }
     for data in units.data.iter().filter(|data| !data.variables.is_empty()) {
         let binding = Binding {
@@ -161,7 +189,7 @@ fn main() {
             types: &[],
             wrapped: false,
         };
-        bind(&upstream, &units.build, &binding, &out);
+        bind(&upstream, &units.build, &binding, &out, &shim);
     }
     for header in &units.header {
         let binding = Binding {
@@ -172,11 +200,19 @@ fn main() {
             types: &[],
             wrapped: true,
         };
-        let wrappers = bind(&upstream, &units.build, &binding, &out)
+        let wrappers = bind(&upstream, &units.build, &binding, &out, &shim)
             .unwrap_or_else(|| panic!("no static function of {} wrapped", header.path));
         sources.push(wrappers);
     }
-    compile(&upstream, &units.build, &sources);
+    compile(&upstream, &units.build, &sources, &shim);
+}
+
+/// Writes the SDL shim into `out`, and returns its folder.
+fn sdl_shim(out: &Path) -> PathBuf {
+    let dir = out.join(SDL_SHIM_DIR);
+    fs::create_dir_all(&dir).expect("the shim's folder");
+    fs::write(dir.join(SDL_SHIM_FILE), SDL_SHIM).expect("the shim written");
+    dir
 }
 
 /// What bindgen binds of a unit or a header.
@@ -207,12 +243,13 @@ fn define_args(build: &Build) -> impl Iterator<Item = String> + '_ {
     build.defines.iter().map(|define| format!("-D{define}"))
 }
 
-/// Compiles `sources` into the static library.
-fn compile(upstream: &Path, build: &Build, sources: &[PathBuf]) {
+/// Compiles `sources` into the static library, the SDL shim in `shim`.
+fn compile(upstream: &Path, build: &Build, sources: &[PathBuf], shim: &Path) {
     let mut compiler = cc::Build::new();
     compiler
         .files(sources)
         .includes(build.include_dirs.iter().map(|dir| upstream.join(dir)))
+        .include(shim)
         .opt_level(build.optimization)
         .warnings(false)
         // Upstream's C warns a great deal by design (its Makefile turns most of it off).
@@ -230,8 +267,14 @@ fn compile(upstream: &Path, build: &Build, sources: &[PathBuf]) {
 
 /// Binds `binding`'s functions, globals and types into `<out>/<name>.rs`, every function with the
 /// `C-unwind` ABI (a stub may unwind through it). A header's `static` functions are wrapped
-/// in a C file of their own, returned.
-fn bind(upstream: &Path, build: &Build, binding: &Binding<'_>, out: &Path) -> Option<PathBuf> {
+/// in a C file of their own, returned. The SDL shim is in `shim`.
+fn bind(
+    upstream: &Path,
+    build: &Build,
+    binding: &Binding<'_>,
+    out: &Path,
+    shim: &Path,
+) -> Option<PathBuf> {
     let source = upstream.join(binding.path);
     let name = binding.name();
     let wrappers = out.join(format!("{name}{WRAPPERS_SUFFIX}"));
@@ -245,6 +288,7 @@ fn bind(upstream: &Path, build: &Build, binding: &Binding<'_>, out: &Path) -> Op
                 .iter()
                 .map(|dir| format!("-I{}", upstream.join(dir).display())),
         )
+        .clang_arg(format!("-I{}", shim.display()))
         .clang_args(define_args(build))
         .clang_args(build.flags.iter().filter(|flag| flag.starts_with("-std=")))
         .override_abi(bindgen::Abi::CUnwind, ".*")

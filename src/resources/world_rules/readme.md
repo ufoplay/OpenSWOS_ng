@@ -25,7 +25,7 @@ an error.
 | `country_details.json` | `countries[]`: each country's `number` and `continent` (code: 0 Europe, 1 North America, 2 South America, 3 Asia, 4 Oceania, 5 Africa; upstream `_countriesTable`) | not a world |
 | `team_files.json` | `bases[256]`: each team file's first global team number (upstream `_teamsCountryNumbers`); `second_files[]`: `{country, file}` for a country over two team files (upstream `World_SecondFile`); `squad_numbers`: whether players keep their own shirt numbers (`World_SquadNumbers`) | not a world |
 | `season.json` | `end.countries[]`: the season end's countries, in its order (upstream `_careerCompetitionIdRemapTable`, `World_SeasonCountries`); `end.own_country_first`: a club coach's own country first (career_season.c) | not a world |
-| `fixtures.json` | `odd_round_robin`: `original_pair_tables` or `rounds_with_rest` (an odd-sized league's fixtures); `odd_tournament_groups`: whether a tournament's groups may be odd-sized | not a world |
+| `fixtures.json` | `odd_tournament_groups`: whether a tournament's groups may be odd-sized; `schedules[]`: each size's round robin, `{teams, rounds, pairs}` (one cycle's `[home, away]` pairs in playing order; `rounds`: every club at most once a match day, which a career league needs: upstream `FixtureRounds_Real`); `competition_schedules[]`: `{competitions, schedule}`, competitions that play their own (upstream `getCurrentFixtureTeamPtrs`: the European Championships') | not a world |
 
 ## Tests
 

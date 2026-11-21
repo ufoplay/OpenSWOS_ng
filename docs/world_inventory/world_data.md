@@ -73,7 +73,7 @@ files. All rows are DATA except FixtureRounds_Install (COMPONENT).
 | `kWorld2627Splits`, `split<c>_<d>` (wd 8876-9886); `{0}` (wd8485 3487) | divisions' mid-season splits and own meetings (compiled split tables) | `LeagueSplit[38]` / count 0 | `World_LeagueSplits(&count)` (wd 9888; baked 193) | count 0 | rules/league_splits.json |
 | `kWorld2627CupD`, `CupDRounds`, `CupDTies[161]`, `CupDBase[512]`, `CupDStrength[512]`, `CupDPoolStrength[42]` (wd 9905-10144) | the Coppa Italia Serie D: rounds, ties, its level (first division 5, 9 groups), each slot's base division and strength, the pool's strengths, names | WorldCupD x1 / none | `World_CupD()` (wd 10146; baked 198) | 0 | rules/level_cup.json (a cup for one level of groups) |
 | `kWorld2627SuperCups[10]` (wd 10161-10172) | national and UEFA super cups: country, seed, first season, early tie, weeks, level, size, rules, first season's entrants, names, record line | `WorldSuperCup[10]` / none | `World_SuperCups(&count)` (wd 10175; baked 208) | count 0 | rules/super_cups.json |
-| InstallBaked `FixtureRounds_Install()` (wd 1870; wd8485 626) | odd-club leagues play real rounds (one club at rest a day) | call | World_InstallBaked | not called: the original pair tables (a teamdb mod also calls it, teamdb.c 332) | COMPONENT OddClubFixtures, selected by rules/fixtures.json `odd_clubs` (see Summary) |
+| InstallBaked `FixtureRounds_Install()` (wd 1870; wd8485 626) | odd-club leagues play real rounds (one club at rest a day) | call | World_InstallBaked | not called: the original pair tables (a teamdb mod also calls it, teamdb.c 332) | DATA: the round robins the install leaves, rules/fixtures.json `schedules` (M5 #1; was COMPONENT OddClubFixtures) |
 | InstallBaked `World_SyncSecondFiles()` (wd 1871; wd8485 627) | second files get their country's table entries | call | World_InstallBaked; save_format_json.c 4967 | no-op | no data of its own: follows rules/second_files.json |
 
 ## The JSON overlay: what a world installs over 96/97 (save_format_json.c)
@@ -321,7 +321,7 @@ Overlay table: 11 merge rules (not branch rows). NOT_A_BRANCH, no rows: 6. They 
 - rules/season_countries.json: season-end country order.
 - rules/presets.json: preset competitions offered (none in 2627/8485).
 - rules/tweaks.json: whether the SWOS 2020 league tweaks apply (9697 only) (unsure).
-- rules/fixtures.json: `odd_clubs` selector for the component below.
+- rules/fixtures.json: the round robins themselves, each size's (M5 #1).
 - Competition data the baked tables carry (for the competitions inventory to confirm):
   rules/league_groups.json, cup_clubs.json, nationals.json, league_playoffs.json, team_pools.json,
   national_cups.json, europe_places.json, conti_cups.json, promedio.json, states.json,
@@ -335,8 +335,9 @@ Overlay table: 11 merge rules (not branch rows). NOT_A_BRANCH, no rows: 6. They 
   cpu_replacements) already exist in the world packages.
 
 **Components:**
-- OddClubFixtures: `OriginalPairTables` (9697: the compiled `_fixtureSchedulePtrTable`, a quirk kept)
-  and `RestDayRounds` (2627, 8485: fixture_rounds.c `FixtureRounds_Install`, `FixtureRounds_Real`).
+- OddClubFixtures: no component since M5 #1. The two ways are two tables: 9697's compiled
+  `_fixtureSchedulePtrTable` and 2627's and 8485's after fixture_rounds.c
+  `FixtureRounds_Install`, so they are data, rules/fixtures.json `schedules`.
 - Hint for the competitions inventory: the European cups have three forms (9697 compiled knockouts
   with seed buckets; 8485 knockout records + places, world_europe.c `WorldEurope_Install`; 2627
   league phases, league_phase.c `LeaguePhase_InstallCups`).

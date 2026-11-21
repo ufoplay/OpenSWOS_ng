@@ -31,7 +31,7 @@ files come (docs/WORLD_INVENTORY.md §4; M4 #5c, M5, M7).
 | `first_year`, `continent` | `rules/calendar.json`, `rules/country_details.json` | the year the first season starts; each country's continent |
 | `TeamNumbering` | `rules/team_files.json` | each team file's first global team number (a club's global number: its file's base plus its place), the second team files, whether squad numbers are kept |
 | `SeasonEnd` | `rules/season.json` | the season end's countries, in its order; a club coach's own country first |
-| `Fixtures` | `rules/fixtures.json` | the fixture behaviours (an odd-sized league's, odd-sized tournament groups); without the file, the original's |
+| `Schedules` | `rules/fixtures.json` | the round robins (`competition::schedule`): each size's pairs in playing order and whether it plays real rounds, and the competitions that play their own (`Schedules::of`: a competition's own, else its size's); whether tournament groups may be odd-sized |
 
 References become typed handles (`LeagueRef`, `CupRef`, `CompetitionRef`, `GroupRef`,
 `BlockRef`…) into the world that made them; `World::competition` finds a competition by its
@@ -64,9 +64,14 @@ competitions/cups.json: competitions[1] (_cupWinnersCup).team_seed_list[0].count
 - the rules files `calendar.json`, `country_details.json`, `team_files.json`, `season.json`
   and `fixtures.json`, each required (no world's behaviour is a default): every country with one entry of details
   and no other number; 256 bases never going down; a second file a country's, numbered as
-  no country is; the season end's countries the world's, each once.
+  no country is; the season end's countries the world's, each once; each round robin every
+  pair of its two or more clubs once, real rounds where it says so, a size once; a
+  competition's own round robin of the size its record states (a league's divisions, a
+  tournament's groups; a cup played as a league draws its groups, a knockout plays none),
+  each competition once.
 
-Not checked yet: which team file a competition plays with (`team_number`): the European
+Not checked yet: whether every division has the round robin it plays (M5 #5: World
+2026-27's leagues in zones play their own pairs). Which team file a competition plays with (`team_number`): the European
 pool's first season joins `rules/europe.json` (M4 #5c), and the custom teams are the
 player's.
 
@@ -111,3 +116,43 @@ registry, `dj_selftest_graph`), `src/team_db.c` (the team database, canonical te
   its rosters made from the PC game's `DATA/TEAM.nnn` as `world_extract` makes them,
   with the game's pool and the built-in tactics, is valid: every seeded team and every pool
   player's team is in the rosters, every team canonical.
+
+## The competition engine (`competition`)
+
+The generic engine of docs/PLAN.md M5, unit by unit. Today:
+
+- `schedule`: the round robins a world states. `Schedule` is one cycle's pairs (`Pair`: home
+  and away, by place) in playing order, whether it plays real rounds, and how many pairs a
+  match day counts; `Schedules::of(competition, teams)` gives a competition's own, else its
+  size's (upstream diy_competition.c `getCurrentFixtureTeamPtrs`: the European Championships'
+  by id, else `_fixtureSchedulePtrTable[teams - 2]`). The engine has no table of its own.
+- `table`: a league table. `Line` is a team's (upstream `DIYTeamStats`: 16-bit counts that
+  wrap, the goal difference in a signed word); `record` writes a result into the two lines
+  (a win the competition's points, a draw a point each, the goals both ways; the games are
+  counted with the progress, `Line::count_game`); `sort_groups` orders each group as
+  upstream's `DIY_SortLeagueTableByStandings` does: points, goal difference, goals, the
+  name byte for byte, by its exchange sort (not stable, faithfully).
+- `value`: a team's average price (its 16 players' price bytes, `average_price`) and a
+  competition's `Strength` (the average over all its teams' players, and its tier: four
+  prices a tier, at most 7).
+- `draw`: `shuffle`, the one every draw of upstream's makes (from the last place down, each
+  swapped with the place `Rand2() × n >> 8`), `shuffled_order`, and `seed_by_value`, the
+  seeded draw: ordered by value (a bubble sort, highest first), then each pot shuffled
+  (`Pots::Groups`: a pot per group place; `Pots::Quarters`: a knockout's four, left
+  unshuffled when a quarter is two teams or fewer). Every draw comes from the second
+  generator (`openswos_rng`), in upstream's order.
+- `running`: a competition under way (upstream `DIYCompetitionEx`). `RunningCompetition` is
+  upstream's image itself (2,640 bytes, its 64-bit build's layout), each field a typed
+  accessor at its offset (`num_teams`, `team_entry_offset(place)`, `cup_round_legs(round)`,
+  `row(index)`…). Upstream's unions are two sets of accessors over the same bytes (the match
+  data's league and cup views; the shuffle order and a cup bracket's scratch), and an index
+  past an array's end reaches the bytes after it, as upstream's code does (a league's
+  fifteenth team id is `competitionFormat`). So a competition is checked against the C on
+  the same image, and a save's image is written back as read.
+- `league`: a league started. `start_division` makes a division of a `LeagueRecord` (a
+  `leagues.json` league, or a `cups.json` cup played as a league, read through the league's
+  layout as upstream reads it) the competition under way, as upstream's
+  `InitDIYCompetitionFromTableEntry` does: the reset, the record's fields, the name, the
+  derived counts and months, each team's identity and the strength, the places shuffled. Its
+  texts and classes (the division's name, the country's adjective, the default name, the
+  continental track) come in resolved (`DivisionStart`).

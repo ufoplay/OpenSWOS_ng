@@ -125,7 +125,6 @@ impl Rules {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::fixtures::OddRoundRobin;
 
     #[test]
     fn each_kind_has_its_file_name() {
@@ -141,8 +140,8 @@ mod tests {
         let mut rules = Rules::default();
         assert!(rules.files().is_empty());
         let calendar = b"{\n  \"first_year\": 2026\n}\n";
-        let fixtures =
-            b"{\n  \"odd_round_robin\": \"rounds_with_rest\",\n  \"odd_tournament_groups\": true\n}\n";
+        let fixtures = b"{\n  \"odd_tournament_groups\": true,\n  \"schedules\": [],\n  \
+            \"competition_schedules\": []\n}\n";
         rules
             .read(RulesFileKind::Fixtures, fixtures)
             .expect("fixtures");
@@ -154,8 +153,11 @@ mod tests {
             Some(2026)
         );
         assert_eq!(
-            rules.fixtures.map(|fixtures| fixtures.odd_round_robin),
-            Some(OddRoundRobin::RoundsWithRest)
+            rules
+                .fixtures
+                .as_ref()
+                .map(|fixtures| fixtures.odd_tournament_groups),
+            Some(true)
         );
         assert_eq!(
             rules.files(),

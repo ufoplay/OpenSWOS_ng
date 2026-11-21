@@ -13,7 +13,7 @@ pub mod team_files;
 pub use calendar::Calendar;
 pub use country_details::{CountryDetail, CountryDetails};
 pub use file::{RulesFile, read, write};
-pub use fixtures::{Fixtures, OddRoundRobin};
+pub use fixtures::{CompetitionSchedule, Fixtures, Schedule};
 pub use rules::{Rules, RulesError, RulesFileKind};
 pub use season::{Season, SeasonEnd};
 pub use team_files::{SecondFile, TeamFiles};

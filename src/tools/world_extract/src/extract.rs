@@ -15,12 +15,12 @@ use openswos_world_package_resource::{
     WorldIni, WorldIniFormat, WorldPackage,
 };
 use openswos_world_rules_resource::{
-    Calendar, CountryDetail, CountryDetails, Fixtures, OddRoundRobin, Rules, Season, SeasonEnd,
-    TeamFiles,
+    Calendar, CountryDetail, CountryDetails, Fixtures, Rules, Season, SeasonEnd, TeamFiles,
 };
 
 use crate::assemble::identity;
 use crate::error::ExtractError;
+use crate::schedules;
 
 /// Upstream's 96/97 data files, in its checkout.
 const DATA_JSON: &str = "bin/data_json";
@@ -37,10 +37,6 @@ pub(crate) const OWN_COUNTRY_FIRST: bool = true;
 /// Whether careers keep the players' own squad numbers: not in 96/97 (upstream
 /// src/world_baked.c, `World_SquadNumbers` answers 0 outside a world).
 const SQUAD_NUMBERS: bool = false;
-
-/// How an odd-sized league gets its fixtures in 96/97: the original's pair tables (upstream
-/// installs real rounds only for a world: `FixtureRounds_Install`, include/fixture_rounds.h).
-const ODD_ROUND_ROBIN: OddRoundRobin = OddRoundRobin::OriginalPairTables;
 
 /// Whether a tournament's groups may be odd-sized in 96/97: no (upstream diy_competition.c
 /// `InitDIYLeagueFromRecord` panics 0x1313 in 96/97 only).
@@ -100,6 +96,14 @@ fn rules(package: &WorldPackage, bases: Vec<u16>) -> Result<Rules, ExtractError>
         .into_iter()
         .map(TeamFileNumber)
         .collect();
+    // The original's round robins: upstream installs real rounds only for a world
+    // (`FixtureRounds_Install`, include/fixture_rounds.h).
+    let schedules = schedules::schedules(&tables::fixture_schedules()?);
+    let euro_championships = schedules::euro_championships(
+        &package.competitions,
+        &tables::euro_championship_fixtures()?,
+        &schedules,
+    )?;
     Ok(Rules {
         calendar: Some(Calendar {
             first_year: FIRST_YEAR,
@@ -117,8 +121,9 @@ fn rules(package: &WorldPackage, bases: Vec<u16>) -> Result<Rules, ExtractError>
             },
         }),
         fixtures: Some(Fixtures {
-            odd_round_robin: ODD_ROUND_ROBIN,
             odd_tournament_groups: ODD_TOURNAMENT_GROUPS,
+            schedules,
+            competition_schedules: vec![euro_championships],
         }),
     })
 }

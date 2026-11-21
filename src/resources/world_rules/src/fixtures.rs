@@ -1,40 +1,69 @@
-//! `rules/fixtures.json`: which fixture behaviours the world plays (docs/WORLD_INVENTORY.md
-//! §5, `OddRoundRobin`).
+//! `rules/fixtures.json`: the world's round robins, the order a league or a tournament's group
+//! plays its matches in (upstream `_fixtureSchedulePtrTable`, src/fixture_data.c; a world's
+//! odd sizes rewritten as real rounds, src/fixture_rounds.c), the competitions that play their
+//! own, and whether a tournament's groups may be odd-sized.
 
+use openswos_competitions_json_resource::SymbolId;
 use serde::{Deserialize, Serialize};
 
 use crate::file::RulesFile;
 
-/// `rules/fixtures.json`. Every package names its behaviours: there is no default, so no
-/// world's behaviour is the engine's.
+/// `rules/fixtures.json`. Every package states its round robins: the engine has none of its
+/// own, so no world's order is the engine's.
 ///
 /// ```json
 /// {
-///   "odd_round_robin": "original_pair_tables",
-///   "odd_tournament_groups": false
+///   "odd_tournament_groups": false,
+///   "schedules": [
+///     { "teams": 2, "rounds": true, "pairs": [[0, 1]] },
+///     …
+///   ],
+///   "competition_schedules": [
+///     {
+///       "competitions": ["_europeanChampionships2", "_europeanChampionships"],
+///       "schedule": { "teams": 4, "rounds": true, "pairs": [[1, 0], [3, 2], …] }
+///     }
+///   ]
 /// }
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Fixtures {
-    /// How a league with an odd number of clubs gets its fixtures.
-    pub odd_round_robin: OddRoundRobin,
     /// Whether a tournament's groups may hold an odd number of clubs (upstream
     /// diy_competition.c `InitDIYLeagueFromRecord` refuses them, panic 0x1313, in the world
     /// that does not allow them).
     pub odd_tournament_groups: bool,
+    /// The round robin of each number of clubs, a size once.
+    pub schedules: Vec<Schedule>,
+    /// The competitions that play a round robin of their own instead of their size's
+    /// (upstream diy_competition.c `getCurrentFixtureTeamPtrs`: the European Championships'
+    /// groups play `_euroChampFixtureData`).
+    pub competition_schedules: Vec<CompetitionSchedule>,
 }
 
-/// How a league with an odd number of clubs gets its fixtures: a behaviour component.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum OddRoundRobin {
-    /// The original's pair tables (upstream `_fixtureSchedulePtrTable`). Faithful to the
-    /// original: they are not real rounds, and a career league refuses them (panic 0x1313).
-    OriginalPairTables,
-    /// Real rounds, a club resting each day (upstream fixture_rounds.c,
-    /// `FixtureRounds_Install`).
-    RoundsWithRest,
+/// A round robin: the pairs of one cycle, in the order they are played. A second cycle plays
+/// them again, each the other way round.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Schedule {
+    /// Its clubs.
+    pub teams: u8,
+    /// Whether it plays in real rounds, every club at most once a match day of `teams / 2`
+    /// pairs (upstream `FixtureRounds_Real`): a career league of this size can be played. The
+    /// original's odd tables are not (its career league refuses them, panic 0x1313).
+    pub rounds: bool,
+    /// Its pairs, each `[home, away]` as places among its clubs.
+    pub pairs: Vec<[u8; 2]>,
+}
+
+/// A round robin some competitions play instead of their size's.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CompetitionSchedule {
+    /// The competitions, by id.
+    pub competitions: Vec<SymbolId>,
+    /// Their round robin.
+    pub schedule: Schedule,
 }
 
 impl RulesFile for Fixtures {
@@ -46,26 +75,54 @@ mod tests {
     use super::*;
     use crate::file::{read, write};
 
+    /// A file with one schedule and one competition's, as this crate writes it.
+    const TEXT: &str = "{\n  \"odd_tournament_groups\": true,\n  \"schedules\": [\n    {\n      \
+        \"teams\": 2,\n      \"rounds\": true,\n      \"pairs\": [\n        [\n          0,\n          \
+        1\n        ]\n      ]\n    }\n  ],\n  \"competition_schedules\": [\n    {\n      \
+        \"competitions\": [\n        \"_cup\"\n      ],\n      \"schedule\": {\n        \
+        \"teams\": 2,\n        \"rounds\": false,\n        \"pairs\": [\n          [\n            \
+        1,\n            0\n          ]\n        ]\n      }\n    }\n  ]\n}\n";
+
     #[test]
     fn it_reads_and_writes_back() {
-        let text = "{\n  \"odd_round_robin\": \"rounds_with_rest\",\n  \"odd_tournament_groups\": \
-                    true\n}\n";
-        let fixtures: Fixtures = read(text.as_bytes()).expect("fixtures");
+        let fixtures: Fixtures = read(TEXT.as_bytes()).expect("fixtures");
         assert_eq!(
             fixtures,
             Fixtures {
-                odd_round_robin: OddRoundRobin::RoundsWithRest,
-                odd_tournament_groups: true
+                odd_tournament_groups: true,
+                schedules: vec![Schedule {
+                    teams: 2,
+                    rounds: true,
+                    pairs: vec![[0, 1]],
+                }],
+                competition_schedules: vec![CompetitionSchedule {
+                    competitions: vec![SymbolId("_cup".to_owned())],
+                    schedule: Schedule {
+                        teams: 2,
+                        rounds: false,
+                        pairs: vec![[1, 0]],
+                    },
+                }],
             }
         );
-        assert_eq!(write(&fixtures), text.as_bytes());
+        assert_eq!(write(&fixtures), TEXT.as_bytes());
     }
 
     #[test]
-    fn an_unknown_behaviour_does_not_read() {
-        let error =
-            read::<Fixtures>(br#"{"odd_round_robin": "shuffled", "odd_tournament_groups": false}"#)
-                .expect_err("no such behaviour");
-        assert!(error.to_string().contains("shuffled"), "{error}");
+    fn a_pair_is_two_places() {
+        assert!(
+            read::<Fixtures>(
+                br#"{"odd_tournament_groups": false, "schedules": [{"teams": 3, "rounds": false,
+                    "pairs": [[0, 1, 2]]}], "competition_schedules": []}"#,
+            )
+            .is_err(),
+            "three places"
+        );
+        let error = read::<Fixtures>(br#"{"odd_tournament_groups": false, "schedules": []}"#)
+            .expect_err("no competition schedules");
+        assert!(
+            error.to_string().contains("competition_schedules"),
+            "{error}"
+        );
     }
 }

@@ -1,13 +1,21 @@
 #![doc = include_str!("../readme.md")]
 
 #[cfg(not(oracle_unavailable))]
+pub mod draw;
+#[cfg(not(oracle_unavailable))]
 mod ffi;
+#[cfg(not(oracle_unavailable))]
+pub mod league;
 #[cfg(not(oracle_unavailable))]
 pub mod math;
 #[cfg(not(oracle_unavailable))]
 pub mod rng;
 #[cfg(not(oracle_unavailable))]
+pub mod running;
+#[cfg(not(oracle_unavailable))]
 pub mod style;
+#[cfg(not(oracle_unavailable))]
+pub mod table;
 pub mod tables;
 pub mod unpack;
 

@@ -6,11 +6,13 @@
 use std::ffi::{CStr, c_char, c_void};
 
 use super::bindings::{
-    competition_data_c, strings_data_c, swos_amiga_data_imports_c, world_data_c,
+    competition_data_c, fixture_data_c, fixture_rounds_c, strings_data_c,
+    swos_amiga_data_imports_c, swos_data_bulk_imports_c, world_data_c,
 };
 use super::stubs;
 use crate::tables::{
-    BakedWorld, CompetitionBase, CountryEntry, CupRecord, TournamentRecord, WorldCupEntry,
+    BakedWorld, CompetitionBase, CountryEntry, CupRecord, FixtureSchedule, TournamentRecord,
+    WorldCupEntry,
 };
 
 /// The entries of `_countriesTable` (src/strings_data.c).
@@ -25,6 +27,15 @@ const SEASON_COUNTRIES_LEN: usize = 66;
 
 /// What ends the season end's countries.
 const END_OF_COUNTRIES: u8 = 0xFF;
+
+/// The sizes upstream has a round robin for: 2 to 24 clubs (`_fixtureSchedulePtrTable[23]`).
+pub(crate) const SCHEDULE_SIZES: usize = 23;
+
+/// The smallest of them.
+const FIRST_SCHEDULE_SIZE: u8 = 2;
+
+/// The bytes of `_euroChampFixtureData`.
+const EURO_CHAMPIONSHIP_FIXTURES_LEN: usize = 28;
 
 /// The European cups a world's league phases replace: the Champions', Cup Winners' and UEFA
 /// Cup's (upstream src/league_phase.c `LeaguePhase_InstallCups`).
@@ -79,6 +90,87 @@ pub(crate) fn season_countries() -> Vec<u8> {
         .collect()
 }
 
+/// Points `_fixtureSchedulePtrTable` at the original's round robins, as upstream's data
+/// section does (src/swos_amiga_ptr_imports.c).
+fn point_at_original_schedules() {
+    macro_rules! originals {
+        ($($table:ident),+ $(,)?) => {
+            [$((&raw const fixture_data_c::$table).cast::<u8>()),+]
+        };
+    }
+    let originals: [*const u8; SCHEDULE_SIZES] = originals!(
+        _fixtureSchedule2Teams,
+        _fixtureSchedule3Teams,
+        _fixtureSchedule4Teams,
+        _fixtureSchedule5Teams,
+        _fixtureSchedule6Teams,
+        _fixtureSchedule7Teams,
+        _fixtureSchedule8Teams,
+        _fixtureSchedule9Teams,
+        _fixtureSchedule10Teams,
+        _fixtureSchedule11Teams,
+        _fixtureSchedule12Teams,
+        _fixtureSchedule13Teams,
+        _fixtureSchedule14Teams,
+        _fixtureSchedule15Teams,
+        _fixtureSchedule16Teams,
+        _fixtureSchedule17Teams,
+        _fixtureSchedule18Teams,
+        _fixtureSchedule19Teams,
+        _fixtureSchedule20Teams,
+        _fixtureSchedule21Teams,
+        _fixtureSchedule22Teams,
+        _fixtureSchedule23Teams,
+        _fixtureSchedule24Teams,
+    );
+    // SAFETY: a plain write to a global the lock's holder owns.
+    unsafe { stubs::_fixtureSchedulePtrTable = originals };
+}
+
+/// The round robins `_fixtureSchedulePtrTable` points at, each with whether it plays real
+/// rounds (`FixtureRounds_Real`).
+fn schedules() -> Vec<FixtureSchedule> {
+    // SAFETY: a plain read of a global the lock's holder owns; each entry points at a table of
+    // `teams * (teams - 1)` bytes (the original's, or `FixtureRounds_Install`'s rounds).
+    let table = unsafe { stubs::_fixtureSchedulePtrTable };
+    (FIRST_SCHEDULE_SIZE..)
+        .zip(table)
+        .map(|(teams, pointer)| {
+            let len = usize::from(teams) * usize::from(teams - 1);
+            // SAFETY: as above.
+            let bytes = unsafe { std::slice::from_raw_parts(pointer, len) };
+            FixtureSchedule {
+                teams,
+                // SAFETY: the function reads its own flag.
+                rounds: unsafe { fixture_rounds_c::FixtureRounds_Real(i32::from(teams)) } != 0,
+                pairs: bytes
+                    .as_chunks()
+                    .0
+                    .iter()
+                    .map(|&[home, away]| (home, away))
+                    .collect(),
+            }
+        })
+        .collect()
+}
+
+/// The original's round robins.
+pub(crate) fn original_schedules() -> Vec<FixtureSchedule> {
+    point_at_original_schedules();
+    schedules()
+}
+
+/// The bytes of `_euroChampFixtureData`.
+pub(crate) fn euro_championship_fixtures() -> Vec<u8> {
+    // SAFETY: upstream defines the table with its 28 bytes.
+    let table = unsafe {
+        (&raw const swos_data_bulk_imports_c::_euroChampFixtureData)
+            .cast::<[i8; EURO_CHAMPIONSHIP_FIXTURES_LEN]>()
+            .read()
+    };
+    table.iter().map(|&byte| byte.cast_unsigned()).collect()
+}
+
 /// World 2026-27's baked install over 96/97's tables (upstream src/world_data.c
 /// `WorldData2627_InstallBaked`, run as `World_InstallBaked` runs it at start-up), and what it
 /// leaves: the team files' bases, the countries' table, and its accessors' answers. The
@@ -87,6 +179,7 @@ pub(crate) fn season_countries() -> Vec<u8> {
 pub(crate) fn install_world_2627() -> Result<BakedWorld, u16> {
     // SAFETY: a plain write to a global the lock's holder owns.
     unsafe { stubs::WORLD = stubs::WORLD_2627 };
+    point_at_original_schedules();
     // SAFETY: the install writes upstream's tables within their sizes; its externs are the
     // compiled data's and the stubs.
     super::halting(|| unsafe { world_data_c::WorldData2627_InstallBaked() })?;
@@ -117,15 +210,15 @@ pub(crate) fn install_world_2627() -> Result<BakedWorld, u16> {
             world_data_c::WorldData2627_SquadNumbers() != 0,
         )
     };
-    // SAFETY: plain reads of globals the lock's holder owns.
-    let (fixture_rounds, league_phases) = unsafe { (stubs::FIXTURE_ROUNDS, stubs::LEAGUE_PHASES) };
+    // SAFETY: a plain read of a global the lock's holder owns.
+    let league_phases = unsafe { stubs::LEAGUE_PHASES };
     Ok(BakedWorld {
         bases: team_file_bases().to_vec(),
         countries,
         season_countries,
         second_files,
         squad_numbers,
-        fixture_rounds,
+        schedules: schedules(),
         league_phases,
         league_phase_cups: league_phase_cups(),
         cups: world_cups(),

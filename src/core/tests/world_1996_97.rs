@@ -7,8 +7,17 @@ mod common;
 use openswos_common::{TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_competitions_json_resource::{Continent, SymbolId};
 use openswos_core::World;
+use openswos_core::competition::schedule::{Pair, Schedule};
 use openswos_core::world::{CompetitionRef, GroupEntry, LeagueLink, TableContent};
-use openswos_world_rules_resource::OddRoundRobin;
+
+/// The smallest round robin upstream has (`_fixtureSchedule2Teams`).
+const FIRST_SCHEDULE: u8 = 2;
+
+/// The largest (`_fixtureSchedule24Teams`).
+const LAST_SCHEDULE: u8 = 24;
+
+/// The European Championships' groups' clubs.
+const EURO_GROUP: u8 = 4;
 
 fn id(text: &str) -> SymbolId {
     SymbolId(text.to_owned())
@@ -176,8 +185,27 @@ fn its_rules_are_upstreams_compiled_tables() {
         &[TeamFileNumber(0), TeamFileNumber(1), TeamFileNumber(76)]
     );
     assert!(end.own_country_first);
+    // The original's round robins of 2 to 24 clubs, real rounds the even ones
+    // (`_fixtureSchedulePtrTable`); the European Championships' groups their own.
+    let schedules = world.schedules();
+    for teams in FIRST_SCHEDULE..=LAST_SCHEDULE {
+        let schedule = schedules.of_size(teams).expect("a round robin");
+        assert_eq!(schedule.rounds(), teams % 2 == 0, "{teams}");
+    }
+    assert!(schedules.of_size(LAST_SCHEDULE + 1).is_none());
+    let euro = world
+        .competition(&SymbolId("_europeanChampionships".to_owned()))
+        .expect("the European Championships");
+    let first = |schedule: Option<&Schedule>| schedule.and_then(|s| s.pairs().first().copied());
     assert_eq!(
-        world.fixtures().odd_round_robin,
-        OddRoundRobin::OriginalPairTables
+        first(schedules.of(euro, EURO_GROUP)),
+        Some(Pair { home: 1, away: 0 }),
+        "`_euroChampFixtureData`"
     );
+    assert_eq!(
+        first(schedules.of_size(EURO_GROUP)),
+        Some(Pair { home: 0, away: 1 }),
+        "`_fixtureSchedule4Teams`"
+    );
+    assert!(!world.odd_tournament_groups());
 }

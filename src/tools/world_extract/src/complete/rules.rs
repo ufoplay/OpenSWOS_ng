@@ -9,13 +9,14 @@ use openswos_competitions_json_resource::{Continent, CountriesFile};
 use openswos_oracle::tables::BakedWorld;
 use openswos_team_json_resource::TeamJsonDocument;
 use openswos_world_rules_resource::{
-    Calendar, CountryDetail, CountryDetails, Fixtures, OddRoundRobin, Rules, Season, SeasonEnd,
+    Calendar, CountryDetail, CountryDetails, Fixtures, Rules, RulesFile, Season, SeasonEnd,
     SecondFile, TeamFiles,
 };
 
 use super::GLOBAL_TEAM_NUMBERS;
 use crate::error::ExtractError;
 use crate::extract::OWN_COUNTRY_FIRST;
+use crate::schedules::schedules;
 
 /// The year World 2026-27's first season starts (upstream src/world.c
 /// `kFirstYear[WORLD_2627]`: a `static` table the oracle cannot link).
@@ -31,12 +32,20 @@ const NATIONAL_FILES: std::ops::RangeInclusive<u8> = 80..=85;
 
 /// World 2026-27's rules: its first year; each country of `countries`' continent and the
 /// team files' bases as its baked install leaves them, the national files grown to its
-/// rosters' (`teams`); its season end's countries; its fixture behaviours.
+/// rosters' (`teams`); its season end's countries; its round robins as the install leaves
+/// them, and the competitions that play their own, as in `base` (upstream picks them by
+/// competition id in every world).
 pub(super) fn world_2627(
     countries: &CountriesFile,
     teams: &BTreeMap<String, TeamJsonDocument>,
     baked: &BakedWorld,
+    base: &Rules,
 ) -> Result<Rules, ExtractError> {
+    let competition_schedules = base
+        .fixtures
+        .as_ref()
+        .map(|fixtures| fixtures.competition_schedules.clone())
+        .ok_or(ExtractError::NoBaseRules(Fixtures::FILE_NAME))?;
     let mut bases = baked.bases.clone();
     fit_national_files(&mut bases, |file| national_count(teams, file))?;
     Ok(Rules {
@@ -68,12 +77,9 @@ pub(super) fn world_2627(
             },
         }),
         fixtures: Some(Fixtures {
-            odd_round_robin: if baked.fixture_rounds {
-                OddRoundRobin::RoundsWithRest
-            } else {
-                OddRoundRobin::OriginalPairTables
-            },
             odd_tournament_groups: WORLD_ODD_TOURNAMENT_GROUPS,
+            schedules: schedules(&baked.schedules),
+            competition_schedules,
         }),
     })
 }
@@ -155,7 +161,9 @@ fn fit_national_files(
 
 #[cfg(test)]
 mod tests {
-    use openswos_oracle::tables::CountryEntry;
+    use openswos_competitions_json_resource::SymbolId;
+    use openswos_oracle::tables::{CountryEntry, FixtureSchedule};
+    use openswos_world_rules_resource::{CompetitionSchedule, Schedule};
 
     use super::*;
 
@@ -202,7 +210,11 @@ mod tests {
             season_countries: vec![8, 47],
             second_files: Vec::new(),
             squad_numbers: true,
-            fixture_rounds: true,
+            schedules: vec![FixtureSchedule {
+                teams: 3,
+                rounds: true,
+                pairs: vec![(0, 1), (2, 0), (1, 2)],
+            }],
             league_phases: true,
             league_phase_cups: Vec::new(),
             cups: Vec::new(),
@@ -224,12 +236,32 @@ mod tests {
         }
     }
 
+    /// The base's rules: a competition's own round robin.
+    fn base() -> Rules {
+        Rules {
+            fixtures: Some(Fixtures {
+                odd_tournament_groups: false,
+                schedules: Vec::new(),
+                competition_schedules: vec![CompetitionSchedule {
+                    competitions: vec![SymbolId("_europeanChampionships".to_owned())],
+                    schedule: Schedule {
+                        teams: 2,
+                        rounds: true,
+                        pairs: vec![[1, 0]],
+                    },
+                }],
+            }),
+            ..Rules::default()
+        }
+    }
+
     #[test]
     fn the_rules_are_the_installs_and_the_worlds() {
         let rules = world_2627(
             &countries(&[8, 47]),
             &BTreeMap::new(),
             &baked(vec![(8, entry(0)), (47, entry(0))]),
+            &base(),
         )
         .expect("rules");
         assert_eq!(
@@ -244,12 +276,21 @@ mod tests {
             rules.season.map(|season| season.end.countries),
             Some(vec![TeamFileNumber(8), TeamFileNumber(47)])
         );
+        let fixtures = rules.fixtures.expect("fixtures");
+        assert!(fixtures.odd_tournament_groups);
         assert_eq!(
-            rules.fixtures,
-            Some(Fixtures {
-                odd_round_robin: OddRoundRobin::RoundsWithRest,
-                odd_tournament_groups: true
-            })
+            fixtures.schedules,
+            [Schedule {
+                teams: 3,
+                rounds: true,
+                pairs: vec![[0, 1], [2, 0], [1, 2]],
+            }],
+            "the install's"
+        );
+        assert_eq!(
+            fixtures.competition_schedules,
+            base().fixtures.expect("fixtures").competition_schedules,
+            "the base's"
         );
         assert_eq!(
             rules.team_files.map(|files| files.squad_numbers),
@@ -263,8 +304,24 @@ mod tests {
             &countries(&[8, 47]),
             &BTreeMap::new(),
             &baked(vec![(8, entry(0))]),
+            &base(),
         )
         .expect_err("no entry");
         assert!(error.to_string().contains("country 47"), "{error}");
+    }
+
+    #[test]
+    fn a_base_without_fixtures_is_named() {
+        let error = world_2627(
+            &countries(&[8]),
+            &BTreeMap::new(),
+            &baked(vec![(8, entry(0))]),
+            &Rules::default(),
+        )
+        .expect_err("no fixtures");
+        assert_eq!(
+            error.to_string(),
+            "the base package has no rules/fixtures.json"
+        );
     }
 }

@@ -24,3 +24,4 @@ pub mod extract;
 pub mod fetch;
 pub mod game;
 pub mod output;
+pub(crate) mod schedules;

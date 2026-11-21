@@ -93,8 +93,7 @@ not quite the original game:
 
 ## 3. Decisions for the owner
 
-All three taken as recommended on 2026-11-21: docs/PLAN.md D10, D11, D12. A fourth world,
-World 1995-96, was decided the same day: D13 (§3.4).
+All three taken as recommended on 2026-11-21: docs/PLAN.md D10, D11, D12.
 
 ### 3.1 Europe 1984-85 (decided: D10)
 
@@ -131,38 +130,6 @@ schema. Packages are self-contained, and the plan counts the career economy as w
 World 1996-97 it is upstream's file as it is. The completion step copies the same file into
 2026-27 and 1984-85, since upstream plays them with it.
 
-### 3.4 World 1995-96, from the DOS SWOS 95/96 (decided: D13)
-
-Upstream has no 95/96 data, and none of its scripts reads a DOS executable: its 96/97 tables
-come from its own decompiled data (`scripts/export_competitions.py` reads
-`src/competition_data.c`). What a copy of the DOS SWOS 95/96 holds, checked on 2026-11-21:
-
-- **`DATA/`**: the 96/97 formats and the same 84 files (81 `TEAM.nnn`, `POOLPLYR.DAT`,
-  `EUROCUP.TMD`, `EUROCWC.TMD`). 36 team files hold a different number of teams from 96/97's,
-  so 96/97's competition tables cannot carry 95/96's rosters.
-- **`SWS.EXE`**: a DOS/4GW linear executable with two objects, code and data. The competition
-  records are in the data object, uncompressed, in the DOS layout. A record is variable
-  length: a league's name-table offset byte is 9 + 6 × its divisions, or 0 when it uses the
-  default names (upstream's C struct has a fixed 33). Its names are 32-bit pointers that
-  fixups make.
-- **The 96/97 executable proves a decoder.** In a copy of the DOS 96/97 game, `SWOS.BAT` runs
-  `SWS!!!_!.EXE`. Its leagues match upstream's committed `leagues.json` in every league's
-  divisions. Its competition ids are upstream's minus one (England's league: 45 there, 46
-  upstream). The same copy's `ENGLISH.EXE` is not the 96/97 game: its league records are
-  `SWS.EXE`'s, byte for byte.
-- **What 95/96 changes:**
-  - 14 leagues have other sizes (Croatia 18 clubs against 12, Spain's second division 18
-    against 20), matching its rosters;
-  - its competition ids are its own (England's league is 12);
-  - it has no World Cup qualifying groups, so its national-team competitions differ from
-    96/97's.
-
-**Decision:** in scope, as M4 #6, after World 2026-27's completion is finished (#5d3, #5e).
-`world_extract` decodes the executable, proven on 96/97's against upstream's files. The world
-plays with the port's engine (upstream's 96/97 logic), as World 2026-27 does: it is 95/96's
-data, not 95/96's code. Its competition ids stay data, which the engine already requires. Its
-package is derived from your copy and never committed.
-
 ## 4. The package: new files under `rules/`
 
 A file of data only (Super Cups, splits…) is optional: an absent file means "none". A file
@@ -184,7 +151,7 @@ default. The sources are upstream files. The
 | file | holds | 96/97 | 2026-27 | 1984-85 |
 |---|---|---|---|---|
 | `season.json` | `end.countries` (the season end's order), `end.own_country_first`, `end.steps` (§7); `start.slots`, `start.continental_order`; `league_tweaks` | competition_data.c `_careerCompetitionIdRemapTable` (65); the original's steps; tweaks apply | `kWorld2627SeasonCountries` (91); tweaks don't | `kWorld8485SeasonCountries` (32); tweaks don't |
-| `fixtures.json` | `odd_round_robin` (component), `odd_tournament_groups` | original pair tables; refused (panic 0x1313) | rounds with a rest day; allowed | the same as 2026-27 |
+| `fixtures.json` | `schedules` (each size's round robin: its pairs in playing order, whether it plays real rounds), `competition_schedules` (competitions that play their own), `odd_tournament_groups` (M5 #1) | the original's tables (`_fixtureSchedulePtrTable`); the European Championships' own (`_euroChampFixtureData`); odd groups refused (panic 0x1313) | the tables after `FixtureRounds_Install` (odd sizes 5 to 23 as rounds with a rest day); the same competitions'; allowed | the same as 2026-27 |
 | `league_playoffs.json` | per country: divisions, promoted and relegated by place, the play-off component with its data (`fixed_tiers` or `spec`), names, `then`, round names, record lines, B-team rules, promedio history | absent: the leagues' own play-off links (`leagues.json`, `league_blocks.json`) | `kWorld2627Playoffs` (35 countries), `kWorld2627Promedio43` | absent |
 | `league_splits.json` | per (country, division, clubs): meetings, split days, stages, groups, points rules, stage tables | absent | `kWorld2627Splits` (38) | absent |
 | `league_groups.json` | leagues with parallel groups: levels, clubs and their areas | absent | `kWorld2627Groups` (4 countries) | absent |
@@ -243,14 +210,16 @@ default. The sources are upstream files. The
 
 A component is one way of doing one job. The package always names it: there is no default,
 so the engine holds no world's behaviour. Implementations are named after what they do.
+Where the two ways turn out to be two tables, the tables become data and the component goes:
+an odd number of clubs' fixtures (`OddRoundRobin`) are `rules/fixtures.json`'s round robins
+(M5 #1).
 
 | component | job | implementations (upstream) | 96/97 | 2026-27 | 1984-85 |
 |---|---|---|---|---|---|
 | `LeaguePlayoffs` | play-offs and play-outs at a league's end, and the career club's contest | `linked_playoff_cups` (`processDiyLeagueQualificationEntry`, slot 4); `fixed_tier_brackets` (src/rules/sr_dplay.c, world_playoff.c `league_ended`, `c_playoff`); `spec_knockouts` (sr_gplay.c, sr_post.c, world_playoff.c `k_*`) | linked cups (England) | 35 countries: spec; Italy also fixed tiers (Serie B, C) | linked cups |
 | `LevelMoves` | promotion and relegation between levels | `division_ladder`; `parallel_groups` (`LeagueGroups_Apply`, sr_groups.c) | ladder | groups (4 countries) | ladder |
 | `FixturePairing` | who meets whom on a day | `schedule_tables`; `split_days` (league_split.c); `league_phase_draw` (league_phase.c); `fixed_calendar` (states.c) | tables | all four | tables |
-| `OddRoundRobin` | fixtures for an odd number of clubs | `original_pair_tables` (quirk: a career league refuses them); `rounds_with_rest` (`FixtureRounds_Install`) | original | rounds | rounds |
-| `TableOrder` | a league table's order | `points_gd_goals_name` (`DIY_SortLeagueTableByStandings`); `split_groups` (`LeagueSplit_Sort`); `uefa_league_phase` (`LeaguePhase_Sort`) | original | all three | original |
+| `TableOrder` | a league table's order | `points_gd_goals_name` (`DIY_SortLeagueTableByStandings`: every world's ordinary table, M5 #2); `split_groups` (`LeagueSplit_Sort`, after it) and `uefa_league_phase` (`LeaguePhase_Sort`, instead of it), each the order of the competitions whose data has a split or a league phase: no world selects one (M5 #9) | original | all three | original |
 | `CareerLeaguePosition` | the place the board judges | `league_place`; `zone_place_scaled` (`LeagueSplit_Zone*`) | place | zones (Argentina, Panama, MLS) | place |
 | `StateChampionships` | state leagues alongside the national one | `none`; `state_sim` (states.c, state_sim.c, state_pool.c) | none | Brazil | none |
 | `CupEntrants` | who plays a national cup | `whole_country` (career_teams.c, the career club first); `fixed_list_then_quotas` (world_cups.c, sr_cups.c) | whole country | fixed lists | fixed lists |
@@ -506,7 +475,7 @@ The area files proposed names independently. They map to this design as follows.
 | `SeasonEndPlayoffs`, `CareerPlayoffContest`, `promotion_playoffs` | `LeaguePlayoffs` |
 | `LevelPlacement`, `promotion_relegation_moves` | `LevelMoves` |
 | `LeagueFixturePairing` | `FixturePairing` |
-| `OddRoundRobinSchedule`, `OddClubFixtures` | `OddRoundRobin` |
+| `OddRoundRobinSchedule`, `OddClubFixtures`, `OddRoundRobin` | data: `rules/fixtures.json` `schedules` (M5 #1) |
 | `LeagueTableOrder` | `TableOrder` |
 | `EuropeanCupFormat` `classic_knockouts` | `EuropeanCupFormat` `cup_records`, plus `KnockoutPairing` |
 | `european_access`, `european_qualification` | `EuropeanQualification` |

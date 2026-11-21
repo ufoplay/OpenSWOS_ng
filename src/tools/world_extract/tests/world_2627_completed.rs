@@ -6,11 +6,11 @@
 
 use openswos_common::{TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_competitions_json_resource::{Continent, SymbolId};
+use openswos_core::competition::schedule::Pair;
 use openswos_core::world::{CompetitionRef, LeagueLink, TableContent};
 use openswos_test_utils::tactics_path;
 use openswos_world_extract::check::{builtin_tactics, game_data};
 use openswos_world_package_resource::WorldPackage;
-use openswos_world_rules_resource::OddRoundRobin;
 
 mod common;
 use common::completed;
@@ -46,6 +46,9 @@ const CUPS: usize = 126;
 
 /// The clubs of its English cup's real bracket (`kWorld2627_englishCupExt`).
 const ENGLISH_CUP_CLUBS: usize = 64;
+
+/// The European Championships' groups' clubs.
+const EURO_GROUP: u8 = 4;
 
 #[test]
 fn world_2627_completes_into_a_valid_world() {
@@ -93,11 +96,24 @@ fn world_2627_completes_into_a_valid_world() {
     assert_eq!(first(81) - first(80), EUROPE_NATIONAL_TEAMS);
     assert!(numbering.squad_numbers);
     assert_eq!(world.season_end().countries.len(), SEASON_COUNTRIES);
+    // Its odd round robins are real rounds (`FixtureRounds_Install`), 3 clubs' the original's;
+    // the European Championships play their own, as in 96/97.
+    let schedules = world.schedules();
+    let rounds = |teams| schedules.of_size(teams).map(|schedule| schedule.rounds());
     assert_eq!(
-        world.fixtures().odd_round_robin,
-        OddRoundRobin::RoundsWithRest
+        (rounds(3), rounds(5), rounds(23), rounds(24)),
+        (Some(false), Some(true), Some(true), Some(true))
     );
-    assert!(world.fixtures().odd_tournament_groups);
+    let euro = world
+        .competition(&SymbolId("_europeanChampionships".to_owned()))
+        .expect("the European Championships");
+    assert_eq!(
+        schedules
+            .of(euro, EURO_GROUP)
+            .and_then(|schedule| schedule.pairs().first().copied()),
+        Some(Pair { home: 1, away: 0 })
+    );
+    assert!(world.odd_tournament_groups());
 
     // England's league is the world's, its play-off links 96/97's (`install_league`).
     let Some(CompetitionRef::League(english)) =

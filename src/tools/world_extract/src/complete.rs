@@ -82,7 +82,7 @@ pub fn world_2627(
             | CompetitionsFile::SeedBuckets(_) => None,
         })
         .ok_or(ExtractError::NoCountries)?;
-    let rules = rules::world_2627(countries, &download.teams, baked)?;
+    let rules = rules::world_2627(countries, &download.teams, baked, &base.rules)?;
     Ok(WorldPackage {
         identity: download.identity.clone(),
         manifest: download.manifest.clone(),

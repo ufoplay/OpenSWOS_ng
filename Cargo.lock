@@ -703,6 +703,7 @@ dependencies = [
  "openswos_common",
  "openswos_competitions_json_resource",
  "openswos_poolplyr_resource",
+ "openswos_rng",
  "openswos_tac_resource",
  "openswos_tactics_json_resource",
  "openswos_team_json_resource",
@@ -760,6 +761,9 @@ version = "0.1.0"
 dependencies = [
  "bindgen",
  "cc",
+ "openswos_common",
+ "openswos_competitions_json_resource",
+ "openswos_core",
  "openswos_game_style",
  "openswos_math",
  "openswos_rng",

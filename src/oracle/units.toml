@@ -115,6 +115,37 @@ variables = []
 # A world cup's record, behind `WorldCup.record` (a `void *`).
 types = ["CompetitionCup"]
 
+# The real match days of a world's odd-sized leagues (MIT, the SWOS 96/97 Mod's): World 2026-27's
+# install rewrites the odd round robins with it, and `world_extract` reads the result
+# (`tables::world_2627`). The pointer table it writes is the oracle's (`ffi::stubs`).
+[[unit]]
+path = "src/fixture_rounds.c"
+functions = ["FixtureRounds_Install", "FixtureRounds_Real"]
+variables = []
+
+# The DIY competition engine, a function at a time as M5 ports it: the league table's sort
+# (`table`), the teams' values and the draws (`draw`). Its other references are to functions no
+# bound one reaches: the linker drops them with the functions that make them (function
+# sections, `--gc-sections`), so only what the bound functions reach is stubbed (`ffi::stubs`:
+# a world's league phase and split, the loaded teams).
+[[unit]]
+path = "src/diy_competition.c"
+functions = [
+    "DIY_SortLeagueTableByStandings",
+    "GetAveragePlayerPrice",
+    "DIY_ComputeAverageTeamStrengthTier",
+    "DIY_ShuffleTeams",
+    "DIY_SortAndShuffleTeamsByValue",
+    "DIY_ShuffleLeagueTeamOrder",
+    "DIY_ShuffleTeamOrderList",
+    "DIY_ShuffleTeamGridPairs",
+    "InitDIYCompetitionFromTableEntry",
+]
+variables = ["_diyCompetitionStart", "_selectedTeams", "_careerTeam"]
+# The tournament's state the shuffles take behind a byte pointer; the league and cup records a
+# league is started from.
+types = ["DIYTournamentState", "CompetitionLeague", "CompetitionCup"]
+
 # Upstream's RNC unpacker (the game's own, SWOS2.s): World 2026-27's foreign pool is packed, and
 # `world_extract` unpacks it with this (`unpack`), so no importer reads RNC (D9).
 [[unit]]
@@ -136,6 +167,43 @@ functions = ["M68kShiftLeft32", "M68kShiftLeft16"]
 
 [[data]]
 path = "src/swos_data_bulk_imports.c"
+# The European Championships' round robin (diy_competition.c `getCurrentFixtureTeamPtrs`).
+variables = ["_euroChampFixtureData"]
+
+[[data]]
+path = "src/selected_teams.c"
+
+[[data]]
+path = "src/career_team_buffers.c"
+
+[[data]]
+path = "src/fixture_data.c"
+# The original's round robin of each size, 2 to 24 clubs.
+variables = [
+    "_fixtureSchedule2Teams",
+    "_fixtureSchedule3Teams",
+    "_fixtureSchedule4Teams",
+    "_fixtureSchedule5Teams",
+    "_fixtureSchedule6Teams",
+    "_fixtureSchedule7Teams",
+    "_fixtureSchedule8Teams",
+    "_fixtureSchedule9Teams",
+    "_fixtureSchedule10Teams",
+    "_fixtureSchedule11Teams",
+    "_fixtureSchedule12Teams",
+    "_fixtureSchedule13Teams",
+    "_fixtureSchedule14Teams",
+    "_fixtureSchedule15Teams",
+    "_fixtureSchedule16Teams",
+    "_fixtureSchedule17Teams",
+    "_fixtureSchedule18Teams",
+    "_fixtureSchedule19Teams",
+    "_fixtureSchedule20Teams",
+    "_fixtureSchedule21Teams",
+    "_fixtureSchedule22Teams",
+    "_fixtureSchedule23Teams",
+    "_fixtureSchedule24Teams",
+]
 
 [[data]]
 path = "src/swos_data_typed_stubs.c"
