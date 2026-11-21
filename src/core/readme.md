@@ -15,9 +15,9 @@ See `docs/PLAN.md` §4 and §5.
 ## The world (`world`)
 
 `World::from_package` turns a world package (`openswos_world_package_resource`) into a
-typed, valid world: its identity, its countries, and its competitions with the tables that
-tie them together. The rules upstream hardcodes join it as the inventory (M4 #4) and the
-competition and career ports (M5, M7) give them files.
+typed, valid world: its identity, its countries, its competitions with the tables that tie
+them together, and the rules it reads so far. The rules upstream hardcodes join it as their
+files come (docs/WORLD_INVENTORY.md §4; M4 #5c, M5, M7).
 
 | part | from | what it is |
 |---|---|---|
@@ -28,6 +28,10 @@ competition and career ports (M5, M7) give them files.
 | `CareerContest` | `career.json` | the career index's competitions, and their copies' names |
 | `CountryTable` | `country_competitions.json` | a slot of upstream's `_competitionsTable`: a country's own leagues and cups, or a region's qualifying group |
 | `SeedBucket` | `seed_buckets.json` | the UEFA Cup berths, by country |
+| `first_year`, `continent` | `rules/calendar.json`, `rules/country_details.json` | the year the first season starts; each country's continent |
+| `TeamNumbering` | `rules/team_files.json` | each team file's first global team number (a club's global number: its file's base plus its place), the second team files, whether squad numbers are kept |
+| `SeasonEnd` | `rules/season.json` | the season end's countries, in its order; a club coach's own country first |
+| `Fixtures` | `rules/fixtures.json` | the fixture behaviours (an odd-sized league's, odd-sized tournament groups); without the file, the original's |
 
 References become typed handles (`LeagueRef`, `CupRef`, `CompetitionRef`, `GroupRef`,
 `BlockRef`…) into the world that made them; `World::competition` finds a competition by its
@@ -56,10 +60,15 @@ competitions/cups.json: competitions[1] (_cupWinnersCup).team_seed_list[0].count
   qualifying groups, friendlies and tours play as leagues), the play-offs are cups;
 - a country listed again must be listed the same, and a table slot listed once.
   Faithful to the original: upstream's list starts with BRAZIL, which it lists again in
-  its place.
+  its place;
+- the rules files `calendar.json`, `country_details.json`, `team_files.json`, `season.json`
+  and `fixtures.json`, each required (no world's behaviour is a default): every country with one entry of details
+  and no other number; 256 bases never going down; a second file a country's, numbered as
+  no country is; the season end's countries the world's, each once.
 
-Not checked yet: which team file a competition plays with (`team_number`: the `.TMD` pools
-and the custom teams are not in packages yet).
+Not checked yet: which team file a competition plays with (`team_number`): the European
+pool's first season joins `rules/europe.json` (M4 #5c), and the custom teams are the
+player's.
 
 ## The game data (`data`)
 
@@ -75,9 +84,14 @@ and the custom teams are not in packages yet).
 
 Checked: every team converts; no identity and no id (team or player) is held twice; every
 country's roster is in the package and holds only the country's teams (rosters no country
-names, such as World 2026-27's pools and guests, are allowed); every team a draw starts
-from and every pool player's team is in the rosters, and the player in its squad; every
-preset has its shipped tactics.
+names, such as World 2026-27's pools and guests, are allowed); every team a draw of a
+competition the world plays starts from and every pool player's team is in the rosters, and
+the player in its squad; every preset has its shipped tactics.
+
+`World::is_played`: a competition the career index, a country table or a qualifying group
+names, or that a league it plays leads to (a play-off, a block's leagues and play-offs). A
+record nothing names is never drawn: World 2026-27 keeps 96/97's European cups, which its
+league phases replace, because upstream's world modules copy them as templates.
 
 ## Sources
 
@@ -94,6 +108,6 @@ registry, `dj_selftest_graph`), `src/team_db.c` (the team database, canonical te
   upstream's competition files) is a valid world: 66 leagues, 76 cups, 14 tournaments, 7
   play-offs, 76 table slots, 71 countries (72 listed), every reference resolved.
 - `tests/real_assets.rs` (`just test_real_assets <game_dir>`): World 1996-97's game data,
-  its rosters made from the PC game's `DATA/TEAM.nnn` as `world_extract` will make them,
+  its rosters made from the PC game's `DATA/TEAM.nnn` as `world_extract` makes them,
   with the game's pool and the built-in tactics, is valid: every seeded team and every pool
   player's team is in the rosters, every team canonical.

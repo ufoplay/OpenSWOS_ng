@@ -709,6 +709,7 @@ dependencies = [
  "openswos_team_resource",
  "openswos_test_utils",
  "openswos_world_package_resource",
+ "openswos_world_rules_resource",
  "thiserror",
  "uuid",
 ]
@@ -763,6 +764,7 @@ dependencies = [
  "openswos_math",
  "openswos_rng",
  "openswos_test_utils",
+ "openswos_world_package_resource",
  "proptest",
  "serde",
  "thiserror",
@@ -929,14 +931,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "openswos_world_extract"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "openswos_common",
+ "openswos_competitions_json_resource",
+ "openswos_core",
+ "openswos_oracle",
+ "openswos_poolplyr_resource",
+ "openswos_tac_resource",
+ "openswos_tactics_json_resource",
+ "openswos_team_json_resource",
+ "openswos_team_resource",
+ "openswos_test_utils",
+ "openswos_upstream",
+ "openswos_world_package_resource",
+ "openswos_world_rules_resource",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "openswos_world_package_resource"
 version = "0.1.0"
 dependencies = [
+ "openswos_career_params_json_resource",
  "openswos_common",
  "openswos_competitions_json_resource",
  "openswos_national_teams_json_resource",
+ "openswos_poolplyr_resource",
  "openswos_team_json_resource",
  "openswos_test_utils",
+ "openswos_world_rules_resource",
  "proptest",
  "serde",
  "serde_json",
@@ -945,6 +972,17 @@ dependencies = [
  "thiserror",
  "uuid",
  "zip",
+]
+
+[[package]]
+name = "openswos_world_rules_resource"
+version = "0.1.0"
+dependencies = [
+ "openswos_common",
+ "openswos_competitions_json_resource",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

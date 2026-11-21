@@ -1,4 +1,4 @@
-//! Upstream's `career_params.json` (`data/career_params.json`, GPL): it round-trips,
+//! Upstream's `career_params.json` (World 1996-97's, `data/worlds/1996-97/rules/`, GPL): it round-trips,
 //! sets every knob once, and states the original's values. When upstream's checkout is in
 //! the cache (`just upstream_fetch`), the knobs are the ones its loader reads.
 

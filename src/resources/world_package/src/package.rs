@@ -1,15 +1,19 @@
-//! A world package: `WORLD.ini`, `mod.json`, `teams/*.json`, `competitions/*.json` (with the
-//! world's national teams, B teams and stadiums, each a format of its own).
+//! A world package: `WORLD.ini`, `mod.json`, `teams/*.json` (and the foreign players' pool),
+//! `competitions/*.json` (with the world's national teams, B teams and stadiums, each a format
+//! of its own), and the `rules/` this port reads so far.
 
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use openswos_career_params_json_resource::{CareerParamsDocument, CareerParamsJsonFormat};
 use openswos_common::{Exporter, Importer};
 use openswos_competitions_json_resource::{
     CompetitionsDocument, CompetitionsJsonError, CompetitionsJsonFormat,
 };
 use openswos_national_teams_json_resource::{NationalTeamsDocument, NationalTeamsJsonFormat};
+use openswos_poolplyr_resource::{PoolFile, PoolFileError, PoolFileFormat};
 use openswos_team_json_resource::{TeamJsonDocument, TeamJsonError, TeamJsonFormat};
+use openswos_world_rules_resource::{Rules, RulesError, RulesFileKind};
 use thiserror::Error;
 
 use crate::bteams::BTeamsDocument;
@@ -41,6 +45,22 @@ pub const BTEAMS_JSON: &str = "bteams.json";
 /// The world's stadium names, in `competitions/` (upstream src/world_stadium.c).
 pub const STADIUMS_JSON: &str = "stadiums.json";
 
+/// The world's rules (docs/PLAN.md §5.2; the files: docs/WORLD_INVENTORY.md §4).
+pub const RULES_FOLDER: &str = "rules";
+
+/// The world's career params, in `rules/` (upstream `bin/data_json/career_params.json`, a
+/// world's own here: docs/PLAN.md D12).
+pub const CAREER_PARAMS_JSON: &str = "career_params.json";
+
+/// The world's foreign players' pool, in `teams/` (upstream src/transfer_market.c
+/// `LoadPoolplyrDat`, scripts/world_import.py `write_pool`).
+pub const POOL_FILE: &str = "POOLPLYR.DAT";
+
+/// What an RNC-packed file starts with (upstream tools/swosdata/lib/rnc_archive.c; src/rnc.c
+/// `RNC_SIG_V1` adds the method byte). World 2026-27's pool is packed, and is not read (D9). An
+/// unpacked pool cannot start so: its third byte is a player's place in his squad, under 16.
+const RNC_SIGNATURE: &[u8] = b"RNC";
+
 /// The extension of the files read in `teams/` and `competitions/`.
 const JSON_EXTENSION: &str = ".json";
 
@@ -61,6 +81,12 @@ pub struct WorldPackage {
     pub bteams: Option<BTeamsDocument>,
     /// Its stadium names (`competitions/stadiums.json`), if it has any.
     pub stadiums: Option<StadiumsDocument>,
+    /// Its career params (`rules/career_params.json`), if it states them.
+    pub career_params: Option<CareerParamsDocument>,
+    /// Its other `rules/` files, those `openswos_world_rules_resource` reads.
+    pub rules: Rules,
+    /// Its foreign players' pool (`teams/POOLPLYR.DAT`), if it has one unpacked.
+    pub pool: Option<PoolFile>,
 }
 
 /// A package as opened: the package, its fingerprint check, and what was not read.
@@ -72,7 +98,7 @@ pub struct OpenedPackage {
     /// itself only warns (upstream src/main.c).
     pub fingerprint: FingerprintCheck,
     /// The paths not read: `data/` (the Amiga's team files, D9: in the fingerprint all the
-    /// same), `teams/POOLPLYR.DAT` (the world's foreign players' pool, RNC-packed: D9, in the
+    /// same), `teams/POOLPLYR.DAT` when it is RNC-packed (World 2026-27's: D9, in the
     /// fingerprint too), and anything else the package holds.
     pub ignored: Vec<String>,
 }
@@ -116,6 +142,15 @@ pub enum WorldPackageError {
         /// Why.
         source: serde_json::Error,
     },
+    /// The career params do not read.
+    #[error("{RULES_FOLDER}/{CAREER_PARAMS_JSON}: {0}")]
+    CareerParams(serde_json::Error),
+    /// Another `rules/` file does not read.
+    #[error("{RULES_FOLDER}/{0}")]
+    Rules(RulesError),
+    /// The foreign players' pool does not read or write.
+    #[error("{TEAMS_FOLDER}/{POOL_FILE}: {0}")]
+    Pool(PoolFileError),
 }
 
 /// A `competitions/` file of its own format's error.
@@ -140,6 +175,9 @@ impl WorldPackage {
             national_teams: None,
             bteams: None,
             stadiums: None,
+            career_params: None,
+            rules: Rules::default(),
+            pool: None,
         };
         let mut ignored = Vec::new();
         for (path, bytes) in files.iter() {
@@ -181,6 +219,21 @@ impl WorldPackage {
                 Entry::Stadiums => {
                     package.stadiums =
                         Some(StadiumsDocument::read(bytes).map_err(world_file(STADIUMS_JSON))?);
+                }
+                Entry::CareerParams => {
+                    package.career_params = Some(
+                        CareerParamsJsonFormat::import(bytes)
+                            .map_err(WorldPackageError::CareerParams)?,
+                    );
+                }
+                Entry::Rules(kind) => package
+                    .rules
+                    .read(kind, bytes)
+                    .map_err(WorldPackageError::Rules)?,
+                Entry::Pool if bytes.starts_with(RNC_SIGNATURE) => ignored.push(path.to_owned()),
+                Entry::Pool => {
+                    package.pool =
+                        Some(PoolFileFormat::import(bytes).map_err(WorldPackageError::Pool)?);
                 }
                 Entry::Ignored => ignored.push(path.to_owned()),
             }
@@ -234,6 +287,18 @@ impl WorldPackage {
         if let Some(document) = &self.stadiums {
             let bytes = document.to_bytes().map_err(world_file(STADIUMS_JSON))?;
             files.insert(&format!("{COMPETITIONS_FOLDER}/{STADIUMS_JSON}"), bytes)?;
+        }
+        if let Some(document) = &self.career_params {
+            let bytes =
+                CareerParamsJsonFormat::export(document).unwrap_or_else(|never| match never {});
+            files.insert(&format!("{RULES_FOLDER}/{CAREER_PARAMS_JSON}"), bytes)?;
+        }
+        for (file, bytes) in self.rules.files() {
+            files.insert(&format!("{RULES_FOLDER}/{file}"), bytes)?;
+        }
+        if let Some(pool) = &self.pool {
+            let bytes = PoolFileFormat::export(pool).map_err(WorldPackageError::Pool)?;
+            files.insert(&format!("{TEAMS_FOLDER}/{POOL_FILE}"), bytes)?;
         }
         if let Some(manifest) = &self.manifest {
             let bytes = ModManifestFormat::export(manifest).map_err(WorldPackageError::Manifest)?;
@@ -296,6 +361,12 @@ enum Entry<'a> {
     BTeams,
     /// The world's stadium names.
     Stadiums,
+    /// The world's career params.
+    CareerParams,
+    /// Another of the world's rules.
+    Rules(RulesFileKind),
+    /// The world's foreign players' pool.
+    Pool,
     /// Something this port does not read.
     Ignored,
 }
@@ -306,10 +377,25 @@ fn classify(path: &str) -> Entry<'_> {
             .and_then(|rest| rest.strip_prefix('/'))
             .filter(|name| !name.contains('/') && name.ends_with(JSON_EXTENSION))
     };
+    let in_folder = |folder: &str, name: &str| {
+        path.strip_prefix(folder)
+            .and_then(|rest| rest.strip_prefix('/'))
+            .is_some_and(|rest| rest == name)
+    };
     if path == WORLD_INI {
         Entry::Ini
     } else if path == MOD_JSON {
         Entry::Manifest
+    } else if in_folder(TEAMS_FOLDER, POOL_FILE) {
+        Entry::Pool
+    } else if in_folder(RULES_FOLDER, CAREER_PARAMS_JSON) {
+        Entry::CareerParams
+    } else if let Some(kind) = path
+        .strip_prefix(RULES_FOLDER)
+        .and_then(|rest| rest.strip_prefix('/'))
+        .and_then(RulesFileKind::of)
+    {
+        Entry::Rules(kind)
     } else if let Some(file) = json_in(TEAMS_FOLDER) {
         Entry::Team(file)
     } else if let Some(file) = json_in(COMPETITIONS_FOLDER) {
@@ -439,6 +525,89 @@ mod tests {
         assert!(
             error.to_string().starts_with("teams/BROKEN.json: "),
             "{error}"
+        );
+    }
+
+    /// The PC game's pool (`assets/POOLPLYR/`) and World 1996-97's career params.
+    fn pool_and_params() -> (Vec<u8>, Vec<u8>) {
+        let pool = std::fs::read(openswos_test_utils::assets_path().join("POOLPLYR/POOLPLYR.DAT"))
+            .expect("the pool fixture");
+        let params = std::fs::read(openswos_test_utils::career_params_path())
+            .expect("the committed career params");
+        (pool, params)
+    }
+
+    #[test]
+    fn an_unpacked_pool_and_the_career_params_read_and_write_back() {
+        let (pool, params) = pool_and_params();
+        let mut files = files();
+        files
+            .insert("teams/POOLPLYR.DAT", pool.clone())
+            .expect("a safe path");
+        files
+            .insert("rules/career_params.json", params.clone())
+            .expect("a safe path");
+        let opened = WorldPackage::from_files(&files).expect("a package");
+        assert_eq!(
+            opened.package.pool.as_ref().map(|pool| pool.players.len()),
+            Some(900)
+        );
+        assert!(opened.package.career_params.is_some());
+        assert_eq!(opened.ignored, vec!["README.txt", "data/TEAM.000"]);
+        let written = opened.package.to_files().expect("written");
+        assert_eq!(written.get("teams/POOLPLYR.DAT"), Some(pool.as_slice()));
+        assert_eq!(
+            written.get("rules/career_params.json"),
+            Some(params.as_slice())
+        );
+    }
+
+    #[test]
+    fn a_packed_pool_is_not_read_nor_written() {
+        let opened = WorldPackage::from_files(&files()).expect("a package");
+        assert_eq!(opened.package.pool, None);
+        let written = opened.package.to_files().expect("written");
+        assert_eq!(written.get("teams/POOLPLYR.DAT"), None);
+    }
+
+    #[test]
+    fn a_broken_pool_or_career_params_is_named() {
+        let mut files = files();
+        files
+            .insert("teams/POOLPLYR.DAT", vec![0; 5])
+            .expect("a safe path");
+        let error = WorldPackage::from_files(&files).expect_err("a partial record");
+        assert!(
+            error.to_string().starts_with("teams/POOLPLYR.DAT: "),
+            "{error}"
+        );
+        let mut files = self::files();
+        files
+            .insert("rules/career_params.json", b"[]".to_vec())
+            .expect("a safe path");
+        let error = WorldPackage::from_files(&files).expect_err("not an object");
+        assert!(
+            error.to_string().starts_with("rules/career_params.json: "),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn only_the_known_rules_are_read() {
+        let mut files = files();
+        files
+            .insert("rules/europe.json", b"{}".to_vec())
+            .expect("a safe path");
+        files
+            .insert("rules/sub/career_params.json", b"{}".to_vec())
+            .expect("a safe path");
+        let opened = WorldPackage::from_files(&files).expect("a package");
+        assert_eq!(opened.package.career_params, None);
+        assert!(opened.ignored.contains(&"rules/europe.json".to_owned()));
+        assert!(
+            opened
+                .ignored
+                .contains(&"rules/sub/career_params.json".to_owned())
         );
     }
 }

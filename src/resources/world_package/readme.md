@@ -16,8 +16,10 @@ one into a folder.
 | `competitions/bteams.json` | `BTeams` (`bteams.rs`): the B teams and their countries' call-up rules (upstream src/bteam.c) |
 | `competitions/stadiums.json` | `Stadiums` (`stadiums.rs`): the clubs' grounds and the finals' venues (upstream src/world_stadium.c) |
 | `competitions/*.json` (the others) | `openswos_competitions_json_resource` |
+| `teams/POOLPLYR.DAT` | the world's foreign players' pool (`openswos_poolplyr_resource`), if unpacked, as World 1996-97 carries the PC game's; RNC-packed (World 2026-27's), not read (D9) but in the fingerprint |
+| `rules/career_params.json` | `openswos_career_params_json_resource`: the world's career params (docs/PLAN.md D12) |
+| `rules/<file>.json` (the others `openswos_world_rules_resource` knows) | `Rules`: the world's calendar, country details, team numbering, season end, fixtures |
 | `data/` | not read (the Amiga's team files, D9), but in the fingerprint |
-| `teams/POOLPLYR.DAT` | not read: the world's foreign players' pool, RNC-packed (D9), but in the fingerprint |
 | anything else | not read; listed in `OpenedPackage::ignored` |
 
 Each file writes back byte for byte: its layout is kept as read (`JsonFile`: Python's
@@ -25,7 +27,10 @@ Each file writes back byte for byte: its layout is kept as read (`JsonFile`: Pyt
 kept as written; what the game makes of them (a missing call-up rule's default, the lists'
 limits, a stadium name too long) is given by accessors.
 
-`rules/` will join the list with `world_rules` (M2 #8).
+The other `rules/` files of docs/WORLD_INVENTORY.md §4 join `openswos_world_rules_resource`,
+and so this list, as the ports that read them come. A `rules/` file it does not know yet is
+listed as not read. An unpacked pool cannot pass for a packed one: a packed file starts with `RNC`, and
+an unpacked pool's third byte is a player's place in his squad, under 16.
 
 ## The fingerprint
 

@@ -1,7 +1,7 @@
 # OpenSWOS_ng
 
 A Rust port of [OpenSWOS](https://github.com/benbaker76/OpenSWOS) (C). The plan, its
-decisions (D1–D8) and the milestones are in [docs/PLAN.md](docs/PLAN.md). Read it before
+decisions (D1–D12) and the milestones are in [docs/PLAN.md](docs/PLAN.md). Read it before
 starting a task.
 
 ## Commands (everything goes through `just`)
@@ -39,9 +39,11 @@ starting a task.
 - Files the game loads at runtime (upstream's GPL data, our World 1996-97 package) go in
   `data/`, listed in `data/README.md`. Files only the tests read go in `assets/`, listed
   in `assets/README.md`. Tests read runtime data from `data/`, never from a copy.
+- `data/worlds/1996-97/` is written by `just world_extract_9697_data` from the pinned
+  upstream checkout: never edit it by hand (a test compares it with a fresh extraction).
 - Commit no original game data beyond the small curated test set in `assets/`, and list
   every file there in `assets/README.md` with its provenance. Never in `data/`.
-- Never commit World 2026-27 data or the RGD recordings. They are downloaded into
-  `target/cache/`.
+- Never commit World 2026-27 or Europe 1984-85 data, or the RGD recordings. They are
+  downloaded into `target/cache/`.
 - Upstream is GPL-3.0-or-later, and so is this repo. Code ported from MIT sources
   (swos-competition-engine, the SWOS 96/97 Mod) keeps its notice.

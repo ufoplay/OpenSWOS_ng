@@ -18,6 +18,7 @@ openswos_tactics_json_resource = { workspace = true }
 openswos_team_json_resource = { workspace = true }
 openswos_team_resource = { workspace = true }
 openswos_world_package_resource = { workspace = true }
+openswos_world_rules_resource = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true }
 

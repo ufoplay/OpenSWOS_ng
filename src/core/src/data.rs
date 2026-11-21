@@ -17,7 +17,7 @@ pub use rosters::{Roster, RosterTeam, Rosters, TeamRef};
 pub use tactics::{PresetTactics, TACTICS_FOLDER};
 
 use crate::validation::{Field, Invalid, Location, Problem, Problems};
-use crate::world::{Slot, World};
+use crate::world::{CompetitionRef, CupRef, Slot, TournamentRef, World};
 
 /// Where the pool's problems are reported: the PC game's pool file, whose records the pool
 /// holds (upstream `DATA/POOLPLYR.DAT`).
@@ -128,18 +128,35 @@ fn check_country_rosters(world: &World, rosters: &Rosters, problems: &mut Proble
     }
 }
 
-/// Every team a draw starts from is in the rosters.
+/// Every team a draw of a competition the world plays starts from is in the rosters
+/// ([`World::is_played`]).
 fn check_seeds(world: &World, rosters: &Rosters, problems: &mut Problems) {
-    let cups = world.cups().iter().map(|cup| (&cup.record.id, &cup.seeds));
+    let cups = world.cups().iter().enumerate().map(|(index, cup)| {
+        (
+            CompetitionRef::Cup(CupRef(index)),
+            &cup.record.id,
+            &cup.seeds,
+        )
+    });
     let tournaments = world
         .tournaments()
         .iter()
-        .map(|tournament| (&tournament.record.id, &tournament.seeds));
+        .enumerate()
+        .map(|(index, tournament)| {
+            (
+                CompetitionRef::Tournament(TournamentRef(index)),
+                &tournament.record.id,
+                &tournament.seeds,
+            )
+        });
     for (slot, competitions) in [
         (Slot::Cups, cups.collect::<Vec<_>>()),
         (Slot::Tournaments, tournaments.collect()),
     ] {
-        for (index, (id, seeds)) in competitions.into_iter().enumerate() {
+        for (index, (competition, id, seeds)) in competitions.into_iter().enumerate() {
+            if !world.is_played(competition) {
+                continue;
+            }
             for (seed, team) in seeds.iter().enumerate() {
                 if rosters.by_id(*team).is_none() {
                     problems.push(
@@ -189,7 +206,7 @@ mod tests {
     use openswos_team_resource::TeamFile;
 
     use super::*;
-    use crate::fixture::{ALBANIA, ENGLAND, package, pool, roster, tactics, teams};
+    use crate::fixture::{ALBANIA, ENGLAND, package, package_with, pool, roster, tactics, teams};
 
     /// The parts of the small world's game data, to change before checking them.
     struct Parts {
@@ -301,6 +318,32 @@ mod tests {
                 "competitions/cups.json: competitions[1] (_cupWinnersCup).team_seed_list[0]: the \
              rosters have no team (8, 0)",
             ]
+        );
+    }
+
+    #[test]
+    fn a_cup_the_world_does_not_play_draws_nobody() {
+        let world = World::from_package(&package_with(&[(
+            "qualifying.json",
+            r#""_euroCup", "_cupWinnersCup", -1"#,
+            r#""_euroCup", -1"#,
+        )]))
+        .expect("a valid world");
+        let Parts {
+            mut teams,
+            pool,
+            tactics,
+        } = parts();
+        teams.remove("ENGLAND.json");
+        let invalid = GameData::new(world, &teams, pool, tactics).expect_err("no England");
+        let problems: Vec<String> = invalid.0.iter().map(ToString::to_string).collect();
+        assert_eq!(
+            problems,
+            [
+                "competitions/countries.json: countries[0].team_file: the package has no roster \
+              teams/ENGLAND.json"
+            ],
+            "the Cup Winners' Cup's seeds are not looked at"
         );
     }
 

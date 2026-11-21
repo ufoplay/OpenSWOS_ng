@@ -262,6 +262,36 @@ pub enum Problem {
     /// A reference to a squad place a team does not have.
     #[error("a team has no player {0}")]
     UnknownPlayer(u8),
+    /// A country of the world its rules say nothing of.
+    #[error("country {} has no entry", .0.0)]
+    NoCountryDetails(TeamFileNumber),
+    /// A country listed twice where it is listed once.
+    #[error("country {} is listed again (first at {first})", number.0)]
+    RepeatedCountry {
+        /// Its number.
+        number: TeamFileNumber,
+        /// Where it is listed first.
+        first: Location,
+    },
+    /// A list of another length than its own.
+    #[error("{found} entries, not {expected}")]
+    WrongCount {
+        /// The entries it must have.
+        expected: usize,
+        /// The entries it has.
+        found: usize,
+    },
+    /// A number below the one before it, in a list that never goes down.
+    #[error("{value} is below the one before ({previous})")]
+    Descending {
+        /// The number.
+        value: u16,
+        /// The one before.
+        previous: u16,
+    },
+    /// A second team file numbered as a country's own.
+    #[error("file {} is a country's own", .0.0)]
+    FileTaken(TeamFileNumber),
 }
 
 /// One problem and where it is.

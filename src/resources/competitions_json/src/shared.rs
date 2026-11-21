@@ -8,6 +8,15 @@ use thiserror::Error;
 /// The largest value of a 2-bit field.
 const RULE_BITS_MAX: u8 = 0b11;
 
+/// Where a round rule byte's legs start (bits 7-6).
+const LEGS_SHIFT: u8 = 6;
+
+/// Where its extra time starts (bits 5-4).
+const EXTRA_TIME_SHIFT: u8 = 4;
+
+/// Where its penalties start (bits 3-2).
+const PENALTIES_SHIFT: u8 = 2;
+
 /// An object's id: its C symbol name upstream (`_euroCup`, `_englishLeagues1`), by which
 /// the files name each other.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -129,6 +138,31 @@ pub struct RoundRules {
     pub low: Option<RuleBits>,
 }
 
+impl From<u8> for RoundRules {
+    /// The rules a round rule byte packs (upstream `roundRuleFlags`), split as the JSON
+    /// splits them: the low bits only when not 0.
+    fn from(byte: u8) -> Self {
+        let bits = |shift: u8| RuleBits((byte >> shift) & RULE_BITS_MAX);
+        let low = bits(0);
+        Self {
+            legs: bits(LEGS_SHIFT),
+            extra_time: bits(EXTRA_TIME_SHIFT),
+            penalties: bits(PENALTIES_SHIFT),
+            low: (low.0 != 0).then_some(low),
+        }
+    }
+}
+
+impl From<RoundRules> for u8 {
+    /// The round rule byte that packs `rules`.
+    fn from(rules: RoundRules) -> Self {
+        (rules.legs.0 << LEGS_SHIFT)
+            | (rules.extra_time.0 << EXTRA_TIME_SHIFT)
+            | (rules.penalties.0 << PENALTIES_SHIFT)
+            | rules.low.map_or(0, |low| low.0)
+    }
+}
+
 /// The country of a seeded team: its `CN_*` name, or its number (upstream's loader takes
 /// either).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -159,6 +193,25 @@ pub type Names = Vec<Option<String>>;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_round_rule_byte_splits_and_packs_back() {
+        // 0x94: two legs, extra time, penalties (upstream's two-legged tie).
+        let rules = RoundRules::from(0x94);
+        assert_eq!(
+            (
+                rules.legs.0,
+                rules.extra_time.0,
+                rules.penalties.0,
+                rules.low
+            ),
+            (2, 1, 1, None)
+        );
+        for byte in 0..=u8::MAX {
+            assert_eq!(u8::from(RoundRules::from(byte)), byte);
+        }
+        assert_eq!(RoundRules::from(0x03).low, Some(RuleBits(3)));
+    }
 
     #[test]
     fn competition_types_follow_upstream() {

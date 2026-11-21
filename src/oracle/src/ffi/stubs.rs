@@ -78,6 +78,49 @@ pub(crate) extern "C-unwind" fn Tweaks_On(tweak: u32) -> i32 {
     i32::from(unsafe { TWEAKS } & tweak != 0)
 }
 
+/// Upstream's number of the original world (include/world.h `WORLD_9697`).
+pub(crate) const WORLD_9697: u32 = 0;
+
+/// Upstream's number of World 2026-27 (include/world.h `WORLD_2627`).
+pub(crate) const WORLD_2627: u32 = 1;
+
+/// The world `World_Current` answers (upstream src/world.c, which reads it from the settings).
+pub(crate) static mut WORLD: u32 = WORLD_9697;
+
+/// Whether `FixtureRounds_Install` was called: an odd-sized league then plays real rounds.
+pub(crate) static mut FIXTURE_ROUNDS: bool = false;
+
+/// Whether `LeaguePhase_InstallCups` was called: the European cups then play league phases.
+pub(crate) static mut LEAGUE_PHASES: bool = false;
+
+/// The world played (upstream src/world.c): as [`WORLD`] says.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn World_Current() -> u32 {
+    // SAFETY: a plain read of a global the lock's holder owns.
+    unsafe { WORLD }
+}
+
+/// Upstream installs real rounds for odd-sized leagues (src/fixture_rounds.c): the stub
+/// records it.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn FixtureRounds_Install() {
+    // SAFETY: a plain write to a global the lock's holder owns.
+    unsafe { FIXTURE_ROUNDS = true };
+}
+
+/// Upstream puts a world's league-phase cups in the career's contest table
+/// (src/league_phase.c): the stub records it.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeaguePhase_InstallCups(_cups: *mut std::ffi::c_void) {
+    // SAFETY: a plain write to a global the lock's holder owns.
+    unsafe { LEAGUE_PHASES = true };
+}
+
+/// Upstream copies a country's table entries to its second team file (src/world.c): no
+/// world has one at the pin, so nothing to copy.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn World_SyncSecondFiles() {}
+
 /// Resets the stubbed globals to upstream's values.
 pub(crate) fn reset() {
     // SAFETY: plain writes to globals the lock's holder owns.
@@ -91,5 +134,8 @@ pub(crate) fn reset() {
         FORMATIONS = NO_FORMATIONS;
         TWEAKS = 0;
         _panicReasonCode = 0;
+        WORLD = WORLD_9697;
+        FIXTURE_ROUNDS = false;
+        LEAGUE_PHASES = false;
     }
 }

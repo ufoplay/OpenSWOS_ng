@@ -1,13 +1,14 @@
-//! World 1996-97's committed package (`data/worlds/1996-97/`: upstream's competition
-//! files) is a valid world: its competitions, countries and tables, every reference
-//! resolved.
+//! World 1996-97's committed package (`data/worlds/1996-97/`: upstream's competition files,
+//! and the rules extracted from its compiled tables) is a valid world: its competitions,
+//! countries and tables, every reference resolved, and its rules.
 
 mod common;
 
 use openswos_common::{TeamFileNumber, TeamId, TeamOrdinal};
-use openswos_competitions_json_resource::SymbolId;
+use openswos_competitions_json_resource::{Continent, SymbolId};
 use openswos_core::World;
 use openswos_core::world::{CompetitionRef, GroupEntry, LeagueLink, TableContent};
+use openswos_world_rules_resource::OddRoundRobin;
 
 fn id(text: &str) -> SymbolId {
     SymbolId(text.to_owned())
@@ -141,5 +142,42 @@ fn the_cup_winners_cup_starts_from_32_teams() {
             file: TeamFileNumber(15),
             ordinal: TeamOrdinal(0)
         })
+    );
+}
+
+#[test]
+fn its_rules_are_upstreams_compiled_tables() {
+    let world = world();
+    assert_eq!(world.first_year(), 1996);
+    // `_countriesTable` (src/strings_data.c): `"\000ENGLAND…"`, `"\002ARGENTINA…"`,
+    // `"\005ALGERIA…"`, the regions their own continents.
+    let continent = |number: u8| world.continent(TeamFileNumber(number));
+    assert_eq!(continent(8), Some(Continent::Europe));
+    assert_eq!(continent(43), Some(Continent::SouthAmerica));
+    assert_eq!(continent(42), Some(Continent::Africa));
+    assert_eq!(continent(84), Some(Continent::Asia));
+    let europeans = world
+        .countries()
+        .iter()
+        .filter(|country| world.continent(country.number) == Some(Continent::Europe))
+        .count();
+    assert_eq!(europeans, 44, "43 countries and the region");
+    // `_teamsCountryNumbers` (src/swos_amiga_data_imports.c): England's file starts at 114.
+    let england = TeamId {
+        file: TeamFileNumber(8),
+        ordinal: TeamOrdinal(2),
+    };
+    assert_eq!(world.team_numbering().global_number(england), 116);
+    // `_careerCompetitionIdRemapTable` (src/competition_data.c).
+    let end = world.season_end();
+    assert_eq!(end.countries.len(), 65);
+    assert_eq!(
+        &end.countries[..3],
+        &[TeamFileNumber(0), TeamFileNumber(1), TeamFileNumber(76)]
+    );
+    assert!(end.own_country_first);
+    assert_eq!(
+        world.fixtures().odd_round_robin,
+        OddRoundRobin::OriginalPairTables
     );
 }

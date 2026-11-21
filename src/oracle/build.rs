@@ -76,11 +76,14 @@ struct Header {
     functions: Vec<String>,
 }
 
-/// A unit of upstream's data.
+/// A unit of upstream's data: linked as the units need it, and its globals listed here bound
+/// as `static mut` (the tables `world_extract` reads).
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct DataUnit {
     path: String,
+    #[serde(default)]
+    variables: Vec<String>,
 }
 
 fn main() {
@@ -140,6 +143,16 @@ fn main() {
             functions: &unit.functions,
             variables: &unit.variables,
             constants: &unit.constants,
+            wrapped: false,
+        };
+        bind(&upstream, &units.build, &binding, &out);
+    }
+    for data in units.data.iter().filter(|data| !data.variables.is_empty()) {
+        let binding = Binding {
+            path: &data.path,
+            functions: &[],
+            variables: &data.variables,
+            constants: &[],
             wrapped: false,
         };
         bind(&upstream, &units.build, &binding, &out);

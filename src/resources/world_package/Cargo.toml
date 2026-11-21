@@ -10,10 +10,13 @@ description = "Reader and writer for OpenSWOS world packages (WORLD.ini, mod.jso
 readme = "readme.md"
 
 [dependencies]
+openswos_career_params_json_resource = { workspace = true }
 openswos_common = { workspace = true }
 openswos_competitions_json_resource = { workspace = true }
 openswos_national_teams_json_resource = { workspace = true }
+openswos_poolplyr_resource = { workspace = true }
 openswos_team_json_resource = { workspace = true }
+openswos_world_rules_resource = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha1 = { workspace = true }

@@ -1,6 +1,6 @@
 //! Your own copy of the PC game (`just test_real_assets <game_dir>`): World 1996-97's game
-//! data is valid, its rosters made from the game's `DATA/TEAM.nnn` as `world_extract` will
-//! make them (M4 #5), with the game's pool and the built-in tactics. Every team a draw starts
+//! data is valid, its rosters made from the game's `DATA/TEAM.nnn` as `world_extract` makes
+//! them (src/tools/world_extract), with the game's pool and the built-in tactics. Every team a draw starts
 //! from and every pool player's team is in the rosters. Skipped without
 //! `OPENSWOS_GAME_DIR`.
 

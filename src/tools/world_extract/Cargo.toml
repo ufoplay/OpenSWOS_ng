@@ -1,0 +1,35 @@
+[package]
+name = "openswos_world_extract"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+description = "Builds the world packages: World 1996-97 from your copy of the PC game, World 2026-27 from its download, checked against the upstream pin (docs/PLAN.md §5.2)"
+
+[[bin]]
+name = "world_extract"
+path = "src/main.rs"
+
+[dependencies]
+clap = { workspace = true }
+openswos_common = { workspace = true }
+openswos_core = { workspace = true }
+openswos_competitions_json_resource = { workspace = true }
+openswos_oracle = { workspace = true }
+openswos_poolplyr_resource = { workspace = true }
+openswos_tac_resource = { workspace = true }
+openswos_tactics_json_resource = { workspace = true }
+openswos_team_json_resource = { workspace = true }
+openswos_team_resource = { workspace = true }
+openswos_test_utils = { workspace = true }
+openswos_upstream = { workspace = true }
+openswos_world_package_resource = { workspace = true }
+openswos_world_rules_resource = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

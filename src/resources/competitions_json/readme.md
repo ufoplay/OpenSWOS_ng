@@ -33,6 +33,7 @@ One model, `CompetitionsFile`, picked by each file's `type` key:
 - **Packed bytes as upstream splits them.** The substitutes byte is two `Nibble`s
   (`substitutes` and `points_for_win` or `max_subs`); a round's rule byte is four 2-bit
   `RuleBits` (`legs`, `extra_time`, `penalties`, and `low`, written only when set).
+  `RoundRules` converts from and to the byte, as `world_extract` needs for compiled records.
 - **Codes as enums**, written as their numbers: `CompetitionType` (league, cup,
   tournament: the switch of upstream `comp_name_table`), a new country's `Continent` (the
   first byte of its name in the game's country table, 0 being Europe), the markers between

@@ -25,6 +25,7 @@ openswos_game_style = { workspace = true }
 openswos_math = { workspace = true }
 openswos_rng = { workspace = true }
 openswos_test_utils = { workspace = true }
+openswos_world_package_resource = { workspace = true }
 proptest = { workspace = true }
 
 # The workspace's lints, but `unsafe_code` denied rather than forbidden: the FFI module, and

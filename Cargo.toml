@@ -48,6 +48,11 @@ openswos_team_json_resource = { path = "src/resources/team_json", version = "0.1
 openswos_team_resource = { path = "src/resources/team", version = "0.1.0" }
 openswos_tmd_resource = { path = "src/resources/tmd", version = "0.1.0" }
 openswos_world_package_resource = { path = "src/resources/world_package", version = "0.1.0" }
+openswos_world_rules_resource = { path = "src/resources/world_rules", version = "0.1.0" }
+
+# Tools (the oracle is test-only: only world_extract links it, docs/PLAN.md §4)
+openswos_oracle = { path = "src/oracle" }
+openswos_upstream = { path = "src/tools/upstream" }
 
 # The player flags of the team records.
 bindgen = "0.72"

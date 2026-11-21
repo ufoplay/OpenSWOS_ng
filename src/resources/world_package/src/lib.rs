@@ -21,7 +21,8 @@ pub use ini::{IniEntry, IniError, WorldIdentity, WorldIni, WorldIniFormat, World
 pub use json_file::JsonFile;
 pub use manifest::{ModManifest, ModManifestDocument, ModManifestFormat, ModSetting};
 pub use package::{
-    BTEAMS_JSON, COMPETITIONS_FOLDER, MOD_JSON, NATIONAL_TEAMS_JSON, OpenedPackage, STADIUMS_JSON,
-    TEAMS_FOLDER, WORLD_INI, WorldPackage, WorldPackageError,
+    BTEAMS_JSON, CAREER_PARAMS_JSON, COMPETITIONS_FOLDER, MOD_JSON, NATIONAL_TEAMS_JSON,
+    OpenedPackage, POOL_FILE, RULES_FOLDER, STADIUMS_JSON, TEAMS_FOLDER, WORLD_INI, WorldPackage,
+    WorldPackageError,
 };
 pub use stadiums::{ClubStadium, Stadiums, StadiumsDocument, Venue};

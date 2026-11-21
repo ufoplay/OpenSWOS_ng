@@ -29,7 +29,11 @@ const WORLD_1996_97_DIR: &str = "1996-97";
 /// The built-in tactics, under [`DATA_DIR`] (upstream `bin/data_json/tactics/`).
 const TACTICS_DIR: &str = "tactics";
 
-/// The career params, under [`DATA_DIR`] (upstream `bin/data_json/career_params.json`).
+/// A world package's rules, under its folder (docs/PLAN.md §5.2).
+const RULES_DIR: &str = "rules";
+
+/// The career params, in a package's [`RULES_DIR`] (upstream `bin/data_json/career_params.json`,
+/// a world's own since docs/WORLD_INVENTORY.md §3.3).
 const CAREER_PARAMS_FILE: &str = "career_params.json";
 
 /// The workspace root: the nearest ancestor of this crate that holds `Cargo.lock`.
@@ -74,10 +78,12 @@ pub fn tactics_path() -> PathBuf {
     data_path().join(TACTICS_DIR)
 }
 
-/// The career params: `<root>/data/career_params.json`.
+/// World 1996-97's career params: `<root>/data/worlds/1996-97/rules/career_params.json`.
 #[must_use]
 pub fn career_params_path() -> PathBuf {
-    data_path().join(CAREER_PARAMS_FILE)
+    world_1996_97_path()
+        .join(RULES_DIR)
+        .join(CAREER_PARAMS_FILE)
 }
 
 /// The build output directory: `<root>/target`.

@@ -18,8 +18,11 @@ later.
 | D5 | Crate prefix `openswos_` (e.g. `openswos_team_resource`). |
 | D6 | **Rules are data from day one.** The original game is just another world. There is one logic and no `if original … else …`. Anything the original hardcodes (e.g. Italy has 2 divisions) becomes data in the World 1996-97 package (§5.2). |
 | D7 | **"World 1996-97" is a world package with the same file structure as World 2026-27** (OpenSWOS's world package). It is in effect a mod that reproduces the original 96/97 game exactly, with no hardcoded logic (§5.2). |
-| D8 | Test data we can't commit (World 2026-27, the RGD recordings) is **downloaded on demand and cached under `target/`** (§6). |
+| D8 | Test data we can't commit (World 2026-27, Europe 1984-85, the RGD recordings) is **downloaded on demand and cached under `target/`** (§6). |
 | D9 | **Importers read only the DOS (PC) game's file formats**, plus OpenSWOS's own platform-neutral formats that D4/D7 need (JSON saves, team/competition JSON, world packages, `.SRP`). Amiga formats are not read: RNC-packed files, the `data/` folder of world packages (Amiga `TEAM.nnn`), OCS/AGA graphics, RJP1 music. The installed PC game's files are not RNC-packed (RNC only wraps the floppy release's installer archives), so there is no RNC codec. |
+| D10 | **Europe 1984-85 is in scope** (2026-11-21): upstream's third world, the SWOS 96/97 Mod's classic world, is a third downloaded package, fetched, verified and completed as World 2026-27 is, once World 1996-97 and World 2026-27 play (docs/WORLD_INVENTORY.md §3.1). |
+| D11 | **World 1996-97 reproduces upstream's 96/97 path**, OpenSWOS's Copa Libertadores included (2026-11-21). The Copa is data (its record and its qualification rule), so a package without it is the pure original (docs/WORLD_INVENTORY.md §3.2). |
+| D12 | **The career params are a world's** (2026-11-21): each package carries `rules/career_params.json` in upstream's schema; World 1996-97's is upstream's file, and the completed worlds carry the same (docs/WORLD_INVENTORY.md §3.3). |
 
 ---
 
@@ -30,8 +33,8 @@ later.
 - Readers and writers for every game file format (`src/resources/*`), including the
   ones only the view will use.
 - **World packages**: OpenSWOS's world package structure, extended (in the same
-  structure) with every rule upstream still hardcodes or bakes into C. World 1996-97 and
-  World 2026-27 both load through one loader into one engine.
+  structure) with every rule upstream still hardcodes or bakes into C. World 1996-97,
+  World 2026-27 and then Europe 1984-85 (D10) load through one loader into one engine.
 - `core`: the match simulation, competitions, career and the save mapping, all driven by
   the loaded world. It has no rendering, audio, input or file-system access.
 - Rust tools for tracking the migration, extracting world data, fetching test data,
@@ -58,7 +61,7 @@ later.
 |---|---|
 | ~243k lines of C in `src/` (276k with headers). Pinned baseline: `ec2ed2be5c26e510f7c7b8d7af2710e5b909ca8b` (2026-11-10). 2300 commits, **~590 in the last 30 days**. | Upstream moves fast. Migration has to be tracked per file, against a pinned commit, with tooling (§8). |
 | Rough sizes: match engine ≈31k lines, competitions ≈20k, career ≈29k, resource code ≈17k, worlds ≈15k (of which `world_data.c` ≈10k is baked data). Later: menus/UI ≈43k. Out of scope: mods ≈14k, netplay ≈18k. | About 100k lines of C go into `core` + `resources`. Several files mix logic and UI (`transfer_market.c`, `diy_competition.c`, `career_status.c`, `bench_subs.c`, `statistics.c`), so their logic has to be pulled out. |
-| **Upstream has two paths:** 96/97 runs the original season-end code untouched, and World 2026-27 runs the ported Mod modules (`world_*.c` + the rules library, `src/rules/`: `swos-competition-engine` until 2026-11-11) on top of it. There are 76 world-specific references (`World_Current()`/`WORLD_*`) in 15 files. | We merge them (D6). One generic engine, and two world packages that must each reproduce their upstream path exactly. The upstream branch points are the inventory of what must become data. |
+| **Upstream has two paths:** 96/97 runs the original season-end code untouched, and World 2026-27 runs the ported Mod modules (`world_*.c` + the rules library, `src/rules/`: `swos-competition-engine` until 2026-11-11) on top of it. Since 2026-11-13 a third world, Europe 1984-85 (the Mod's classic world), runs some of them. At `df643c2` there are 116 `World_Current()` checks in 31 files (46 in 15 at the baseline), plus about 120 accessors whose data is absent in 96/97. | We merge them (D6). One generic engine, and world packages that must each reproduce their upstream path exactly. The upstream branch points are the inventory of what must become data: docs/WORLD_INVENTORY.md (M4 #4). |
 | **The World 2026-27 package** (`OpenSWOS-World-2627.zip`, 4.2 MB at the pin; hosted by OpenSWOS at `openswos.net/dlc/` since 2026-11-12, upstream's `PROJECT_WORLD_PACKAGE_URL`; `worldofswos.com` before) holds `WORLD.ini` (tag, name, fingerprint), `mod.json` (the world as a mod, its settings), `teams/` (101 countries' team JSON files, the six continents' national teams, and the world's foreign players' pool `POOLPLYR.DAT`, RNC-packed), `data/` (102 Amiga `TEAM.nnn`), and `competitions/`: `leagues.json` (91 leagues, the same schema as upstream's 96/97 `bin/data_json/competitions/leagues.json`), `national_teams.json` (211 FIFA members), `bteams.json` (the B teams' call-up rules), `stadiums.json`. Its team JSON adds players 17.. (`extra_players`), years of birth and looks; the sealed package's files are written `indent=1` (`scripts/worldgen/seal.py`). | This is the structure (D7). Its JSON schemas are upstream's existing ones or small files of their own, so the resource crates read upstream packages unchanged. |
 | **The package is not the whole world.** Upstream applies it *over* 96/97's records, and the rest of World 2026-27 (96 cups, splits, play-off win lines, league levels, parallel groups, cup quotas/orders, the UEFA/continental specs) is baked into `world_data.c` by `world_import.py`. Upstream has no JSON for any of that. | We extend the package, in the same structure, with files for everything baked or hardcoded. Our packages are **self-contained**: no layering over 96/97 (§5.2). |
 | `WORLD.ini`'s fingerprint = the first 16 hex digits of SHA-1 over `teams/`, `competitions/`, `data/` (each file's path + NUL + bytes, in path order). The pinned upstream expects `80e20cdd3e92ec9c` (`efe1464b6d1d62b8` at the baseline). | The download cache is validated against the pin's fingerprint (D8). |
@@ -89,12 +92,12 @@ OpenSWOS_ng/
 │   ├── code_check.just     # fmt, clippy, check_code
 │   ├── test.just           # test, test_oracle, test_oracle_long, test_real_assets, test_golden, coverage
 │   ├── upstream.just       # upstream_fetch, upstream_status, upstream_diff, upstream_bump
-│   └── worlds.just         # world_extract_9697, world_fetch_2627, world_validate, fetch_test_data
+│   └── worlds.just         # world_extract_9697, world_extract_9697_data, world_fetch_2627
 ├── upstream.toml           # pinned upstream commit + per-file migration ledger (§8)
 ├── data/                   # runtime data: the files the game loads (committed, GPL) — §6
 │   ├── worlds/1996-97/     # the World 1996-97 package, without rosters — §5.2
+│   │                       #   (its rules/ holds the career params, D12)
 │   ├── tactics/            # the built-in tactics (upstream bin/data_json/tactics/)
-│   ├── career_params.json  # the career params (upstream bin/data_json/career_params.json)
 │   └── README.md           # provenance + license of every file
 ├── assets/                 # test-only fixtures, one folder per format (§6)
 │   └── README.md           # provenance + license of every file
@@ -244,6 +247,7 @@ structure:
                                   steps, splits, play-off win lines, league levels, parallel
                                   groups, continental access & coefficients, cup quotas/orders,
                                   national teams, career params, tweaks, limits
+                                  (the files: docs/WORLD_INVENTORY.md §4)
 ```
 
 The principles:
@@ -277,6 +281,7 @@ The principles:
 
 **World 1996-97: a mod that reproduces the original.**
 
+- It reproduces upstream's 96/97 path, OpenSWOS's Copa Libertadores included (D11).
 - Committed in `data/worlds/1996-97/`, without `teams/` and `data/` (the rosters are the
   original game's).
 - `competitions/*.json`: upstream's committed 96/97 files (GPL), copied as they are.
@@ -312,6 +317,11 @@ The principles:
   every upstream pin and diffs.
 - Proof: the Rust engine + this package reproduces upstream's 2627 path (the rules library,
   `world_*.c`, and the 2627 golden careers).
+
+**Europe 1984-85: the same, later (D10).** Its package (`OpenSWOS-World-8485.zip`, upstream's
+`PROJECT_WORLD8485_PACKAGE_URL`, DaniSwos's data: never committed) is downloaded, verified and
+completed like World 2026-27's, its tables from `world_data_8485.c`, once World 1996-97 and
+World 2026-27 play. Proof: its three golden careers.
 
 ### 5.3 Variation points are traits (D1)
 
@@ -385,9 +395,10 @@ every upstream JSON file. In practice:
 
 - **Runtime data, committed (`data/`).** The files the game loads, kept apart from the
   test fixtures:
-  - upstream's GPL data: World 1996-97's competitions (`data/worlds/1996-97/`), the
-    built-in tactics and the career params, which upstream loads for every world;
-  - our own: World 1996-97's `rules/` (M4 #4–#5).
+  - upstream's GPL data: World 1996-97's competitions and career params
+    (`data/worlds/1996-97/`, D12), and the built-in tactics, which upstream loads for every
+    world;
+  - our own: the rest of World 1996-97's `rules/` (M4 #4–#5).
 
   Never original game data. `data/README.md` records where every file comes from and its
   license. Tests read these files where they are, never a copy in `assets/`.
@@ -619,7 +630,7 @@ All binary formats are the PC (DOS) game's (D9).
 | 5 ✅ | (`team`) | `CUSTOMS.EDT`, `SAFE.EDT` | No crate of its own: the layout of `TEAM.nnn` (BE count + 684-byte `TeamFileEx[]`, 48 teams), read by the `team` crate. Both PC files round-trip. Faithful to the original: they store the global team numbers little-endian, which the game recomputes on load. |
 | 6 ✅ | `tac` | `.TAC` | The 370-byte `TeamTactics` record: name, 10 outfield players × 35 ball areas (7 × 5) of packed x/y cells, pair ids, the ball-out-of-play slot. Bytes after the record (which the game ignores) are kept: SWOS 2020's CPU tactics end with six zeros. Fixtures from SWOS 2020 (the PC game ships no `.TAC`). OpenSWOS's JSON `.TAC` (`write_tactics_buf`) is read as the same record: #13c. |
 | 7 ✅ | `competitions_json` | `competitions/*.json` | Upstream's ten files (leagues, cups, tournaments, playoffs, qualifying, league blocks, career, country competitions, countries, seed buckets) as one model picked by `type`, field for field. All ten round-trip byte for byte (committed, GPL), and World 2026-27's `leagues.json` (download cache). Bytes kept as written; packed bytes split as upstream splits them; competition types, continents and list markers are enums; fields whose meaning the engine gives stay numbers (M5). The JSON helpers moved to `openswos_common::json`. |
-| 8 | `world_rules` | `rules/*.json` | Our new files (§5.2). Schemas are defined as M4/M5/M7 find what upstream hardcodes; the crate grows with them. |
+| 8 | `world_rules` | `rules/*.json` | Our new files (§5.2). The files and what each holds: docs/WORLD_INVENTORY.md §4 (M4 #4); their schemas are fixed as M4 #5, M5 and M7 port what reads them, and the crate grows with them. Started with M4 #5c1: `calendar`, `country_details`, `team_files`, `season`, `fixtures`. |
 | 9 ✅ | `world_package` | `WORLD.ini`, `mod.json`, the layout | Opens a package from a folder or a zip (paths kept inside, 80 MiB cap), checks its fingerprint (upstream's algorithm: World 2026-27's files give `80e20cdd3e92ec9c`, the pin), writes one into an empty folder stating the fingerprint of what it writes. `competitions/`' own formats: `national_teams.json` (#10's crate), `bteams.json`, `stadiums.json`; `mod.json`'s settings. `data/` (Amiga, D9) and `teams/POOLPLYR.DAT` (RNC) are fingerprinted but not read; other files are listed as ignored. `rules/` joins with #8. |
 | 10 ✅ | `tactics_json`, `career_params_json`, `national_teams_json` | upstream `bin/data_json/…` | Inputs to `world_extract`. **Tactics:** the 12 presets and their Amiga/DOS releases as `TeamTactics` (the `tac` crate's record); all 20 upstream files round-trip byte for byte (committed, GPL), and SWOS 2020's CPU 5-3-2 is the built-in one. **Career params:** 53 knobs typed by their C width, notes and order kept; upstream's hand-written file round-trips byte for byte, and the knobs are exactly the keys its loader reads. **National teams:** the 6-byte records named field by field, the manager's nationalities, the job-offer pick, with the loader's checks; OpenSWOS ships none, so the original's compiled tables (read from upstream's source) are the real-data test. `Nationality` moved to `openswos_common`. |
 | 11 ✅ | `career_save`, `competition_save` | `.CAR`/`.SEA`, `.PRE`/`.DIY` (JSON) + DOS `.DIY` import | Byte-identical writer (D4), including the raw competition blobs in the x86_64 layout upstream's golden record uses. Both worlds. |
@@ -651,8 +662,18 @@ All binary formats are the PC (DOS) game's (D9).
 | 2b ✅ | `math` | The crate `openswos_math` (math68k.c/h): `CalculateDeltaXAndY`, its movement scale a `DeltaScale` parameter (41/64 DOS, done with shifts; none Amiga) instead of two globals; the 68k shifts. Checked against the C on every angle in every quadrant, on any two points at any speed and scale, and on upstream's known answers. The oracle reaches a header's `static inline` functions through bindgen's wrappers. |
 | 2c ✅ | `game_style` | The crate `openswos_game_style` (dos_gameplay.c): the trait, its inventory taken from `ApplyGameStyle` (the frame rate, the `DeltaScale`, the releases whose code runs, the goalkeepers' constants, the ball's physics, the clock and stoppage timers), the five styles upstream plays and the registry (by the settings' id and by upstream's number). Checked against the C for every style, with and without the stronger keepers tweak. |
 | 3 ✅ | `core::world` | The typed, validated world built from a package: its identity, countries (by number and `CN_*` name, the list in its order) and competitions with the tables that tie them (qualifying groups, league blocks, career index, competition table slots, UEFA Cup berths), each record as read, its references typed handles. Checked whole, every problem reported naming its file and field: upstream's ten files at their paths, one definition per id, every reference of the right kind, every country the world's, each record of a type its file holds. `core::data::GameData`: the world, its rosters (by identity and id, the canonical check of src/team_db.c), the pool and the built-in tactics, checked together (every country's roster, no identity or id twice, every seeded team and pool player's team in the rosters). Upstream's 96/97 competition files are a valid world; with the PC game's teams, pool and upstream's tactics, valid game data. |
-| 4 | inventory | The 76 upstream world branch points and the 96/97 hardcoded facts found in the competition/career code, each mapped to a package field (`rules/…`) or a behaviour component. |
-| 5 | `world_extract` v0 | `data/worlds/1996-97/` (upstream competition JSON + the extracted tables); the assembled `target/cache/worlds/1996-97/`; the fetched, verified and completed `target/cache/worlds/2026-27/`; the re-extraction diff tests. |
+| 4 ✅ | inventory | docs/WORLD_INVENTORY.md, at upstream `df643c2`: every world branch point of the three worlds (116 `World_Current()` checks in 31 files and about 120 data-gated accessors, about 600 rows in five area files under docs/world_inventory/) and the 96/97 hardcoded facts of the original season end and career setup, each mapped to a package field or a behaviour component. The design: 23 `rules/` files, no new field in upstream's files; 20 behaviour components; the random generator each one draws from; the season end's steps; the limits that change behaviour; the completion's merge. No world check is needed. |
+| 5 | `world_extract` v0 | `data/worlds/1996-97/` (upstream competition JSON + the extracted tables); the assembled `target/cache/worlds/1996-97/`; the fetched, verified and completed `target/cache/worlds/2026-27/`; the re-extraction diff tests. In steps: |
+| 5a ✅ | World 1996-97 assembled | The tool `src/tools/world_extract` (`just world_extract_9697 <game_dir>`): the committed package with your copy of the PC game's rosters (each country's `DATA/TEAM.nnn` as upstream's Setup makes its team JSON, laid out as World 2026-27's clubs, every team its derived ids and checksum) and its foreign pool (`teams/POOLPLYR.DAT`, unpacked), into `target/cache/worlds/1996-97/`, its `WORLD.ini` stating its fingerprint. Checked before it is written: a valid world with valid game data (`core`). World packages now read the career params (`rules/career_params.json`, D12) and an unpacked pool. The `.TMD` pools need no files: their records are the team files' (but for the global number, recomputed on load, and the runtime team control). |
+| 5b ✅ | World 2026-27 fetched | `just world_fetch_2627`: downloaded into the cache (its checksum pinned), its `WORLD.ini` fingerprint its files' and the pin's (`WorldData2627_DataFingerprint` in the checkout's `world_data.c`), else "package and upstream pin out of step". |
+| 5c | World 1996-97's `rules/` | The `world_rules` crate (M2 #8) and the files of docs/WORLD_INVENTORY.md §4, each with its schema: the facts read from upstream's compiled 96/97 tables through the oracle, the authored ones citing their functions, the first season's European clubs (team ids, from your copy's `.TMD`). In steps: |
+| 5c1 ✅ | The pipeline and the first files | `world_extract extract-9697` (`just world_extract_9697_data`) writes the whole committed `data/worlds/1996-97/` from the pinned checkout: upstream's competition files and career params as they are, and the rules read from upstream's compiled tables through the oracle (`openswos_oracle::tables`: always built, `Unavailable` without the checkout; a data file may bind globals), or stated as constants citing the code. The crate `openswos_world_rules_resource` with `calendar.json`, `country_details.json` (each country's continent: `_countriesTable`), `team_files.json` (the team files' bases: `_teamsCountryNumbers`), `season.json` (the season end's countries: `_careerCompetitionIdRemapTable`) and `fixtures.json`. World packages read them; `core::World` requires and checks them (every country's details, 256 bases never going down, a second file on a free number, the season's countries the world's, each once). `tests/committed.rs`: the committed folder is the extraction, byte for byte (#5e for these files). |
+| 5c2 | The other files | The rest of §4 (`europe.json` with the first season's European clubs, `continental_cups.json`, `national_cycle.json`, `career.json`, `limits.json`…), each with the M5 or M7 unit that reads it (its schema is fixed by its reader), extracted here and checked by `tests/committed.rs`. |
+| 5d | World 2026-27 completed | The overlay merged (docs/WORLD_INVENTORY.md §9) and the baked tables of `world_data.c` read through the oracle into the same files (the five of #5c1 first), into `target/cache/worlds/2026-27/`; its RNC pool decided (§13). In steps: |
+| 5d1 ✅ | The merge and the five rules files | `just world_complete_2627`: the oracle runs World 2026-27's baked install (`tables::world_2627`: `world_data.c` compiled, `World_Current` stubbed; the install writes 96/97's tables for good, so once a process, and the oracle serves nothing else afterwards). Over World 1996-97's committed package: the download's identity, mod, 107 rosters (every 96/97 country's), national teams, B teams and stadiums; its leagues replacing 96/97's by id with 96/97's play-off links kept (`install_league`, `dj_inplace_load`), its 26 new leagues with their countries and tables; 96/97's career params (D12); the five rules files (2026; the continents and the bases the install leaves, the national files grown as `fit_world_national_files` grows them; the season's 91 countries; real rounds). A valid world: 97 countries, 92 leagues. |
+| 5d2 ✅ | European cups, pool, game data | The completed World 2026-27 has valid game data (107 rosters, 2,596 teams, a pool of 900, the built-in tactics). Its European cups are its three league phases (`LeaguePhase_InstallCups`): the install's records, read by the oracle field for field (`TournamentRecord`) and converted into `tournaments.json`, named by the career index's first three contests and by Europe's group. Its foreign pool is unpacked by upstream's own decoder (`src/rnc.c` through the oracle's `unpack`, its header checked first) and carried unpacked (§13). `core::World::is_played`: the competitions the career, the tables and the groups name, and what their leagues lead to; the game data checks the seeds of those alone, so 96/97's European cups, kept as the templates upstream's world modules copy, are not drawn. `RoundRules` converts from and to its byte. |
+| 5d3 | National and league cups | The world cups baked into `world_data.c` (101: their records into `cups.json`, each country's table pointing at its cups; `national_cups.json` with M5). |
+| 5e | Re-extraction diff tests | At every pin, the extraction again, diffed against the committed `data/worlds/1996-97/` and the cached completion. |
 
 ### M5 — Competitions (generic engine)
 
@@ -709,6 +730,9 @@ All binary formats are the PC (DOS) game's (D9).
 - Played matches feed competitions and the career. Full save/load through the M2 crates.
 - A headless Rust CLI (`src/tools/cli`) to run a match, a season or a career on any world
   package, for debugging and reports.
+- Europe 1984-85 (D10), once World 1996-97 and World 2026-27 play: fetched, verified and
+  completed as World 2026-27 is (M4 #5b, #5d), its tables from `world_data_8485.c`; its golden
+  careers pass.
 
 Order rationale: competitions (mostly pure functions) mature the oracle tooling and the
 world model before the stateful match engine. The career needs both. Swapping M5 and M6
@@ -784,15 +808,21 @@ the view's files when the view comes. It keeps its name, which notes elsewhere u
 
 ## 13. Open points
 
-None blocking. The `rules/` schemas are designed as the inventory (M4) and the
-competition/career ports (M5, M7) find each hardcoded rule.
+None blocking. The `rules/` files are listed by the inventory (docs/WORLD_INVENTORY.md §4);
+their schemas are fixed as M4 #5, M5 and M7 port what reads them.
 
-- Which team file a competition plays with (`comp.team_number`: a country's, `0xFF` for a
-  `.TMD` pool, 72 for the custom teams) is not checked by `core::world` yet: the pools and
-  the custom teams are not in packages. The inventory (M4 #4) and `world_extract` (M4 #5)
-  give them files.
+- Which team file a competition plays with (`comp.team_number`: a country's, `0xFF` for the
+  European pool, 72 for the custom teams) is not checked by `core::world` yet. The pool's
+  first season is three lists of team ids: the PC game's `.TMD` records are its team files'
+  records but for the global number, which the game recomputes on load
+  (`SetTeamGlobalNumbers`), and the runtime team control (checked on the PC game, M4 #5).
+  They join `rules/europe.json` (`first_season_clubs`) with its schema (M4 #5c). The custom
+  teams are the player's, outside packages.
 - **D9 and a world's foreign players' pool** (since upstream `6dce7b7`, 2026-11-21): World
   2026-27's package carries its own `teams/POOLPLYR.DAT`, RNC-packed, and the PC (SDL) game
   reads it (`LoadPoolplyrDat` through `LoadFileEx`). A world career's foreign market needs
   it (M7): either an RNC unpacker joins D9's exceptions, or the completion step (M4 #5)
-  turns it into the `poolplyr` crate's unpacked file. Until decided, it is not read.
+  turns it into the `poolplyr` crate's unpacked file. Done in M4 #5d2, the second way:
+  upstream's own unpacker (`src/rnc.c`; the pool is method 1, which checks its result) runs in
+  the oracle, which `world_extract` already links; the completed package carries the pool
+  unpacked. D9 stays whole: no importer reads RNC, and the port has no codec of its own.

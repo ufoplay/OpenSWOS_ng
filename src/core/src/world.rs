@@ -14,16 +14,22 @@ mod competitions;
 mod countries;
 mod files;
 mod ids;
+mod rules;
 mod tables;
 
-use openswos_competitions_json_resource::SymbolId;
+use std::collections::{BTreeMap, BTreeSet};
+
+use openswos_common::TeamFileNumber;
+use openswos_competitions_json_resource::{Continent, SymbolId};
 use openswos_world_package_resource::{WorldPackage, WorldTag};
+use openswos_world_rules_resource::{Fixtures, SeasonEnd};
 
 pub use competitions::{
     CompetitionRef, Cup, CupRef, League, LeagueLink, LeagueRef, Playoff, PlayoffRef, Tournament,
     TournamentRef,
 };
 pub use countries::{Countries, Country};
+pub use rules::{TEAM_FILES, TeamNumbering};
 pub use tables::{
     Berths, BlockLeague, BlockRef, CareerContest, CountryTable, GroupEntry, GroupRef, LeagueBlock,
     QualifyingGroup, SeedBucket, TableContent,
@@ -63,6 +69,19 @@ pub struct World {
     country_tables: Vec<CountryTable>,
     /// Its UEFA Cup berths.
     seed_buckets: Vec<SeedBucket>,
+    /// The year its first season starts.
+    first_year: u16,
+    /// Each country's continent.
+    continents: BTreeMap<TeamFileNumber, Continent>,
+    /// How it numbers its clubs.
+    team_numbering: TeamNumbering,
+    /// How its seasons end.
+    season_end: SeasonEnd,
+    /// Its fixture behaviours.
+    fixtures: Fixtures,
+    /// The competitions it plays: those its career index, its country tables or its
+    /// qualifying groups name, and the play-offs and blocks their leagues lead to.
+    played: BTreeSet<CompetitionRef>,
 }
 
 impl World {
@@ -201,11 +220,134 @@ impl World {
     pub fn seed_buckets(&self) -> &[SeedBucket] {
         &self.seed_buckets
     }
+
+    /// The year its first season starts (`rules/calendar.json`).
+    #[must_use]
+    pub fn first_year(&self) -> u16 {
+        self.first_year
+    }
+
+    /// The continent of `country` (`rules/country_details.json`); every country of the world
+    /// has one.
+    #[must_use]
+    pub fn continent(&self, country: TeamFileNumber) -> Option<Continent> {
+        self.continents.get(&country).copied()
+    }
+
+    /// How it numbers its clubs (`rules/team_files.json`).
+    #[must_use]
+    pub fn team_numbering(&self) -> &TeamNumbering {
+        &self.team_numbering
+    }
+
+    /// How its seasons end (`rules/season.json`).
+    #[must_use]
+    pub fn season_end(&self) -> &SeasonEnd {
+        &self.season_end
+    }
+
+    /// Its fixture behaviours (`rules/fixtures.json`).
+    #[must_use]
+    pub fn fixtures(&self) -> Fixtures {
+        self.fixtures
+    }
+
+    /// Whether it plays `competition`: its career index, a country table or a qualifying
+    /// group names it, or a league it plays leads to it (a play-off, a block's leagues and
+    /// play-offs). A record nothing names is never drawn: a package may keep records only to
+    /// copy them.
+    #[must_use]
+    pub fn is_played(&self, competition: CompetitionRef) -> bool {
+        self.played.contains(&competition)
+    }
+}
+
+/// The competitions the parts of a world play.
+struct Parts<'a> {
+    /// Its career index.
+    career: &'a [CareerContest],
+    /// Its country tables.
+    tables: &'a [CountryTable],
+    /// Its qualifying groups.
+    groups: &'a [QualifyingGroup],
+    /// Its leagues.
+    leagues: &'a [League],
+    /// Its league blocks.
+    blocks: &'a [LeagueBlock],
+}
+
+/// The competitions `parts` play: those the career, the tables and the groups name, then
+/// what the leagues among them lead to, until nothing more is reached.
+fn played(parts: &Parts<'_>) -> BTreeSet<CompetitionRef> {
+    let mut played = named(parts.career, parts.tables, parts.groups);
+    let mut blocks = BTreeSet::new();
+    loop {
+        let mut reached = Vec::new();
+        for competition in &played {
+            let CompetitionRef::League(league) = competition else {
+                continue;
+            };
+            let links = parts.leagues[league.0].playoff_links.iter().flatten();
+            for link in links.flatten() {
+                match link {
+                    LeagueLink::Playoff(playoff) => reached.push(CompetitionRef::Playoff(*playoff)),
+                    LeagueLink::Block(block) => {
+                        blocks.insert(*block);
+                    }
+                }
+            }
+        }
+        let mut next_blocks = Vec::new();
+        for block in &blocks {
+            let block = &parts.blocks[block.0];
+            reached.extend(
+                block
+                    .leagues
+                    .iter()
+                    .filter_map(|entry| entry.league)
+                    .map(CompetitionRef::League),
+            );
+            reached.extend(block.playoffs.map(CompetitionRef::Playoff));
+            next_blocks.extend(block.next);
+        }
+        let before = (played.len(), blocks.len());
+        played.extend(reached);
+        blocks.extend(next_blocks);
+        if (played.len(), blocks.len()) == before {
+            return played;
+        }
+    }
+}
+
+/// The competitions `career`, `tables` and `groups` name.
+fn named(
+    career: &[CareerContest],
+    tables: &[CountryTable],
+    groups: &[QualifyingGroup],
+) -> BTreeSet<CompetitionRef> {
+    let careers = career.iter().filter_map(|contest| contest.competition);
+    let own = tables.iter().flat_map(|table| match &table.content {
+        TableContent::Own { leagues, cups, .. } => leagues
+            .iter()
+            .map(|&league| CompetitionRef::League(league))
+            .chain(cups.iter().map(|&cup| CompetitionRef::Cup(cup)))
+            .collect(),
+        TableContent::Region(_) => Vec::new(),
+    });
+    let grouped = groups.iter().flat_map(|group| {
+        group.entries.iter().filter_map(|entry| match entry {
+            GroupEntry::Competition(competition) => Some(*competition),
+            GroupEntry::Marker(_) => None,
+        })
+    });
+    careers.chain(own).chain(grouped).collect()
 }
 
 /// The world, or `None` with the problems reported.
 fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
-    let files = files::pick(package, problems)?;
+    let files = files::pick(package, problems);
+    let rules = rules::pick(&package.rules, problems);
+    let (files, rules) = (files?, rules?);
     let countries = Countries::build(files.countries, problems);
     let ids = Ids::build(&files, problems);
     let mut resolver = Resolver {
@@ -222,18 +364,38 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
     let career = tables::career(&files, &mut resolver);
     let country_tables = tables::country_tables(&files, &mut resolver);
     let seed_buckets = tables::seed_buckets(&files, &mut resolver);
+    let continents = rules::continents(rules.country_details, &countries, problems);
+    let team_numbering = rules::team_numbering(rules.team_files, &countries, problems);
+    let season_end = rules::season_end(rules.season, &countries, problems);
+    // Every builder has run, its problems reported: what is missing now ends the world.
+    let (career, country_tables, qualifying_groups) =
+        (career?, country_tables?, qualifying_groups?);
+    let (leagues, league_blocks) = (leagues?, league_blocks?);
+    let played = played(&Parts {
+        career: &career,
+        tables: &country_tables,
+        groups: &qualifying_groups,
+        leagues: &leagues,
+        blocks: &league_blocks,
+    });
     Some(World {
         tag: package.identity.tag.clone(),
         name: package.identity.name.clone(),
-        leagues: leagues?,
+        leagues,
         cups: cups?,
         tournaments: tournaments?,
         playoffs: playoffs?,
-        qualifying_groups: qualifying_groups?,
-        league_blocks: league_blocks?,
-        career: career?,
-        country_tables: country_tables?,
+        qualifying_groups,
+        league_blocks,
+        career,
+        country_tables,
         seed_buckets: seed_buckets?,
+        first_year: rules.calendar.first_year,
+        continents: continents?,
+        team_numbering: team_numbering?,
+        season_end: season_end?,
+        fixtures: *rules.fixtures,
+        played,
         countries,
         ids,
     })
@@ -284,6 +446,73 @@ mod tests {
             (2, 3, 1, 1)
         );
         assert_eq!(world.seed_buckets().len(), 1);
+    }
+
+    #[test]
+    fn the_rules_are_the_worlds() {
+        let world = World::from_package(&package()).expect("a valid world");
+        assert_eq!(world.first_year(), crate::fixture::FIRST_YEAR);
+        assert_eq!(world.continent(ENGLAND), Some(Continent::Europe));
+        assert_eq!(world.continent(TeamFileNumber(9)), None);
+        assert_eq!(
+            world.team_numbering().global_number(team(ENGLAND, 3)),
+            83,
+            "England's base is 80"
+        );
+        assert_eq!(world.season_end().countries, [ENGLAND, ALBANIA]);
+        assert_eq!(world.fixtures(), crate::fixture::fixtures());
+    }
+
+    #[test]
+    fn a_competition_is_played_when_the_career_a_table_or_a_group_names_it() {
+        let world = World::from_package(&package()).expect("a valid world");
+        let played = |id: &str| {
+            let competition = world.competition(&self::id(id)).expect("a competition");
+            world.is_played(competition)
+        };
+        // The career's `_euroCup` and `_friendly`, Albania's `_albanianCup`, Europe's group's
+        // `_cupWinnersCup`, the leagues of the tables.
+        for id in [
+            "_euroCup",
+            "_friendly",
+            "_albanianCup",
+            "_cupWinnersCup",
+            "_englishLeague",
+        ] {
+            assert!(played(id), "{id}");
+        }
+        assert!(
+            played("_div1Playoffs"),
+            "England's league leads to its play-off"
+        );
+        let world = World::from_package(&package_with(&[(
+            "qualifying.json",
+            r#""_euroCup", "_cupWinnersCup", -1"#,
+            r#""_euroCup", -1"#,
+        )]))
+        .expect("a valid world");
+        let cup = world
+            .competition(&id("_cupWinnersCup"))
+            .expect("still a record");
+        assert!(!world.is_played(cup));
+    }
+
+    #[test]
+    fn missing_rules_are_reported_with_the_other_files() {
+        let mut package = package();
+        package.rules = openswos_world_rules_resource::Rules::default();
+        package.competitions.remove("career.json");
+        assert_eq!(
+            problems(&package),
+            [
+                "competitions/career.json: the file is missing",
+                "rules/calendar.json: the file is missing",
+                "rules/country_details.json: the file is missing",
+                "rules/team_files.json: the file is missing",
+                "rules/season.json: the file is missing",
+                "rules/fixtures.json: the file is missing",
+            ]
+        );
     }
 
     #[test]
