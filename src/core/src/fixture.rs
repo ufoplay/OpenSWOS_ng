@@ -13,6 +13,7 @@ use openswos_tac_resource::TeamTactics;
 use openswos_tactics_json_resource::{PresetFile, TacticsJsonFormat};
 use openswos_team_json_resource::{
     EntryIds, TeamJsonDocument, TeamJsonFile, TrailingNewline, WORLD_1996_97_TAG,
+    WORLD_PACKAGE_INDENT, WORLD_PACKAGE_NON_ASCII,
 };
 use openswos_team_resource::{TeamFile, TeamFileFormat};
 use openswos_test_utils::{assets_path, tactics_path};
@@ -144,6 +145,9 @@ pub(crate) fn package_with(changes: &[(&str, &str, &str)]) -> WorldPackage {
         manifest: None,
         teams: BTreeMap::new(),
         competitions,
+        national_teams: None,
+        bteams: None,
+        stadiums: None,
     }
 }
 
@@ -167,6 +171,8 @@ pub(crate) fn roster(file: &TeamFile, name: &str) -> TeamJsonDocument {
         file: TeamJsonFile::from_team_file(file, Some(name), |team| {
             EntryIds::derived(WORLD_1996_97_TAG, team)
         }),
+        indent: WORLD_PACKAGE_INDENT,
+        non_ascii: WORLD_PACKAGE_NON_ASCII,
         trailing_newline: TrailingNewline::Present,
     }
 }

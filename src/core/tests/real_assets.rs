@@ -14,6 +14,7 @@ use openswos_poolplyr_resource::PoolFileFormat;
 use openswos_tactics_json_resource::{PresetFile, TacticsJsonFormat};
 use openswos_team_json_resource::{
     EntryIds, TeamJsonDocument, TeamJsonFile, TrailingNewline, WORLD_1996_97_TAG,
+    WORLD_PACKAGE_INDENT, WORLD_PACKAGE_NON_ASCII,
 };
 use openswos_team_resource::TeamFileFormat;
 use openswos_test_utils::data::{find_ignoring_case, game_dir};
@@ -42,6 +43,8 @@ fn world_1996_97_plays_with_the_pc_games_teams() {
             roster.clone(),
             TeamJsonDocument {
                 file: json,
+                indent: WORLD_PACKAGE_INDENT,
+                non_ascii: WORLD_PACKAGE_NON_ASCII,
                 trailing_newline: TrailingNewline::Present,
             },
         );

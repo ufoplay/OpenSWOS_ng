@@ -377,7 +377,8 @@ mod tests {
             .teams
             .first_mut()
             .expect("a team");
-        entry.team.team_name = "A NAME FAR TOO LONG FOR ITS FIELD".to_owned();
+        // A character no name field stores (a name too long is cut, as the game cuts it).
+        entry.team.team_name = "ENGLAND \u{3a9}".to_owned();
         let found = problems(parts);
         let [converts, seed] = found.as_slice() else {
             panic!("two problems: {found:?}");

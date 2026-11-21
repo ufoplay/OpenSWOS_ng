@@ -12,8 +12,8 @@ tournament's stage, the parked selection, World 2026-27's world cups, play-offs 
 coefficients, the mods' sections…) are options. Unknown members do not read.
 
 The layout is the writer's (`CareerSave::layout`): one member a line, the header written
-`"key": value`, the stages' cup lists and `cache_scores` on the line of the member
-before.
+`"key": value` (with a world's `national_files` after it), the stages' cup lists and
+`cache_scores` on the line of the member before.
 
 ## The members (M2 #11b–g)
 
@@ -21,15 +21,21 @@ before.
 |---|---|
 | `schema_version`, `file_kind` | `SchemaVersion`, `CareerKind`: only 3 and `career` read |
 | `world` | the world's tag; absent in saves made before worlds (then World 1996-97's) |
-| `season_informations` | `SeasonInformation`: the manager's record, a season each (35) |
+| `national_files` | a world's national teams' files' sizes (countries 80..=85, `NATIONAL_FILES`): the game refuses a save made with other sizes |
+| `season_informations` | `SeasonInformation`: the manager's record, a season each (35, or a longer career's years up to 40) |
 | `primary_country_code` | the current competition's country, 255 without one |
+| `career_years` | CAREER YEARS, the career's own length (30 or 40); absent for the original's 20 |
 | `career_team`, `current_team`, `selected_teams`, `selected_teams_parked`, `tmd_teams` | `SaveTeam`: the team crate's `Team` |
 | `career_team_reserves`, `current_team_reserves` | `SavePlayer`: the team crate's `Player` |
 | `career_foreign_market_players` | `MarketPlayer`: the market's header and a `SavePlayer` |
 | `transfer_offer_table` | `TransferOffer`: clubs' offers for the manager's players (5) |
 | `new_job_offers`, `job_offers` | `JobOffer`: the job-offer queues (5 at least) |
 | `team_pools`, `state_pools` | `TeamPool`, `StatePools`: a world's club pools below the leagues |
-| `world_cups`, `world_cupd`, `conti_holders`, `conti_edition` | `WorldCups`, `WorldCupD`, `ContiHolders`, `ContiEdition`: a world's cups |
+| `world_cups`, `world_cupd`, `conti_holders`, `conti_edition` | `WorldCups`, `WorldCupD`, `ContiHolders`, `ContiEdition` (its `flags` absent in saves before them): a world's cups |
+| `world_supercup`, `cup_record`, `euro_title_holders` | `WorldSuperCup`, `CupRecord` (its matches `CupMatch`), `EuroTitleHolders`: a world's Super Cups, its cups' summary, its European holders |
+| `uefa_prizes`, `ffp`, `cpu_replacements`, `squad_extras`, `b_team`, `world_rules` | `UefaPrizes`, `Ffp`, `CpuReplacements`, `SquadExtras`, `BTeamCalls`, `WorldRules`: a world's career's money, CPU replacements, squads of 30, B-team call-ups, match rules (the SWOS 96/97 Mod 4.1's) |
+| `exact_continuation` | `ExactContinuation`: the random state, clocks and seed groups, with `[career] exact_continuation` on |
+| `cup_pick_list` | a national coach's season's competitions, as career contests' indices (`CUP_PICK_LIST_LEN`) |
 | `world_playoff`, `stage_titles`, `season_winners`, `league_stages`, `promedio` | `WorldPlayoff`, `StageTitles`, `SeasonWinners`, `LeagueStage`, `Promedio`: a world's league contests |
 | `competition_overrides`, `secondary_league_rows`…`euro_league_rows` | `CompetitionOverrides`, `LeagueRow`: the slots' league tables by team identity, a world league's split |
 | `comp_copy_dynamic`, `comp_copy_teamlists` | `CompCopyDynamic`, byte lists: what the competition copies change from their templates |
@@ -54,6 +60,10 @@ The counts the save states must agree with what it holds: `num_selected_teams` w
 - **Names** are written up to their first NUL. Faithful to the original: the bytes after
   it are not written (`jb_key_str` zeroes them), so a name's leftover bytes do not
   survive a save. A name longer than its slot, or holding a NUL, does not read.
+- **Looks.** A player's name is written from its first 22 bytes: the record's byte 25 is
+  the SWOS 96/97 Mod's look, written as `"looks"` after the name when the name leaves room
+  and it is a look (its look bits only). A save made before looks may hold a name of 23
+  bytes: it reads, filling the field.
 - **Season information and offers** keep their numbers in their C widths (an ordinal
   of `-1` for none, `-1`/`-2` marking a haggle's progress); what they mean is the
   career's (M7). A job offer's team name is 18 raw bytes, as written: `0xFF` marks it
@@ -97,7 +107,9 @@ Upstream OpenSWOS: `src/save_format_json.c` (`SaveJson_WriteCareer`,
 `emit_stage_cupfull`, `s_career_scalars`, `emit_scalar_table`, `emitted_len`), the
 world modules' state (`include/team_pool.h`, `state_pool.h`, `states.h`, `world_cups.h`,
 `world_cupd.h`, `world_conti.h`, `world_playoff.h`, `league_playoffs.h`, `uefa_coef.h`,
-`uefa_access.h`, the rules library's `swosrules.h`), `include/game_types.h`
+`uefa_access.h`, `world_supercup.h`, `cup_record.h`, `world_finance.h`, `cpu_repl.h`,
+`squad_extras.h`, `bteam.h`, `world_rules.h`, `player_looks.h`, `src/rules/swosrules.h`),
+`include/game_types.h`
 (`SeasonInformations`, `PlayerFile`, `TeamFile`, `MarketPlayer`, `TransferOfferEntry`,
 `JobOffer`, `DIYTeamStats`, `LeagueSplitState`, `DIYCompetition`, `DIYCompetitionEx` and its
 league and cup views, `DIYTournamentSlot`).

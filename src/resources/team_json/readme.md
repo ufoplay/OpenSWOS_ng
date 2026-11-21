@@ -15,19 +15,37 @@ named fields, with a `uuid` per team and player and a `checksum` per team.
   OpenSWOS Setup writes some fields signed (`-56`) and the World 2026-27 import writes them
   unsigned (`200`); both mean the same byte (`JsonByte`, `JsonWord`, shared with the other
   JSON resources in `openswos_common::json`).
-- **The text**: upstream's layout, Python's `json.dump(indent=2)` with `ensure_ascii`
-  (`openswos_common::json::to_text` with `NonAscii::Escaped`). Upstream files round-trip
-  byte for byte, trailing newline included (Setup writes none, the World 2026-27 import
-  writes one).
-- **What this port writes:** the World 2026-27 package's style. Numbers are always written
+- **The text**: upstream's layout, Python's `json.dump`. Three dialects, all round-tripped
+  byte for byte, the document keeping its indentation, how it writes characters beyond
+  ASCII and its trailing newline (`TeamJsonDocument`), each player its key order:
+  - OpenSWOS Setup: `indent=2`, `ensure_ascii`, no trailing newline;
+  - upstream's World 2026-27 import (`scripts/world_import.py`): `indent=2`, a trailing
+    newline;
+  - World 2026-27's sealed package (`scripts/worldgen/seal.py` rewrites every file):
+    `indent=1`, characters as they are, a trailing newline; its new national teams' players
+    (`scripts/worldgen/nations.py`) write `face` and `looks` before `position`
+    (`PlayerKeyOrder::FaceFirst`), the teams kept from 96/97 the record's order.
+- **What this port writes:** the World 2026-27 import's style. Numbers are always written
   unsigned: nationalities, shirt numbers and prices are unsigned codes, and Setup's signs
-  come from the C structs' `int8_t`. The world packages it makes (World 1996-97) end with a
-  newline (`WORLD_PACKAGE_TRAILING_NEWLINE`). Setup's signed files are still read. Writing
-  never fails: what the game does not read and JSON cannot keep is dropped, namely bytes
-  after a name's end (the PC game's `SAFE.EDT` has some) and the passing byte's high
-  nibble.
+  come from the C structs' `int8_t`. The world packages it makes (World 1996-97) are
+  indented by two spaces, escape characters beyond ASCII and end with a newline
+  (`WORLD_PACKAGE_INDENT`, `WORLD_PACKAGE_NON_ASCII`, `WORLD_PACKAGE_TRAILING_NEWLINE`).
+  Setup's signed files are still read. Writing never fails: what the game does not read and
+  JSON cannot keep is dropped, namely bytes after a name's end but a look (the PC game's
+  `SAFE.EDT` has some) and the passing byte's high nibble.
+- **A world's additions** (upstream `scripts/world_import.py`; the game reads them with
+  `DataJson_LoadTeamExtras`, `DataJson_LoadTeamBorn`): a player's `looks` (the SWOS 96/97
+  Mod's receding, shaved or white hair: the record's byte 25, `openswos_team_resource::looks`),
+  written after `player_name` only when the name leaves room and it is a look; a player's
+  `born` (a B team's, for the call-ups' under-23 rule), last, kept as written (`BirthYear`;
+  the game takes 1801..=2199); a club's `extra_players` (its players from place 17 on, the
+  same fields and ids as `players`), after `players`, in no checksum.
 - **`convert`**: the model to and from the typed `Team`, checking the remaining ranges
-  (cards and injuries, names). The JSON
+  (cards and injuries, the characters of names). Faithful to the original: a name longer
+  than its field is cut to it, as the game's loader cuts it (World 2026-27's national teams
+  have coaches of 24 letters). A look is written into the record's byte 25. The years of
+  birth and the players 17.. are not in the record: `TeamEntry::extras` and
+  `TeamEntry::with_extras` (`EntryExtras`). The JSON
   splits the cards-and-injuries byte as `cards` (bits 0-1), `injury` (bits 2-4) and
   `status_bucket` (bits 5-7). Those names are the JSON's own: the game code reads injuries
   from bits 5-7. The typed model keeps the byte whole.
@@ -109,23 +127,30 @@ speed marked.
 
 The team's `checksum` hashes every player's position, raw skill nibbles (bit 3 included)
 and price. Changing any of them changes the checksum, which `team_checksum` recomputes.
+`players_checksum` is the same of any players (upstream `TeamDb_ChecksumPlayers`: a world
+club's players 17.. are checked by theirs).
 
 ## Sources
 
-Upstream OpenSWOS: `tools/swosdata/lib/team_json.c` (the writer), `docs/TEAM_IDS.md`,
-`docs/DATA_PIPELINE.md`.
+Upstream OpenSWOS: `tools/swosdata/lib/team_json.c` (the writer), `scripts/world_import.py`
+(`team`, `player`: a world's additions), `scripts/worldgen/nations.py` and `seal.py` (the
+sealed package's dialect), `src/save_format_json.c` (`DataJson_LoadTeamExtras`,
+`DataJson_LoadTeamBorn`, the loader's `FLD_STR`), `src/team_db.c` (`TeamDb_ChecksumPlayers`),
+`docs/TEAM_IDS.md`, `docs/DATA_PIPELINE.md`.
 
 ## Tests
 
 - Unit tests: upstream's documented id example (BRAZIL), conversions and their errors,
-  round trips of the PC game's `TEAM.085`. The numbers and the layout are tested in
-  `openswos_common::json`.
+  round trips of the PC game's `TEAM.085`, looks, years of birth and players 17.., names cut
+  to their field, a file in the sealed package's dialect. The numbers and the layout are
+  tested in `openswos_common::json`.
 - `assets/TEAM_JSON/OCEANIA.json`: World 1996-97's team JSON for the PC game's `TEAM.085`,
   as this port writes it (derived 96/97 ids, unsigned numbers, a trailing newline). It
   round-trips byte for byte, and decodes to exactly the teams of `assets/TEAM/TEAM.085`.
 - World 2026-27 (downloaded into `target/cache/`, D8): every `teams/*.json` of the package
-  round-trips byte for byte, converts to typed teams and back, and states the checksums
-  its data gives.
+  (107 files, 2,596 teams, 24,183 players 17 on) round-trips byte for byte, converts to typed
+  teams and back (players 17 on and years of birth included), and states the checksums its
+  data gives.
 - `just test_real_assets <game_dir>`: every PC team file round-trips through this JSON,
   every `*.EDT` file exports to it with every name's text, and BRAZIL's checksum is
   upstream's documented one.

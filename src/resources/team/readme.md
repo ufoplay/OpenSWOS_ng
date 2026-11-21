@@ -16,7 +16,10 @@ unlike every other team file. The game ignores the stored value (it sets it on l
 the team's file and ordinal), so it is kept as stored.
 
 Names are fixed-size fields that keep every byte (`FixedName`), so every file round-trips
-byte for byte.
+byte for byte. A player name's last byte (the record's byte 25) is NUL in the original
+game's files; the SWOS 96/97 Mod keeps a player's look there (receding, shaved or white
+hair), which only a name shorter than 22 letters leaves room for (`looks.rs`, upstream
+`PlayerLooks_*`).
 
 Some fields are written by the game while it runs: team control, own goals, form, cards,
 goal counters, flags. They are unset in every file of the PC game, and in use in career
@@ -43,7 +46,8 @@ goals, the cards-and-injuries levels, goal counters.
 Upstream OpenSWOS: `include/game_types.h` (`TeamFile`, `PlayerFile`, the `PF_*`,
 `PLAYER_FORM_*`, `TEAM_VALUES_*` and `TACTIC_*` defines), `include/team_colors.h` (shirt
 types, `KIT_COLOURS`), `include/play_match_menu.h` and `src/teams.c` (team controls),
-`include/mod_api.h` (faces), `docs/CUSTOM_TEAMS.md` (kit colour names),
+`include/mod_api.h` (faces), `include/player_looks.h` and `src/player_looks.c` (looks),
+`docs/CUSTOM_TEAMS.md` (kit colour names),
 `src/career_status.c` (the cards-and-injuries bits), `docs/DATA_JSON.md` (layouts and
 byte-faithfulness notes).
 

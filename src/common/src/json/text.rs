@@ -1,5 +1,6 @@
 //! The text layout of upstream's JSON files: Python's `json.dump(indent=…)`. That means:
-//! - one value a line, indented by two spaces (one in a mod's `mod.json`);
+//! - one value a line, indented by two spaces (one in a mod's `mod.json` and World 2026-27's
+//!   national teams);
 //! - `": "` after a key;
 //! - `[]` / `{}` for an empty container;
 //! - with `ensure_ascii` (the default), every character outside space..`~` escaped as
@@ -28,6 +29,23 @@ pub enum Indent {
 }
 
 impl Indent {
+    /// The indentation of a text laid out as upstream lays it out: its second line's (the
+    /// first key's). [`Indent::Two`] when there is none to see (an empty container).
+    #[must_use]
+    pub fn of(bytes: &[u8]) -> Self {
+        let second_line = bytes
+            .iter()
+            .position(|&byte| byte == b'\n')
+            .and_then(|end| bytes.get(end + 1..))
+            .unwrap_or_default();
+        let spaces = second_line.iter().take_while(|&&byte| byte == b' ').count();
+        if spaces == ONE_SPACE.len() {
+            Self::One
+        } else {
+            Self::Two
+        }
+    }
+
     fn bytes(self) -> &'static [u8] {
         match self {
             Self::One => ONE_SPACE,
@@ -57,6 +75,19 @@ pub enum NonAscii {
     Escaped,
     /// As they are, in UTF-8 (`ensure_ascii=False`: the competition JSON).
     Raw,
+}
+
+impl NonAscii {
+    /// How a text wrote characters beyond ASCII: [`NonAscii::Raw`] when it holds any as they
+    /// are. A text of ASCII alone reads [`NonAscii::Escaped`], which writes it the same.
+    #[must_use]
+    pub fn of(bytes: &[u8]) -> Self {
+        if bytes.is_ascii() {
+            Self::Escaped
+        } else {
+            Self::Raw
+        }
+    }
 }
 
 impl TrailingNewline {
@@ -119,6 +150,32 @@ fn escape_non_ascii(text: &str) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn the_layout_is_read_from_the_text() {
+        assert_eq!(Indent::of(b"{\n \"type\": 1\n}"), Indent::One);
+        assert_eq!(Indent::of(b"{\n  \"type\": 1\n}"), Indent::Two);
+        assert_eq!(Indent::of(b"{}"), Indent::Two);
+        assert_eq!(
+            NonAscii::of("{\"a\": \"\\u00e9\"}".as_bytes()),
+            NonAscii::Escaped
+        );
+        assert_eq!(NonAscii::of("{\"a\": \"é\"}".as_bytes()), NonAscii::Raw);
+        for (indent, non_ascii) in [
+            (Indent::One, NonAscii::Raw),
+            (Indent::Two, NonAscii::Escaped),
+        ] {
+            let text = to_text(
+                &json!({ "name": "PELÉ", "list": [1] }),
+                indent,
+                non_ascii,
+                TrailingNewline::Present,
+            )
+            .expect("serializes");
+            assert_eq!(Indent::of(text.as_bytes()), indent);
+            assert_eq!(NonAscii::of(text.as_bytes()), non_ascii);
+        }
+    }
 
     #[test]
     fn lays_out_like_python() {

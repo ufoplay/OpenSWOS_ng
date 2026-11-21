@@ -5,7 +5,7 @@
 use openswos_common::{Exporter, Importer, TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_team_json_resource::{
     EntryIds, TeamJsonDocument, TeamJsonFile, TeamJsonFormat, TrailingNewline, WORLD_1996_97_TAG,
-    team_checksum,
+    WORLD_PACKAGE_INDENT, WORLD_PACKAGE_NON_ASCII, team_checksum,
 };
 use openswos_team_resource::{TeamFile, TeamFileFormat};
 use openswos_test_utils::data::{find_ignoring_case, game_dir, game_file};
@@ -31,6 +31,8 @@ fn every_team_file_survives_the_json() {
         });
         let text = TeamJsonFormat::export(&TeamJsonDocument {
             file,
+            indent: WORLD_PACKAGE_INDENT,
+            non_ascii: WORLD_PACKAGE_NON_ASCII,
             trailing_newline: TrailingNewline::Present,
         })
         .expect("exports");

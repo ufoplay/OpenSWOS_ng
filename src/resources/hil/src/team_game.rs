@@ -164,7 +164,12 @@ pub struct DosPlayerGame {
 }
 
 impl DosPlayerGame {
-    fn read(reader: &mut ByteReader<'_>) -> Result<Self, ReadError> {
+    /// Reads a player's match record (all bytes: no word order).
+    ///
+    /// # Errors
+    ///
+    /// When the data is too short.
+    pub fn read(reader: &mut ByteReader<'_>) -> Result<Self, ReadError> {
         let [
             skip,
             player_index,
@@ -222,7 +227,8 @@ impl DosPlayerGame {
         })
     }
 
-    fn write(&self, writer: &mut ByteWriter) {
+    /// Writes the player's match record.
+    pub fn write(&self, writer: &mut ByteWriter) {
         let Self {
             skip,
             player_index,

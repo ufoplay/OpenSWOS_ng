@@ -6,24 +6,36 @@ pub mod convert;
 pub mod ids;
 pub mod model;
 
-use openswos_common::json::{Indent, NonAscii, to_text};
+use openswos_common::json::to_text;
 use openswos_common::{Exporter, Importer};
 use openswos_team_resource::{Team, TeamFile};
+use serde::de::{IgnoredAny, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 use thiserror::Error;
 
-pub use convert::{EntryError, EntryIds};
+pub use convert::{EntryError, EntryExtras, EntryIds, ExtraPlayer};
 pub use ids::{
-    TEAM_ID_NAMESPACE, WORLD_1996_97_TAG, derived_player_uuid, derived_team_uuid, team_checksum,
+    TEAM_ID_NAMESPACE, WORLD_1996_97_TAG, derived_player_uuid, derived_team_uuid, players_checksum,
+    team_checksum,
 };
-pub use model::{FileKind, PlayerEntry, TeamChecksum, TeamEntry, TeamHeader, TeamJsonFile};
-pub use openswos_common::json::{JsonByte, JsonWord, TrailingNewline};
+pub use model::{
+    BirthYear, FIRST_KNOWN_BIRTH_YEAR, FileKind, LAST_KNOWN_BIRTH_YEAR, PlayerEntry,
+    PlayerKeyOrder, TeamChecksum, TeamEntry, TeamHeader, TeamJsonFile,
+};
+pub use openswos_common::json::{Indent, JsonByte, JsonWord, NonAscii, TrailingNewline};
 
-/// A team JSON file and the one thing about its text the model does not hold: whether it
-/// ends with a newline.
+/// A team JSON file and what about its text the model does not hold: its indentation, how it
+/// writes characters beyond ASCII and whether it ends with a newline (each player's key order
+/// is the player's: [`PlayerKeyOrder`]).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TeamJsonDocument {
     /// The file.
     pub file: TeamJsonFile,
+    /// Its indentation: two spaces (OpenSWOS Setup, `scripts/world_import.py`), one in World
+    /// 2026-27's sealed package (`scripts/worldgen/seal.py` rewrites every file).
+    pub indent: Indent,
+    /// Its characters beyond ASCII: escaped (Setup), or as they are (the sealed package).
+    pub non_ascii: NonAscii,
     /// Whether its text ends with a newline.
     pub trailing_newline: TrailingNewline,
 }
@@ -101,6 +113,78 @@ impl TeamJsonFile {
 /// does, as in the World 2026-27 package.
 pub const WORLD_PACKAGE_TRAILING_NEWLINE: TrailingNewline = TrailingNewline::Present;
 
+/// The indentation of the team JSON of the world packages this port makes: two spaces, as
+/// upstream's import writes a world's clubs (`scripts/world_import.py`, `indent=2`; World
+/// 2026-27's sealed package is rewritten with one, `scripts/worldgen/seal.py`).
+pub const WORLD_PACKAGE_INDENT: Indent = Indent::Two;
+
+/// How the team JSON of the world packages this port makes writes characters beyond ASCII:
+/// escaped, as OpenSWOS Setup does (`ensure_ascii`; the names of the PC game's files are
+/// ASCII, so it writes them the same either way).
+pub const WORLD_PACKAGE_NON_ASCII: NonAscii = NonAscii::Escaped;
+
+/// The key orders of a file's players, read beside the model (which reads keys in any order).
+#[derive(Deserialize)]
+struct KeyOrders {
+    teams: Vec<TeamKeyOrders>,
+}
+
+/// A team's players' key orders.
+#[derive(Deserialize)]
+struct TeamKeyOrders {
+    players: Vec<PlayerKeys>,
+    #[serde(default)]
+    extra_players: Option<Vec<PlayerKeys>>,
+}
+
+/// A player's key order: [`PlayerKeyOrder::FaceFirst`] when its `face` comes before its
+/// `position`.
+struct PlayerKeys(PlayerKeyOrder);
+
+impl<'de> Deserialize<'de> for PlayerKeys {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_map(PlayerKeysVisitor)
+    }
+}
+
+struct PlayerKeysVisitor;
+
+impl<'de> Visitor<'de> for PlayerKeysVisitor {
+    type Value = PlayerKeys;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a player")
+    }
+
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<PlayerKeys, A::Error> {
+        let mut order = PlayerKeyOrder::Record;
+        let mut position_seen = false;
+        while let Some(key) = map.next_key::<String>()? {
+            map.next_value::<IgnoredAny>()?;
+            match key.as_str() {
+                "position" => position_seen = true,
+                "face" if !position_seen => order = PlayerKeyOrder::FaceFirst,
+                _ => {}
+            }
+        }
+        Ok(PlayerKeys(order))
+    }
+}
+
+/// Gives the file's players the key orders their text has.
+fn apply_key_orders(file: &mut TeamJsonFile, orders: KeyOrders) {
+    for (team, orders) in file.teams.iter_mut().zip(orders.teams) {
+        for (player, PlayerKeys(order)) in team.players.iter_mut().zip(orders.players) {
+            player.key_order = order;
+        }
+        if let (Some(players), Some(orders)) = (team.extra_players.as_mut(), orders.extra_players) {
+            for (player, PlayerKeys(order)) in players.iter_mut().zip(orders) {
+                player.key_order = order;
+            }
+        }
+    }
+}
+
 /// The team JSON format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TeamJsonFormat;
@@ -110,15 +194,18 @@ impl Importer for TeamJsonFormat {
     type Error = TeamJsonError;
 
     fn import(bytes: &[u8]) -> Result<TeamJsonDocument, TeamJsonError> {
-        let file: TeamJsonFile = serde_json::from_slice(bytes)?;
+        let mut file: TeamJsonFile = serde_json::from_slice(bytes)?;
         if file.count != file.teams.len() {
             return Err(TeamJsonError::CountMismatch {
                 count: file.count,
                 teams: file.teams.len(),
             });
         }
+        apply_key_orders(&mut file, serde_json::from_slice(bytes)?);
         Ok(TeamJsonDocument {
             file,
+            indent: Indent::of(bytes),
+            non_ascii: NonAscii::of(bytes),
             trailing_newline: TrailingNewline::of(bytes),
         })
     }
@@ -131,8 +218,8 @@ impl Exporter for TeamJsonFormat {
     fn export(model: &TeamJsonDocument) -> Result<Vec<u8>, TeamJsonError> {
         Ok(to_text(
             &model.file,
-            Indent::Two,
-            NonAscii::Escaped,
+            model.indent,
+            model.non_ascii,
             model.trailing_newline,
         )?
         .into_bytes())
@@ -175,5 +262,54 @@ mod tests {
             TeamJsonFormat::import(b"{"),
             Err(TeamJsonError::Json(_))
         ));
+    }
+
+    /// World 2026-27's sealed dialect: one space, characters as they are, a national team's
+    /// player face first, a look, a year of birth, players 17 on. It round-trips byte for byte.
+    #[test]
+    #[allow(clippy::indexing_slicing)] // fixed indexes into a fixed-size squad
+    fn the_sealed_packages_dialect_round_trips() {
+        use openswos_team_resource::{LookBits, TeamFileFormat};
+        let bytes = std::fs::read(
+            openswos_test_utils::assets_path()
+                .join("TEAM")
+                .join("TEAM.085"),
+        )
+        .expect("the committed fixture");
+        let teams = TeamFileFormat::import(&bytes).expect("a team file");
+        let mut file = TeamJsonFile::from_team_file(&teams, Some("OCEANIA"), |team| {
+            EntryIds::derived(WORLD_1996_97_TAG, team)
+        });
+        let entry = file.teams.first_mut().expect("an entry");
+        entry.players[0].key_order = PlayerKeyOrder::FaceFirst;
+        entry.players[0].looks = Some(LookBits::BALD);
+        entry.players[1].born = Some(BirthYear(2005));
+        entry.players[2].player_name = "JOS\u{c9}".to_owned();
+        entry.extra_players = Some(vec![entry.players[0].clone()]);
+        let document = TeamJsonDocument {
+            file,
+            indent: Indent::One,
+            non_ascii: NonAscii::Raw,
+            trailing_newline: TrailingNewline::Present,
+        };
+        let text = TeamJsonFormat::export(&document).expect("exports");
+        let read = TeamJsonFormat::import(&text).expect("reads back");
+        assert_eq!(read, document);
+        assert_eq!(TeamJsonFormat::export(&read).expect("exports"), text);
+        let text = String::from_utf8(text).expect("UTF-8");
+        assert!(text.starts_with("{\n \"type\": \"team\","));
+        assert!(text.contains("\"JOS\u{c9}\""));
+        let first = text.find("\"player_name\"").expect("a player");
+        let (face, looks, position) = (
+            text[first..].find("\"face\"").expect("a face"),
+            text[first..].find("\"looks\": 1").expect("a look"),
+            text[first..].find("\"position\"").expect("a position"),
+        );
+        assert!(face < looks && looks < position, "face first");
+        assert!(text.contains("\"born\": 2005"));
+        assert_eq!(
+            read.file.teams[0].extras().map(|extras| extras.born[1]),
+            Ok(Some(BirthYear(2005)))
+        );
     }
 }

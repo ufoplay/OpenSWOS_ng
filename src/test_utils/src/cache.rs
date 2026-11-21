@@ -27,14 +27,16 @@ pub struct Download<'a> {
     pub sha256: Option<&'a str>,
 }
 
-/// World 2026-27's package for OpenSWOS (the URL of upstream's Setup, `tools/swosdata/app/
-/// main.cpp`). Its data is the SWOS 96/97 Mod's and is not ours to commit (D8). Its
-/// `WORLD.ini` fingerprint is `efe1464b6d1d62b8`, upstream's at the pinned commit. A new
-/// package on the server fails this checksum on purpose: check it, then update both.
+/// World 2026-27's package for OpenSWOS (the URL upstream's Setup downloads it from,
+/// `PROJECT_WORLD_PACKAGE_URL` in `include/project_identity.h`: OpenSWOS hosts it itself since
+/// 2026-11-12). Its data is the SWOS 96/97 Mod's (with Playaveli's national teams and balance)
+/// and is not ours to commit (D8). Its `WORLD.ini` fingerprint is `80e20cdd3e92ec9c`,
+/// upstream's at the pinned commit. A new package on the server fails this checksum on
+/// purpose: check it, then update both.
 pub const WORLD_2627_PACKAGE: Download<'static> = Download {
-    url: "https://worldofswos.com/static/openswos/OpenSWOS-World-2627.zip",
+    url: "https://openswos.net/dlc/OpenSWOS-World-2627.zip",
     file_name: "OpenSWOS-World-2627.zip",
-    sha256: Some("80647e3423f1d9bd1949c7954ef85d8c2aa546eb32248d106313d44d88507acd"),
+    sha256: Some("50f95dd9b5c3a90e460f51d3a05bc27f61a71221481aa0e3e749473d6a12cb84"),
 };
 
 /// The URL of a file of swos-port's `tests/data`, at the commit pinned: its last change to

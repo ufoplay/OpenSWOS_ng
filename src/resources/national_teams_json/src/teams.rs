@@ -119,6 +119,7 @@ pub enum NationalTeamsError {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "TeamsText", into = "TeamsText")]
 pub struct NationalTeams {
+    about: Option<String>,
     records: Vec<NationalTeamRecord>,
     nationalities: Option<Vec<ManagerNationality>>,
     job_offer_pick: Option<JobOfferPick>,
@@ -147,10 +148,27 @@ impl NationalTeams {
             return Err(NationalTeamsError::TooManyNationalities(listed.len()));
         }
         Ok(Self {
+            about: None,
             records,
             nationalities,
             job_offer_pick,
         })
+    }
+
+    /// These teams with `about`, the file's comment.
+    #[must_use]
+    pub fn with_about(self, about: String) -> Self {
+        Self {
+            about: Some(about),
+            ..self
+        }
+    }
+
+    /// The file's comment (World 2026-27's says where its records come from), which the game
+    /// does not read. `None`: the key is absent.
+    #[must_use]
+    pub fn about(&self) -> Option<&str> {
+        self.about.as_deref()
     }
 
     /// The national teams, in order: a nationality's national team is the first record
@@ -180,6 +198,8 @@ impl NationalTeams {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct TeamsText {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    about: Option<String>,
     records: Vec<NationalTeamRecord>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     nationalities: Option<Vec<ManagerNationality>>,
@@ -192,22 +212,29 @@ impl TryFrom<TeamsText> for NationalTeams {
 
     fn try_from(text: TeamsText) -> Result<Self, Self::Error> {
         let TeamsText {
+            about,
             records,
             nationalities,
             job_offer_pick,
         } = text;
-        Self::new(records, nationalities, job_offer_pick)
+        let teams = Self::new(records, nationalities, job_offer_pick)?;
+        Ok(match about {
+            Some(about) => teams.with_about(about),
+            None => teams,
+        })
     }
 }
 
 impl From<NationalTeams> for TeamsText {
     fn from(teams: NationalTeams) -> Self {
         let NationalTeams {
+            about,
             records,
             nationalities,
             job_offer_pick,
         } = teams;
         Self {
+            about,
             records,
             nationalities,
             job_offer_pick,

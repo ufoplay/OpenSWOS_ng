@@ -42,6 +42,13 @@ pub(crate) const REPLAYS_FRAME_OVERLAY: &str = concat!(
 pub(crate) const REPLAYS_SPEED: &str =
     "; speed: normal | half — the speed a recording starts at in the viewer.";
 
+/// The comment before `[career] exact_continuation`.
+pub(crate) const CAREER_EXACT_CONTINUATION: &str = concat!(
+    "; exact_continuation: true | false -- a career's saves also keep its random state and clock,\n",
+    "; so a loaded career plays on exactly as it would have. Off: as the original (a load plays\n",
+    "; on differently).",
+);
+
 /// The comment before `[testing] no_injuries_cards`.
 pub(crate) const TESTING_NO_INJURIES_CARDS: &str = concat!(
     "; no_injuries_cards: true | false -- FOR TESTING A CAREER: nobody is booked, sent off,\n",
@@ -63,9 +70,16 @@ pub(crate) const GENERAL_ASSETS_REMINDER_OFF: &str = concat!(
 
 /// The comment before `[general] world`.
 pub(crate) const GENERAL_WORLD: &str = concat!(
-    "; world: 9697 | 2627 -- the football world: its countries, clubs and competitions\n",
-    "; (docs/WORLD_2026_27.md): SWOS 96/97, or World 2026-27 once OpenSWOS Setup has\n",
-    "; imported its data. A save is played in the world it was made in.",
+    "; world: 9697 | 2627 | 8485 -- the football world: its countries, clubs and competitions\n",
+    "; (docs/WORLD_2026_27.md): SWOS 96/97, World 2026-27 or Europe 1984-85 once OpenSWOS Setup\n",
+    "; has imported its data. A save is played in the world it was made in.",
+);
+
+/// The comment before `[general] original_main_menu`.
+pub(crate) const GENERAL_ORIGINAL_MAIN_MENU: &str = concat!(
+    "; original_main_menu: true | false -- the main menu as 96/97's (no WORLD button, CAREER in\n",
+    "; the middle) and 96/97 the world played, whatever world says (the SWOS 96/97 Mod 4.1's\n",
+    "; \"Original main menu\", Marco's idea). world is kept for when it is off again.",
 );
 
 /// The comment before `[general] file_sort`.

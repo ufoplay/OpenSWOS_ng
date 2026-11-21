@@ -11,5 +11,7 @@ pub use dos::{
     DosCompetitionHeader, DosCompetitionType, DosDiyError, DosDiyFile, DosDiyFormat,
     DosMatchOptions, InvalidCompetitionType, USER_TACTICS,
 };
-pub use save::{CompetitionKind, CompetitionSave, CompetitionSaveError, CompetitionSaveFormat};
+pub use save::{
+    CompetitionKind, CompetitionSave, CompetitionSaveError, CompetitionSaveFormat, WorldPack,
+};
 pub use scalars::CompetitionScalars;

@@ -1,13 +1,17 @@
 //! World 2026-27's rosters, from its package (downloaded into `target/cache/`, D8): every
-//! `teams/*.json` round-trips byte for byte, converts to typed teams and back, and states
-//! the checksums its data gives. Skipped when the package can be neither found in the cache
-//! nor downloaded.
+//! `teams/*.json` round-trips byte for byte (the clubs' and the national teams' dialects),
+//! converts to typed teams and back (their players 17 on and years of birth too, a name longer
+//! than its field cut as the game cuts it), and states the checksums its data gives. Skipped
+//! when the package can be neither found in the cache nor downloaded.
 
 use std::collections::BTreeSet;
 use std::io::Read;
 
 use openswos_common::{Exporter, Importer};
-use openswos_team_json_resource::{EntryIds, TeamEntry, TeamJsonFormat, team_checksum};
+use openswos_team_json_resource::{
+    EntryIds, Indent, PlayerKeyOrder, TeamEntry, TeamJsonFormat, team_checksum,
+};
+use openswos_team_resource::{COACH_NAME_LEN, PLAYER_NAME_LEN, TEAM_NAME_LEN};
 use openswos_test_utils::cache::{WORLD_2627_PACKAGE, fetch};
 
 /// The folder of the rosters in the package.
@@ -53,10 +57,39 @@ fn every_roster_round_trips_byte_for_byte() {
     }
 }
 
+/// `text` as the game's loader reads it into a field of `len` bytes.
+fn cut(text: &mut String, len: usize, cut_names: &mut usize) {
+    if text.chars().count() > len {
+        *text = text.chars().take(len).collect();
+        *cut_names += 1;
+    }
+}
+
+/// `entry` as the typed model holds it: its names cut to their fields. Its players' key
+/// orders are the text's, which the typed model does not hold: `back` gets them.
+fn as_typed(entry: &TeamEntry, back: &mut TeamEntry, cut_names: &mut usize) -> TeamEntry {
+    let mut expected = entry.clone();
+    cut(&mut expected.team.team_name, TEAM_NAME_LEN, cut_names);
+    cut(&mut expected.team.coach_name, COACH_NAME_LEN, cut_names);
+    let players = expected
+        .players
+        .iter_mut()
+        .chain(expected.extra_players.iter_mut().flatten());
+    let back_players = back
+        .players
+        .iter_mut()
+        .chain(back.extra_players.iter_mut().flatten());
+    for (player, back_player) in players.zip(back_players) {
+        cut(&mut player.player_name, PLAYER_NAME_LEN, cut_names);
+        back_player.key_order = player.key_order;
+    }
+    expected
+}
+
 #[test]
 fn every_team_converts_to_typed_and_back() {
     let Some(rosters) = rosters() else { return };
-    let mut teams = 0;
+    let (mut teams, mut cut_names) = (0, 0);
     for (name, bytes) in &rosters {
         let document =
             TeamJsonFormat::import(bytes).unwrap_or_else(|error| panic!("{name}: {error}"));
@@ -64,15 +97,68 @@ fn every_team_converts_to_typed_and_back() {
             let team = entry
                 .to_team()
                 .unwrap_or_else(|error| panic!("{name}: {error}"));
-            let back = TeamEntry::from_team(&team, EntryIds::of(entry));
-            assert_eq!(&back, entry, "{name}: {}", team.name);
+            let extras = entry
+                .extras()
+                .unwrap_or_else(|error| panic!("{name}: {error}"));
+            let mut back = TeamEntry::from_team(&team, EntryIds::of(entry)).with_extras(&extras);
+            let expected = as_typed(entry, &mut back, &mut cut_names);
+            assert_eq!(back, expected, "{name}: {}", team.name);
             teams += 1;
         }
     }
     eprintln!(
-        "{} rosters, {teams} teams: all convert both ways",
+        "{} rosters, {teams} teams: all convert both ways ({cut_names} names cut to their field)",
         rosters.len()
     );
+}
+
+/// What World 2026-27's rosters hold beyond the record: players 17 on (in no checksum), years
+/// of birth, looks; the new national teams' players written face first; every file indented
+/// by one space (the sealed package: `scripts/worldgen/seal.py`).
+#[test]
+fn the_world_adds_squads_years_and_looks_and_its_national_teams_dialect() {
+    let Some(rosters) = rosters() else { return };
+    let (mut extras, mut born, mut looks, mut face_first, mut one_space) = (0, 0, 0, 0, 0);
+    for (name, bytes) in &rosters {
+        let document =
+            TeamJsonFormat::import(bytes).unwrap_or_else(|error| panic!("{name}: {error}"));
+        if document.indent == Indent::One {
+            one_space += 1;
+        }
+        for entry in &document.file.teams {
+            let players: Vec<_> = entry
+                .players
+                .iter()
+                .chain(entry.extra_players.iter().flatten())
+                .collect();
+            extras += entry.extra_players.as_ref().map_or(0, Vec::len);
+            born += players
+                .iter()
+                .filter(|player| player.born.is_some())
+                .count();
+            looks += players
+                .iter()
+                .filter(|player| player.looks.is_some())
+                .count();
+            face_first += players
+                .iter()
+                .filter(|player| player.key_order == PlayerKeyOrder::FaceFirst)
+                .count();
+            assert!(
+                players
+                    .iter()
+                    .filter_map(|player| player.born)
+                    .all(|year| year.known().is_some()),
+                "{name}: a year of birth the game would not take"
+            );
+        }
+    }
+    eprintln!(
+        "{extras} players 17 on, {born} years of birth, {looks} looks, {face_first} players face \
+         first, {one_space} files indented by one space"
+    );
+    assert!(extras > 0 && born > 0 && looks > 0 && face_first > 0);
+    assert_eq!(one_space, rosters.len());
 }
 
 #[test]

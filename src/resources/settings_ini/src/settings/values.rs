@@ -28,6 +28,16 @@ pub(crate) fn parse_bool(value: &[u8]) -> Option<bool> {
     }
 }
 
+/// The words `[general] original_main_menu` reads as true: `parse_bool`'s but `yes`.
+const ON_WORDS: [&str; 3] = ["true", "on", "1"];
+
+/// A boolean as `[general] original_main_menu` reads it (upstream `handler`): one of
+/// [`ON_WORDS`], ignoring ASCII case, is true; any other value is false. Faithful to the
+/// original: unlike `parse_bool`, no value is ignored, and `yes` is false.
+pub(crate) fn is_on(value: &[u8]) -> bool {
+    ON_WORDS.iter().any(|word| eqi(value, word.as_bytes()))
+}
+
 /// A boolean as the table writes it.
 pub(crate) fn bool_text(value: bool) -> Vec<u8> {
     if value { TRUE_TEXT } else { FALSE_TEXT }
@@ -253,6 +263,16 @@ mod tests {
         assert_eq!(parse_bool(b"2"), None);
         assert_eq!(parse_bool(b""), None);
         assert_eq!(bool_text(true), b"true");
+    }
+
+    #[test]
+    fn on_is_three_words_in_any_case_and_anything_else_is_off() {
+        for word in ["true", "ON", "1"] {
+            assert!(is_on(word.as_bytes()), "{word}");
+        }
+        for word in ["yes", "false", "off", "0", "2", ""] {
+            assert!(!is_on(word.as_bytes()), "{word}");
+        }
     }
 
     #[test]

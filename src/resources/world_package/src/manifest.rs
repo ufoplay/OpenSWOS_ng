@@ -1,7 +1,7 @@
 //! `mod.json`: the world as an OpenSWOS mod, for OpenSWOS Setup to install (upstream
 //! scripts/make_world_package.sh, docs/MODS.md §14, §17). Written by Python's
-//! `json.dumps(indent=1)` and a newline. Older packages (the pinned World 2026-27 among
-//! them) have none.
+//! `json.dumps(indent=1)` and a newline. Older packages have none, and only newer ones have
+//! the world's settings.
 
 use openswos_common::json::{Indent, NonAscii, TrailingNewline, to_text};
 use openswos_common::{Exporter, Importer};
@@ -30,6 +30,25 @@ pub struct ModManifest {
     pub changes: String,
     /// Whether it is on by default.
     pub default: bool,
+    /// The world's switches, which the game reads with `ModApi_SettingInt("world<tag>", key)`
+    /// and keeps in `SWOS.ini`'s `[mod.<slug>]` (docs/MODS.md: up to 32); `None`: the key is
+    /// absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<Vec<ModSetting>>,
+}
+
+/// A mod's setting: a choice among words, cycled on the mod's page (docs/MODS.md, item 2).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ModSetting {
+    /// Its key (`uefa_prizes`).
+    pub key: String,
+    /// Its label on the mod's page.
+    pub label: String,
+    /// The words it takes, in the order fire cycles them.
+    pub choices: Vec<String>,
+    /// The word it starts with.
+    pub default: String,
 }
 
 /// A `mod.json` and whether its text ends with a newline.
@@ -91,6 +110,26 @@ mod tests {
         assert_eq!(
             ModManifestFormat::export(&document).ok(),
             Some(WORLD_2627_MANIFEST.as_bytes().to_vec())
+        );
+    }
+
+    /// The settings a newer package's `mod.json` ends with (World 2026-27's first two).
+    #[test]
+    fn a_manifests_settings_round_trip() {
+        let text = WORLD_2627_MANIFEST.replace(
+            " \"default\": false\n}",
+            " \"default\": false,\n \"settings\": [\n  {\n   \"key\": \"uefa_prizes\",\n   \"label\": \"UEFA prize money (new careers)\",\n   \"choices\": [\n    \"on\",\n    \"off\"\n   ],\n   \"default\": \"on\"\n  },\n  {\n   \"key\": \"cpu_replacements\",\n   \"label\": \"CPU replacements (new careers)\",\n   \"choices\": [\n    \"invented\",\n    \"from_squad\"\n   ],\n   \"default\": \"invented\"\n  }\n ]\n}",
+        );
+        let document = ModManifestFormat::import(text.as_bytes()).expect("a manifest");
+        let settings = document.manifest.settings.as_deref().expect("settings");
+        assert_eq!(settings.len(), 2);
+        assert_eq!(
+            settings.last().map(|setting| setting.choices.clone()),
+            Some(vec!["invented".to_owned(), "from_squad".to_owned()])
+        );
+        assert_eq!(
+            ModManifestFormat::export(&document).ok(),
+            Some(text.into_bytes())
         );
     }
 

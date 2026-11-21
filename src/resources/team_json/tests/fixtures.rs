@@ -7,7 +7,7 @@
 use openswos_common::{Exporter, Importer};
 use openswos_team_json_resource::{
     EntryIds, TeamJsonDocument, TeamJsonFile, TeamJsonFormat, WORLD_1996_97_TAG,
-    WORLD_PACKAGE_TRAILING_NEWLINE,
+    WORLD_PACKAGE_INDENT, WORLD_PACKAGE_NON_ASCII, WORLD_PACKAGE_TRAILING_NEWLINE,
 };
 use openswos_team_resource::TeamFileFormat;
 use openswos_test_utils::assets_path;
@@ -29,6 +29,8 @@ fn from_binary() -> Vec<u8> {
     });
     TeamJsonFormat::export(&TeamJsonDocument {
         file,
+        indent: WORLD_PACKAGE_INDENT,
+        non_ascii: WORLD_PACKAGE_NON_ASCII,
         trailing_newline: WORLD_PACKAGE_TRAILING_NEWLINE,
     })
     .expect("exports")

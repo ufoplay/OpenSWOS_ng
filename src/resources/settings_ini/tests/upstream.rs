@@ -9,8 +9,8 @@ use openswos_test_utils::skip::{Skip, report};
 const ROW: &str = "SETTING(n) = (IniEntry){";
 
 /// The sections typed here.
-const TYPED_SECTIONS: [&str; 7] = [
-    "gameplay", "replays", "testing", "general", "mods", "tweaks", "options",
+const TYPED_SECTIONS: [&str; 8] = [
+    "gameplay", "replays", "career", "testing", "general", "mods", "tweaks", "options",
 ];
 
 /// How upstream's source names the setup in a comment (`PROJECT_SETUP_NAME`).

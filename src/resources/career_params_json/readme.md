@@ -12,7 +12,7 @@ One JSON object. The game reads the keys it knows over its defaults
 - **Knobs.** The 53 keys the loader reads, typed by their field in upstream's
   `CareerParams`: 47 unsigned words (`UnsignedKnob`), the board's four signed thresholds
   (`SignedKnob`), and two arrays held per division (`PerDivisionKnob`). Values are kept as
-  written. The loader's clamps (`num_seasons` to 1..=35, the list capacities, the modes)
+  written. The loader's clamps (`num_seasons` to 1..=40, the list capacities, the modes)
   are the game's, applied when the career loads them (M7), not the file's.
 - **Per-division arrays.** The game reads the first four values, the top division first;
   a division without one keeps its value. Arrays of any length are kept.

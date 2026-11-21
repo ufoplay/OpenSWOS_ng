@@ -60,8 +60,9 @@ The sections the game itself reads, typed; their defaults are the game's (upstre
 |---|---|
 | `[gameplay]` | the style (`amiga`, `dos`, `xbox`, `amiga60`, `moon`), the original's fire-hold bug, the computer's tactics |
 | `[replays]` | a dated copy of every match, the viewer's frame box, its starting speed |
+| `[career]` | saves that keep the random state and the clocks (`exact_continuation`, off) |
 | `[testing]` | no cards nor injuries (upstream's default build has it) |
-| `[general]` | language, currency, the dismissed reminders, the world's tag, the file lists' order, QUICK ACCESS, the intro and loading options |
+| `[general]` | language, currency, the dismissed reminders, the world's tag, the Mod 4.1's original main menu, the file lists' order, QUICK ACCESS, the intro and loading options |
 | `[mods]` | the mods enabled, the game's own disabled |
 | `[tweaks]` | the 12 tweaks (`Tweaks`; all built, five on by default) |
 | `[options]` | the OPTIONS screen: game length, pitch type, auto replays, all teams equal, auto-save highlights, menu music; each unset (`None`) when the file lacks it |
@@ -73,7 +74,8 @@ but a tweak's key exactly (`Tweaks_Bit`). Booleans take `on`/`true`/`yes`/`1` an
 the file. Texts are bytes, cut to the game's buffers (`language` 15 bytes, `currency` and
 `world` 7, the mods' lists 255, and a line's 199 before them); `file_sort` keeps its spelling.
 Faithful to the original: any word sets `cpu_tactics` (`expert`, else normal) and the
-replays' `speed` (`half`, else normal).
+replays' `speed` (`half`, else normal), and `original_main_menu` (`true`/`on`/`1`, else off:
+`yes` too).
 
 `Settings::table` is upstream's table for them (`settings_build`): its rows in its order,
 its comments verbatim, its spellings (an unset option writes the game's default: `3`,
@@ -114,4 +116,5 @@ BSD-3-Clause: its rules are ported in `reader.rs`, which keeps its notice),
   values leaves it alone, a changed value changes one line, a missing key joins its section;
   read as `Settings` and saved with its baseline, every line of it stays (the keys an older
   build did not write are added), it reads back the same, a changed setting changes one line.
-  Never committed.
+  A file longer than the save's 400 lines (a newer build's fresh file can be) is rewritten by
+  every save, as the game does: then only that is checked. Never committed.

@@ -10,8 +10,8 @@ use std::path::Path;
 use openswos_common::json::TrailingNewline;
 use openswos_common::{Exporter, Importer, Nationality, TeamFileNumber};
 use openswos_national_teams_json_resource::{
-    JobOfferPick, ManagerNationality, NATIONAL_TEAM_RECORD_LEN, NationalTeamRecord, NationalTeams,
-    NationalTeamsDocument, NationalTeamsJsonFormat, OTHER,
+    DATA_JSON_INDENT, JobOfferPick, ManagerNationality, NATIONAL_TEAM_RECORD_LEN,
+    NationalTeamRecord, NationalTeams, NationalTeamsDocument, NationalTeamsJsonFormat, OTHER,
 };
 use openswos_test_utils::skip::{Skip, report};
 
@@ -116,6 +116,7 @@ fn the_originals_tables_make_a_file() {
     assert_eq!(table, bytes);
     let document = NationalTeamsDocument {
         teams,
+        indent: DATA_JSON_INDENT,
         trailing_newline: TrailingNewline::Present,
     };
     let text = NationalTeamsJsonFormat::export(&document).expect("serializes");

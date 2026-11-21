@@ -3,11 +3,13 @@
 #![deny(clippy::indexing_slicing)]
 
 pub mod file;
+pub mod looks;
 pub mod player;
 pub mod skill;
 pub mod team;
 
 pub use file::{TeamFile, TeamFileError, TeamFileFormat};
+pub use looks::{Look, LookBits};
 pub use openswos_common::Nationality;
 pub use player::{
     Face, Form, FormLevel, GoalCounts, InvalidFace, InvalidPlayerFlags, NotAFormLevel,

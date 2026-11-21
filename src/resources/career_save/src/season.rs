@@ -1,6 +1,7 @@
 //! A season of the manager's record (upstream `SeasonInformations`, include/game_types.h;
-//! `emit_season_informations`, src/save_format_json.c): one per season of the career,
-//! 35 in a save (`CAREER_MAX_SEASONS`), the seasons not played zero.
+//! `emit_season_informations`, src/save_format_json.c): one per season of the career, the
+//! seasons not played zero. A save writes 35 (as before CAREER YEARS), or as many as a
+//! longer career's years, up to 40 (`save_si_rows`, `CAREER_MAX_SEASONS`).
 //!
 //! What the numbers mean (trophies, results, the manager's status) is the career's (M7);
 //! they are kept as written, in their fields' C widths. Names are the bytes written:

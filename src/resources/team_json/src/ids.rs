@@ -7,7 +7,7 @@
 //! always derived from the team's data.
 
 use openswos_common::TeamId;
-use openswos_team_resource::{PLAYERS_PER_TEAM, Team};
+use openswos_team_resource::{Player, Team};
 use sha1::{Digest, Sha1};
 use std::fmt::Write as _;
 use uuid::Uuid;
@@ -43,13 +43,20 @@ fn team_path(tag: &str, id: TeamId) -> String {
     format!("{tag}/team/{}/{}", id.file.0, id.ordinal.0)
 }
 
-/// The team's checksum: the first 16 hex digits of the SHA-1 of, per player in order,
-/// position, passing, velocity, heading, tackling, control, speed, finishing and price.
+/// The team's checksum (upstream `TeamDb_Checksum`): its 16 players' [`players_checksum`].
 /// Names, faces, nationalities, shirt numbers and kits are not in it.
 #[must_use]
 pub fn team_checksum(team: &Team) -> TeamChecksum {
-    let mut data = Vec::with_capacity(PLAYERS_PER_TEAM * CHECKSUM_BYTES_PER_PLAYER);
-    for player in &team.players {
+    players_checksum(&team.players)
+}
+
+/// The checksum of any players, in order (upstream `TeamDb_ChecksumPlayers`; a world club's
+/// players 17.. are checked by theirs): the first 16 hex digits of the SHA-1 of, per player,
+/// position, passing, velocity, heading, tackling, control, speed, finishing and price.
+#[must_use]
+pub fn players_checksum(players: &[Player]) -> TeamChecksum {
+    let mut data = Vec::with_capacity(players.len() * CHECKSUM_BYTES_PER_PLAYER);
+    for player in players {
         let skills = player.skills;
         data.push(u8::from(player.position));
         data.extend(
@@ -92,6 +99,24 @@ mod tests {
             TEAM_ID_NAMESPACE,
             Uuid::new_v5(&Uuid::NAMESPACE_URL, b"https://us.swos.eu/team-data")
         );
+    }
+
+    #[test]
+    fn a_teams_checksum_is_its_players_and_order_counts() {
+        let path = openswos_test_utils::assets_path()
+            .join("TEAM")
+            .join("TEAM.085");
+        let bytes = std::fs::read(&path).expect("the committed fixture");
+        let file =
+            <openswos_team_resource::TeamFileFormat as openswos_common::Importer>::import(&bytes)
+                .expect("a valid team file");
+        let team = file.teams.first().expect("a team");
+        assert_eq!(team_checksum(team), players_checksum(&team.players));
+        let mut reversed = team.players.to_vec();
+        reversed.reverse();
+        assert_ne!(players_checksum(&reversed), team_checksum(team));
+        // No players: the SHA-1 of nothing.
+        assert_eq!(players_checksum(&[]).as_str(), "da39a3ee5e6b4b0d");
     }
 
     /// The example of docs/TEAM_IDS.md §2: BRAZIL (file 82, ordinal 2) and its first player.

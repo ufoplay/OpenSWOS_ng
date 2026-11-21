@@ -79,6 +79,15 @@ impl Default for ReplaySettings {
     }
 }
 
+/// `[career]`: how a career is saved.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+pub struct CareerSettings {
+    /// A career's saves also keep the first random generator, the game's clocks and the
+    /// European qualifying draws' seed groups, so a loaded career plays on exactly (the save's
+    /// `exact_continuation`). Off by default, as the original.
+    pub exact_continuation: bool,
+}
+
 /// `[testing]`: rules for testing, off line only.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct TestingSettings {
@@ -95,8 +104,11 @@ pub struct GeneralSettings {
     pub currency: Vec<u8>,
     /// The data versions whose reminder was dismissed (at most 63 bytes).
     pub assets_reminder_off: Vec<u8>,
-    /// The world's tag (`9697`, `2627`; at most 7 bytes); empty for World 1996-97.
+    /// The world's tag (`9697`, `2627`, `8485`; at most 7 bytes); empty for World 1996-97.
     pub world: Vec<u8>,
+    /// The SWOS 96/97 Mod 4.1's "Original main menu": 96/97's main menu, and World 1996-97
+    /// played whatever `world` says (which is kept).
+    pub original_main_menu: bool,
     /// The file lists' order: `name` or `date`, in any case, as written.
     pub file_sort: Vec<u8>,
     /// SWOS 2020's QUICK ACCESS after a friendly.
@@ -116,6 +128,7 @@ impl Default for GeneralSettings {
             currency: DEFAULT_CURRENCY.as_bytes().to_vec(),
             assets_reminder_off: Vec::new(),
             world: Vec::new(),
+            original_main_menu: false,
             file_sort: DEFAULT_FILE_SORT.as_bytes().to_vec(),
             quick_access: false,
             skip_intro: false,
@@ -160,6 +173,8 @@ pub struct Settings {
     pub gameplay: GameplaySettings,
     /// `[replays]`.
     pub replays: ReplaySettings,
+    /// `[career]`.
+    pub career: CareerSettings,
     /// `[testing]`.
     pub testing: TestingSettings,
     /// `[general]`.
@@ -283,6 +298,8 @@ mod tests {
             ("general", "language", "en"),
             ("general", "currency", "pound"),
             ("general", "world", "9697"),
+            ("general", "original_main_menu", "false"),
+            ("career", "exact_continuation", "false"),
             ("general", "file_sort", "name"),
             ("tweaks", "cpu_cards", "false"),
             ("tweaks", "five_substitutes", "true"),
@@ -310,6 +327,7 @@ mod tests {
             [
                 "[gameplay]         ; deliberate departures from the original Amiga game",
                 "[replays]",
+                "[career]",
                 "[testing]",
                 "[general]",
                 "[mods]",
@@ -346,7 +364,7 @@ mod tests {
         for pitch in PitchType::ALL {
             cases.push(("options", "pitch_type", pitch.spelling().to_owned()));
         }
-        for world in ["9697", "2627"] {
+        for world in ["9697", "2627", "8485"] {
             cases.push(("general", "world", world.to_owned()));
         }
         for language in ["en", "de", "fr", "es", "it", "nl"] {
@@ -385,6 +403,18 @@ mod tests {
             "[gameplay]\nstyle=pc\nfire_hold_lockout=maybe\n[general]\nlanguage=\nworld=\nfile_sort=size\n[options]\ngame_length=4\n",
         ));
         assert_eq!(settings, Settings::default());
+    }
+
+    /// Faithful to the original: `original_main_menu` takes every value, `true`, `on` and `1`
+    /// as on and anything else, `yes` among them, as off.
+    #[test]
+    fn the_original_main_menu_takes_every_value() {
+        for (value, on) in [("On", true), ("1", true), ("yes", false), ("maybe", false)] {
+            let settings = Settings::read(&file(&format!(
+                "[general]\noriginal_main_menu=true\noriginal_main_menu={value}\n"
+            )));
+            assert_eq!(settings.general.original_main_menu, on, "{value}");
+        }
     }
 
     #[test]

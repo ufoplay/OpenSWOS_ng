@@ -6,9 +6,9 @@ use std::path::{Path, PathBuf};
 
 use thiserror::Error;
 
-/// The most a package may hold, in bytes: twice World 2026-27's 27.6 MiB. A zip that
-/// unpacks to more is refused rather than read.
-pub const MAX_PACKAGE_BYTES: u64 = 64 * 1024 * 1024;
+/// The most a package may hold, in bytes: 80 MiB, over twice World 2026-27's 36.3 MiB at the
+/// pin (27.6 MiB at the baseline). A zip that unpacks to more is refused rather than read.
+pub const MAX_PACKAGE_BYTES: u64 = 80 * 1024 * 1024;
 
 /// The separator of package paths.
 const SEPARATOR: char = '/';

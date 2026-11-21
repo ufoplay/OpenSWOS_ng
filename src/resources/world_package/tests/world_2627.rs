@@ -1,7 +1,8 @@
-//! World 2026-27's package (downloaded into `target/cache/`, D8): it opens, its files give
-//! the fingerprint its `WORLD.ini` states (the one upstream's build is pinned to), and it
-//! writes back with every roster and competition file byte for byte. Skipped when the
-//! package can be neither found in the cache nor downloaded.
+//! World 2026-27's package (downloaded into `target/cache/`, D8): it opens (its rosters, its
+//! leagues, national teams, B teams and stadiums, its `mod.json` with the world's settings),
+//! its files give the fingerprint its `WORLD.ini` states (the one upstream's build is pinned
+//! to), and it writes back with every file it reads byte for byte. Skipped when the package
+//! can be neither found in the cache nor downloaded.
 
 use std::io::Read;
 use std::path::PathBuf;
@@ -11,12 +12,34 @@ use openswos_world_package_resource::{
     COMPETITIONS_FOLDER, OpenedPackage, PackageFiles, TEAMS_FOLDER, WorldPackage, WorldTag,
 };
 
+/// The extension of the files a package reads in `teams/` and `competitions/`.
+const JSON_EXTENSION: &str = ".json";
+
 /// The fingerprint upstream's build is made with (`World_DataFingerprint`,
 /// src/world_data.c at the pinned commit).
-const UPSTREAM_FINGERPRINT: &str = "efe1464b6d1d62b8";
+const UPSTREAM_FINGERPRINT: &str = "80e20cdd3e92ec9c";
 
-/// The rosters of the package.
-const ROSTERS: usize = 101;
+/// The rosters of the package: 101 countries' clubs, the six continents' national teams.
+const ROSTERS: usize = 107;
+
+/// The files of `competitions/`: the leagues, the national teams, the B teams, the stadiums.
+const COMPETITION_FILES: usize = 4;
+
+/// The world's settings in its `mod.json` (upstream scripts/make_world_package.sh: the career's
+/// four, the match's six).
+const SETTINGS: usize = 10;
+
+/// The national teams: the 211 FIFA members (upstream scripts/worldgen/nations.py).
+const NATIONAL_TEAMS: usize = 211;
+
+/// The clubs with a B team.
+const B_TEAMS: usize = 20;
+
+/// The Amiga's team files in `data/`, not read (D9).
+const AMIGA_FILES: usize = 102;
+
+/// The world's foreign players' pool, RNC-packed: not read (D9).
+const POOL: &str = "teams/POOLPLYR.DAT";
 
 /// The cached package's path.
 fn package_path() -> Option<PathBuf> {
@@ -48,16 +71,28 @@ fn the_package_is_the_one_upstream_is_built_with() {
         package.competitions.keys().collect::<Vec<_>>(),
         vec!["leagues.json"]
     );
+    let manifest = &package.manifest.as_ref().expect("a mod.json").manifest;
+    assert_eq!(manifest.version, UPSTREAM_FINGERPRINT);
+    assert_eq!(manifest.settings.as_ref().map(Vec::len), Some(SETTINGS));
+    let national = package.national_teams.as_ref().expect("its national teams");
+    assert_eq!(national.teams.records().len(), NATIONAL_TEAMS);
+    let bteams = &package.bteams.as_ref().expect("its B teams").content;
+    assert_eq!(bteams.teams.len(), B_TEAMS);
     assert!(
-        package.manifest.is_none(),
-        "the pinned package predates mod.json"
+        bteams
+            .teams
+            .iter()
+            .all(|team| bteams.rules_of(team).is_some())
     );
-    assert_eq!(
-        opened.ignored.len(),
-        ROSTERS,
-        "data/: the Amiga's team files"
+    let stadiums = &package.stadiums.as_ref().expect("its stadiums").content;
+    assert!(!stadiums.clubs.is_empty() && !stadiums.venues.is_empty());
+    assert_eq!(opened.ignored.len(), AMIGA_FILES + 1, "data/ and the pool");
+    assert!(
+        opened
+            .ignored
+            .iter()
+            .all(|path| path.starts_with("data/") || path == POOL)
     );
-    assert!(opened.ignored.iter().all(|path| path.starts_with("data/")));
 }
 
 #[test]
@@ -74,11 +109,18 @@ fn the_package_writes_back_its_files_byte_for_byte() {
     let mut compared = 0;
     for folder in [TEAMS_FOLDER, COMPETITIONS_FOLDER] {
         for (file, bytes) in original.in_folder(folder) {
-            assert!(written.get(file) == Some(bytes), "{file} differs");
-            compared += 1;
+            if file.ends_with(JSON_EXTENSION) {
+                assert!(written.get(file) == Some(bytes), "{file} differs");
+                compared += 1;
+            }
         }
     }
-    assert_eq!(compared, ROSTERS + 1);
+    assert_eq!(compared, ROSTERS + COMPETITION_FILES);
+    let manifest = original.get("mod.json").expect("a mod.json");
+    assert!(
+        written.get("mod.json") == Some(manifest),
+        "mod.json differs"
+    );
     let reopened = WorldPackage::open_dir(&target).expect("reopens");
     assert!(reopened.fingerprint.is_match());
     assert!(reopened.ignored.is_empty());

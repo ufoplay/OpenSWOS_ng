@@ -28,7 +28,7 @@ Typed views decode a chunk's content, and encode back to it:
 
 | chunk | type | content |
 |---|---|---|
-| `META` | `SrpMeta` | the match: screen width, gameplay flags, view height, time, build, final score, pitch, substitutes, competition and round, the two teams (the `hil` crate's `TeamGame`, big-endian) |
+| `META` | `SrpMeta` | the match: screen width, gameplay flags, view height, time, build, final score, pitch, substitutes, competition and round, the two teams (the `hil` crate's `TeamGame`, big-endian); after them, a World 2026-27 match's long bench if it had one (`LongBench`: `LBNC`, its places, both teams' players 17..26 as `DosPlayerGame`) |
 | `FRMS` | `SrpFrame` | a frame as drawn: the camera (16.16), the score, the crowd, the minute, the ad's line, its sprites (image, world X, Y; at most 78) |
 | `AUDI` | `AudioEvent` | a sound: frame, kind (preset, wave, volume, the PC game's event, or a later kind), channel, id |
 | `SEEK` | `SeekTable` | a keyframe every 50 frames: frame, offset in `FRMS`, first sound |
@@ -43,7 +43,8 @@ netplay's (M6).
 
 Upstream OpenSWOS: `docs/REPLAY_FORMAT_V2.md`, `include/srp_writer.h` (the layout's
 constants), `src/srp_writer.c` (`Srp_Build`, `chunk_make`, the chunks' builders),
-`src/replay_v2.c` (`build_meta`, `write_head`, `ReplayRec_CaptureSprites`).
+`src/replay_v2.c` (`build_meta`, `write_head`, `ReplayRec_CaptureSprites`, `ReplayV2_Load`'s
+long bench), `src/long_bench.c` (`LongBench_ReplayWrite`, `LongBench_ReplayRead`).
 
 ## Tests
 

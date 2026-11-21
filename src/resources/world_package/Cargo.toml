@@ -6,12 +6,13 @@ license.workspace = true
 authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
-description = "Reader and writer for OpenSWOS world packages (WORLD.ini, mod.json, teams/, competitions/), from a folder or a zip"
+description = "Reader and writer for OpenSWOS world packages (WORLD.ini, mod.json, teams/, competitions/ with the national teams, B teams and stadiums), from a folder or a zip"
 readme = "readme.md"
 
 [dependencies]
 openswos_common = { workspace = true }
 openswos_competitions_json_resource = { workspace = true }
+openswos_national_teams_json_resource = { workspace = true }
 openswos_team_json_resource = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

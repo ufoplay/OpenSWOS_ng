@@ -3,9 +3,9 @@
 //! one `DataJson_LoadCareerParams` reads (src/save_format_json.c).
 //!
 //! What a value means is the career's (M7): the file holds numbers, kept as written. The
-//! loader's clamps (`num_seasons` to 1..=35, the capacities, the modes) are the game's,
-//! not the file's. In brackets, each knob's value in the original game: upstream's
-//! defaults (src/career_params.c), which its file states.
+//! loader's clamps (`num_seasons` to 1..=40, `CAREER_MAX_SEASONS`; the capacities, the
+//! modes) are the game's, not the file's. In brackets, each knob's value in the original
+//! game: upstream's defaults (src/career_params.c), which its file states.
 
 /// Declares a kind of knob: an enum of its knobs with their keys.
 macro_rules! knobs {
@@ -132,7 +132,8 @@ knobs! {
         JobOfferNationalChance = "job_offer_national_chance",
         /// The chance in 256 that a club offer is looked for abroad first (0).
         JobOfferAbroadChance = "job_offer_abroad_chance",
-        /// The seasons before the manager retires (20).
+        /// A new career's length, the seasons before the manager retires (20): CAREER YEARS'
+        /// first choice (`_careerYearsDefault`); a career saves its own (`career_years`).
         NumSeasons = "num_seasons",
         /// The foreign market's player pool (432).
         ForeignPoolCapacity = "foreign_pool_capacity",

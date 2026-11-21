@@ -23,4 +23,7 @@ pub use frames::{
     FRAME_HEAD_LEN, MAX_FRAME_SPRITES, SPRITE_LEN, SrpFrame, SrpSprite, decode_frames,
     encode_frames,
 };
-pub use meta::{BUILD_LEN, GAME_NAME_LEN, GameplayFlags, SrpMeta};
+pub use meta::{
+    BUILD_LEN, ExtraPlaces, GAME_NAME_LEN, GAME_PLACES, GameplayFlags, LONG_BENCH_EXTRA_PLACES,
+    LONG_BENCH_PLACES_MAX, LONG_BENCH_TAG, LongBench, SrpMeta,
+};

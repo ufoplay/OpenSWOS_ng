@@ -5,7 +5,7 @@
 //! | 0 | 1 | nationality |
 //! | 1 | 1 | runtime: cached match value (signed) |
 //! | 2 | 1 | shirt number |
-//! | 3 | 23 | name (22 characters + an always-NUL byte) |
+//! | 3 | 23 | name (22 characters + a byte: its terminator, or the SWOS 96/97 Mod's look: [`crate::looks`]) |
 //! | 26 | 1 | position (bits 5-7), face (bits 3-4), runtime flags (bits 0-2) |
 //! | 27 | 1 | runtime: cards and injuries |
 //! | 28 | 1 | passing (low nibble; the high nibble is unused) |
@@ -31,8 +31,9 @@ use thiserror::Error;
 /// Bytes of a player record.
 pub const PLAYER_RECORD_LEN: usize = 38;
 
-/// Bytes of the player-name field: 22 characters and a byte that is always NUL (upstream
-/// folds the old `field_19` terminator into the name).
+/// Bytes of the player-name field: 22 characters and a byte (upstream folds the old
+/// `field_19` terminator into the name). That byte is NUL in the original game's files; the
+/// SWOS 96/97 Mod keeps a player's look there ([`crate::looks`]).
 pub const PLAYER_NAME_LEN: usize = 23;
 
 /// Where the position starts in the position-and-face byte: bits 5-7 (upstream

@@ -16,6 +16,7 @@ writes World 1996-97's from upstream's tables.
 
 | key | meaning |
 |---|---|
+| `about` | optional, first: a comment (World 2026-27's says where its records come from), which the game does not read |
 | `records` | the national teams (`NationalTeamRecord`), 1..=256, in order: a nationality's national team is the first record with it |
 | `nationalities` | optional: the nationalities the manager may take, at most 127, in the menu's order. The game adds OTHER (255) last, so 255 is not listed. Absent or empty, the game keeps the original's. |
 | `job_offer_pick` | optional: how many of the first records a random national job offer is drawn from, 1..=256 |
@@ -34,13 +35,17 @@ A record is the game's 6-byte `NationalTeamRecord`, named field by field
 What upstream's loader (`DataJson_LoadNationalTeams`) refuses, whole, does not read here
 either: no records, more than the maxima, a record without a field or with one out of
 range, a listed nationality outside 0..=254. A `job_offer_pick` outside 1..=256, which
-the loader ignores, does not read either. Unknown keys do not read.
+the loader ignores, does not read either. Other keys do not read (the loader ignores them;
+no file known has any).
 
 ## Layout
 
-OpenSWOS has no writer for this file. It is written as upstream's other data JSON:
-Python's `json.dump(indent=2)`, keys in the order above, the optional ones only when
-present; whether the text ends with a newline is kept as read.
+OpenSWOS itself has no writer for this file. It is written as Python's `json.dump` writes:
+keys in the order above, the optional ones only when present. The indentation is kept as
+read (`indent=2` as upstream's other data JSON, `DATA_JSON_INDENT`; `indent=1` in World
+2026-27's, `scripts/worldgen/nations.py`), and so is whether the text ends with a newline.
+World 2026-27's package carries its file in `competitions/` (the game reads a world's there
+first: `DataJson_LoadNationalTeams`).
 
 ## Sources
 

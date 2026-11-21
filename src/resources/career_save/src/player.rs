@@ -11,10 +11,16 @@
 //! The bytes the writer prints signed (nationality, cached match value, shirt number,
 //! passing, price, form) read with either sign. Passing is the whole byte, its unused high
 //! nibble included.
+//!
+//! The name is printed from its first 22 bytes; the record's byte 25 (the name field's last)
+//! is the SWOS 96/97 Mod's look (`openswos_team_resource::looks`): `"looks"` follows the name
+//! when the name leaves room for it and it is a look, its look bits only. Reading, a name of
+//! 23 bytes (a save made before looks) still fills the field, and `"looks"` is written into
+//! byte 25 as it is.
 
 use openswos_common::{ByteReader, ByteWriter, Nibble};
 use openswos_save_json_resource::SaveString;
-use openswos_team_resource::{PLAYER_NAME_LEN, PLAYER_RECORD_LEN, Player};
+use openswos_team_resource::{LookBits, PLAYER_NAME_LEN, PLAYER_RECORD_LEN, Player};
 use serde::{Deserialize, Serialize};
 
 use crate::record::{RecordTextError, bits, name_slot, pack, slot_name};
@@ -40,6 +46,15 @@ const STATUS_MASK: u8 = 0xE0;
 /// Bytes of the goal counts.
 const GOAL_STATS_LEN: usize = 4;
 
+/// The name's bytes the writer prints (upstream `jb_key_str(..., 22)`): byte 25 is the look.
+const PRINTED_NAME_LEN: usize = PLAYER_NAME_LEN - 1;
+
+/// The name field's byte that holds the look (the record's byte 25).
+const LOOK_BYTE: usize = PLAYER_NAME_LEN - 1;
+
+/// The name's last letter: NUL when the name leaves room for a look.
+const LAST_LETTER: usize = LOOK_BYTE - 1;
+
 /// A player of a career save.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "PlayerText", into = "PlayerText")]
@@ -56,6 +71,8 @@ pub(crate) struct PlayerText {
     #[serde(with = "crate::signed")]
     shirt_number: u8,
     player_name: SaveString,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    looks: Option<LookBits>,
     position: u8,
     face: u8,
     flags: u8,
@@ -85,6 +102,7 @@ impl PlayerText {
             cached_match_value,
             shirt_number,
             player_name,
+            looks,
             position,
             face,
             flags,
@@ -106,7 +124,11 @@ impl PlayerText {
         writer.write_u8(*nationality);
         writer.write_u8(*cached_match_value);
         writer.write_u8(*shirt_number);
-        writer.write_bytes(&name_slot::<PLAYER_NAME_LEN>("player_name", player_name)?);
+        let mut name = name_slot::<PLAYER_NAME_LEN>("player_name", player_name)?;
+        if let (Some(bits), Some(byte)) = (looks, name.get_mut(LOOK_BYTE)) {
+            *byte = bits.bits();
+        }
+        writer.write_bytes(&name);
         writer.write_u8(pack(&[
             (*position, POSITION_MASK, "position"),
             (*face, FACE_MASK, "face"),
@@ -144,11 +166,14 @@ impl PlayerText {
         let (velocity, heading) = Nibble::split(reader.read_u8().expect(WHOLE));
         let (tackling, control) = Nibble::split(reader.read_u8().expect(WHOLE));
         let (speed, finishing) = Nibble::split(reader.read_u8().expect(WHOLE));
+        let look = LookBits::from(name.get(LOOK_BYTE).copied().unwrap_or_default()).look_bits();
+        let room = name.get(LAST_LETTER) == Some(&0);
         Self {
             nationality,
             cached_match_value,
             shirt_number,
-            player_name: slot_name(&name),
+            player_name: slot_name(name.get(..PRINTED_NAME_LEN).unwrap_or_default()),
+            looks: (room && !look.is_empty()).then_some(look),
             position: bits(position_and_face, POSITION_MASK),
             face: bits(position_and_face, FACE_MASK),
             flags: bits(position_and_face, FLAGS_MASK),
@@ -242,6 +267,31 @@ mod tests {
     }
 
     #[test]
+    fn a_look_follows_the_name_in_byte_25() {
+        let text = TEXT.replace(
+            "\"player_name\":\"FILIPPO ROSSI\",",
+            "\"player_name\":\"FILIPPO ROSSI\",\"looks\":3,",
+        );
+        let player: SavePlayer = from_save_bytes(text.as_bytes()).expect("a player");
+        let record = player_record(&player.0);
+        assert_eq!(record[3 + LOOK_BYTE], 3, "the look: shaved");
+        assert_eq!(write(&player), text);
+        // Bits 3-7 of byte 25 are not written; a full name leaves no room for a look.
+        let mut bytes = record;
+        bytes[3 + LOOK_BYTE] = 0xF9;
+        let read = SavePlayer(Player::read(&mut ByteReader::new(&bytes)).expect("a record"));
+        assert_eq!(write(&read), text.replace("\"looks\":3", "\"looks\":1"));
+        bytes[3..3 + LOOK_BYTE].copy_from_slice(b"ABCDEFGHIJKLMNOPQRSTUV");
+        let full = SavePlayer(Player::read(&mut ByteReader::new(&bytes)).expect("a record"));
+        let written = write(&full);
+        assert!(written.contains("\"player_name\":\"ABCDEFGHIJKLMNOPQRSTUV\",\"position\""));
+        // A save made before looks: a name of 23 bytes fills the field.
+        let old = TEXT.replace("FILIPPO ROSSI", "ABCDEFGHIJKLMNOPQRSTUVW");
+        let read: SavePlayer = from_save_bytes(old.as_bytes()).expect("an older save's player");
+        assert_eq!(&player_record(&read.0)[3..26], b"ABCDEFGHIJKLMNOPQRSTUVW");
+    }
+
+    #[test]
     fn what_has_no_place_in_the_record_does_not_read() {
         for (from, to) in [
             ("\"position\":3", "\"position\":8"),
@@ -276,12 +326,17 @@ mod tests {
             let player = SavePlayer(Player::read(&mut ByteReader::new(&record)).expect("a whole record"));
             let text = PlayerText::from(player);
             let expected = {
-                // The writer prints a name up to its first NUL: the bytes after it are zeroed.
+                // The writer prints a name from its first 22 bytes, up to its first NUL: the
+                // bytes after it are zeroed. Byte 25 keeps its look bits when the name's last
+                // letter leaves room.
                 let mut expected = record;
-                let name = &mut expected[3..3 + PLAYER_NAME_LEN];
+                let look = record[3 + LOOK_BYTE] & LookBits::all().bits();
+                let room = record[3 + LAST_LETTER] == 0;
+                let name = &mut expected[3..3 + PRINTED_NAME_LEN];
                 if let Some(end) = name.iter().position(|&byte| byte == 0) {
                     name[end..].fill(0);
                 }
+                expected[3 + LOOK_BYTE] = if room { look } else { 0 };
                 expected
             };
             prop_assert_eq!(text.to_record().expect("a record"), expected);

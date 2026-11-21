@@ -6,7 +6,7 @@
 use super::comments;
 use super::tweaks::Tweaks;
 use super::values::{
-    CpuTactics, GameLength, PitchType, ReplaySpeed, Spelled, bool_text, kept, parse_bool,
+    CpuTactics, GameLength, PitchType, ReplaySpeed, Spelled, bool_text, is_on, kept, parse_bool,
 };
 use super::{
     DEFAULT_CURRENCY, DEFAULT_FILE_SORT, DEFAULT_LANGUAGE, DEFAULT_WORLD, GameplayStyle, Settings,
@@ -134,7 +134,7 @@ fn or_default(text: &[u8], default: &str) -> Vec<u8> {
 }
 
 /// The game's settings, in upstream's table order.
-pub(crate) const DEFINITIONS: [Definition; 36] = [
+pub(crate) const DEFINITIONS: [Definition; 38] = [
     flag!(
         "gameplay",
         "fire_hold_lockout",
@@ -173,6 +173,12 @@ pub(crate) const DEFINITIONS: [Definition; 36] = [
         read: |settings, value| settings.replays.speed = ReplaySpeed::read(value),
         write: |settings| settings.replays.speed.spelling().as_bytes().to_vec(),
     },
+    flag!(
+        "career",
+        "exact_continuation",
+        Some(comments::CAREER_EXACT_CONTINUATION),
+        career.exact_continuation
+    ),
     flag!(
         "testing",
         "no_injuries_cards",
@@ -224,6 +230,14 @@ pub(crate) const DEFINITIONS: [Definition; 36] = [
             }
         },
         write: |settings| or_default(&settings.general.world, DEFAULT_WORLD),
+    },
+    Definition {
+        section: "general",
+        key: "original_main_menu",
+        key_match: KeyMatch::IgnoreCase,
+        comment: Some(comments::GENERAL_ORIGINAL_MAIN_MENU),
+        read: |settings, value| settings.general.original_main_menu = is_on(value),
+        write: |settings| bool_text(settings.general.original_main_menu),
     },
     Definition {
         section: "general",

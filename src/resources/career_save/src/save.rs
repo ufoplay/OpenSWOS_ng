@@ -16,15 +16,25 @@ use thiserror::Error;
 
 use crate::competitions::{CompCopyDynamic, CompetitionOverrides, LeagueRow};
 use crate::contests::{LeagueStage, Promedio, SeasonWinners, StageTitles, WorldPlayoff};
+use crate::continuation::ExactContinuation;
 use crate::offers::{JobOffer, TransferOffer};
 use crate::player::{MarketPlayer, SavePlayer};
 use crate::pools::{StatePools, TeamPool};
 use crate::scalars::CareerScalars;
 use crate::season::SeasonInformation;
 use crate::slots::{CompSlots, CompetitionSlot, StageRow, StageStandingsRow};
+use crate::supercups::{CupRecord, EuroTitleHolders, WorldSuperCup};
 use crate::team::SaveTeam;
 use crate::uefa::{UefaCoef, UefaQualifying};
+use crate::world_career::{BTeamCalls, CpuReplacements, Ffp, SquadExtras, UefaPrizes, WorldRules};
 use crate::world_cups::{ContiEdition, ContiHolders, WorldCupD, WorldCups};
+
+/// The national teams' files whose sizes a world's save states: countries 80..=85, one per
+/// continent (upstream `national_file_sizes`).
+pub const NATIONAL_FILES: usize = 6;
+
+/// The competitions of a national coach's season (upstream `_careerCupPickList[5]`).
+pub const CUP_PICK_LIST_LEN: usize = 5;
 
 /// The members the writer puts on the line of the member before: the stages' cup lists
 /// and the cache's scores.
@@ -85,11 +95,21 @@ pub struct CareerSave {
     pub world: Option<SaveString>,
     /// The selected teams' count: `selected_teams`' length.
     pub num_selected_teams: u16,
+    /// The teams in each national teams' file, countries 80..=85 (upstream
+    /// `national_file_sizes`): every world's but World 1996-97's. A save without it was made
+    /// with 96/97's (49 34 10 15 31 4); the game refuses one whose sizes are not its own.
+    /// Written `"key": value`, as the header.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub national_files: Option<[i32; NATIONAL_FILES]>,
     /// The manager's record, a season each.
     pub season_informations: Vec<SeasonInformation>,
     /// The country of the current competition (upstream: `teamNumber` of
     /// `currentCompetitionPtr`); 255 without one.
     pub primary_country_code: u8,
+    /// CAREER YEARS: the career's own length, 30 or 40 (upstream `_careerParams.num_seasons`);
+    /// absent for the original's 20.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub career_years: Option<u16>,
     /// The career's scalar table.
     pub career_scalars: CareerScalars,
     /// The primary competition's league table by team identity.
@@ -196,18 +216,52 @@ pub struct CareerSave {
     /// The Coppa Italia Serie D: in a world that has it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub world_cupd: Option<WorldCupD>,
+    /// The Super Cups: in a world that has them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub world_supercup: Option<WorldSuperCup>,
+    /// The cups' summary: once a European table or a confederations' edition is kept.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cup_record: Option<CupRecord>,
     /// The play-off the career club plays: only while it does.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub world_playoff: Option<WorldPlayoff>,
     /// The stage titles decided mid-season: only once one is.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stage_titles: Option<StageTitles>,
+    /// The European title holders: every world's but World 1996-97's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub euro_title_holders: Option<EuroTitleHolders>,
     /// The season winners' page's last season: only once written.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub season_winners: Option<SeasonWinners>,
     /// The UEFA coefficients: in a world that keeps them.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uefa_coef: Option<UefaCoef>,
+    /// The UEFA prize money: every world's but World 1996-97's, with the next four.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uefa_prizes: Option<UefaPrizes>,
+    /// The financial fair play.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ffp: Option<Ffp>,
+    /// The CPU replacements.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu_replacements: Option<CpuReplacements>,
+    /// The squads of 30: the players 17.. gone from their clubs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squad_extras: Option<SquadExtras>,
+    /// The B-team call-ups.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub b_team: Option<BTeamCalls>,
+    /// The match rules kept with the career: every world's but World 1996-97's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub world_rules: Option<WorldRules>,
+    /// What the career needs to go on exactly: only with `[career] exact_continuation` on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exact_continuation: Option<ExactContinuation>,
+    /// A national coach's season's competitions, as career contests' indices (-1 / -2 the
+    /// table's ends, -3 none, -4 unknown): only for a national coach.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cup_pick_list: Option<[i32; CUP_PICK_LIST_LEN]>,
     /// The qualifying rounds: while the coefficients' world plays them.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uefa_qualifying: Option<UefaQualifying>,
@@ -246,16 +300,13 @@ pub struct CareerSave {
 
 impl CareerSave {
     /// The writer's layout of this save: its header written `"key": value` (4 members,
-    /// 3 without a world), the inline members on the line of the one before.
+    /// 3 without a world, and the national files' sizes after them), the inline members on
+    /// the line of the one before.
     #[must_use]
     pub fn layout(&self) -> UpstreamLayout {
-        let header = FileKind::Career.spaced_members();
+        let header = FileKind::Career.spaced_members() - usize::from(self.world.is_none());
         UpstreamLayout {
-            spaced_members: if self.world.is_some() {
-                header
-            } else {
-                header - 1
-            },
+            spaced_members: header + usize::from(self.national_files.is_some()),
             inline: INLINE_MEMBERS,
         }
     }
@@ -367,8 +418,10 @@ mod tests {
             file_kind: CareerKind,
             world: Some(SaveString::from("9697")),
             num_selected_teams: 1,
+            national_files: None,
             season_informations: vec![SeasonInformation::default()],
             primary_country_code: 20,
+            career_years: None,
             career_scalars: CareerScalars {
                 players_on_transfer_market_ids: Some(Vec::new()),
                 ..CareerScalars::default()
@@ -420,10 +473,21 @@ mod tests {
             team_pools: None,
             world_cups: None,
             world_cupd: None,
+            world_supercup: None,
+            cup_record: None,
             world_playoff: None,
             stage_titles: None,
+            euro_title_holders: None,
             season_winners: None,
             uefa_coef: None,
+            uefa_prizes: None,
+            ffp: None,
+            cpu_replacements: None,
+            squad_extras: None,
+            b_team: None,
+            world_rules: None,
+            exact_continuation: None,
+            cup_pick_list: None,
             uefa_qualifying: None,
             league_stages: None,
             state_pools: None,
@@ -480,6 +544,43 @@ mod tests {
         let lines = lines(&bytes);
         assert_eq!(lines[3], "  \"num_selected_teams\": 1,");
         assert!(lines[4].starts_with("  \"season_informations\":["));
+        assert_eq!(CareerSaveFormat::import(&bytes).expect("reads back"), save);
+    }
+
+    /// A world's career: the national files' sizes spaced as the header, CAREER YEARS after
+    /// the primary country, the world's members in the writer's order.
+    #[test]
+    fn a_worlds_save_writes_its_members_in_the_writers_order() {
+        let mut save = save();
+        save.world = Some(SaveString::from("2627"));
+        save.national_files = Some([55, 53, 10, 35, 47, 11]);
+        save.career_years = Some(40);
+        save.euro_title_holders = Some(EuroTitleHolders {
+            champions: 1,
+            cup_winners: 2,
+            uefa: 3,
+        });
+        save.world_rules = Some(WorldRules {
+            cpu_red_cards: 1,
+            cpu_injuries: 1,
+            goalkeeper_injuries: 0,
+            gk_seed: -2,
+        });
+        save.cup_pick_list = Some([-1, -2, -3, 4, 47]);
+        let bytes = CareerSaveFormat::export(&save).expect("writes");
+        let lines = lines(&bytes);
+        assert_eq!(lines[4], "  \"num_selected_teams\": 1,");
+        assert_eq!(lines[5], "  \"national_files\": [55,53,10,35,47,11],");
+        assert!(lines[6].starts_with("  \"season_informations\":["));
+        assert_eq!(lines[8], "  \"career_years\":40,");
+        let keys: Vec<&str> = lines
+            .iter()
+            .filter_map(|line| line.strip_prefix("  \"")?.split('"').next())
+            .collect();
+        let position = |key: &str| keys.iter().position(|k| *k == key).expect(key);
+        assert!(position("euro_title_holders") < position("world_rules"));
+        assert!(position("world_rules") < position("cup_pick_list"));
+        assert!(position("cup_pick_list") < position("career_foreign_market_players"));
         assert_eq!(CareerSaveFormat::import(&bytes).expect("reads back"), save);
     }
 

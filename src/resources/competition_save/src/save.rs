@@ -105,8 +105,25 @@ pub struct CompetitionSave {
     /// Its penalties (18).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stage_score_pen: Option<Vec<u16>>,
+    /// Another installed world's countries its teams are from, at the numbers the save gave
+    /// them (upstream include/world_packs.h): only when there are some.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub world_packs: Option<Vec<WorldPack>>,
     /// The competition's teams, as the team crate's records.
     pub diy_teams: Vec<SaveTeam>,
+}
+
+/// Another world's country a competition's teams are from (the Mod 4.1's "across worlds"):
+/// the country number it plays under for the session, the world and its team file.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorldPack {
+    /// The country number its teams have in the competition.
+    pub number: u8,
+    /// The world's tag (`2627`).
+    pub world: SaveString,
+    /// Its team file (`ITALY.json`).
+    pub file: SaveString,
 }
 
 impl CompetitionSave {
@@ -214,6 +231,7 @@ mod tests {
             stage_score_tab: None,
             stage_score_agg: None,
             stage_score_pen: None,
+            world_packs: None,
             diy_teams: vec![team(), team()],
         }
     }
@@ -244,6 +262,27 @@ mod tests {
         assert_eq!(
             CompetitionSaveFormat::import(&bytes).expect("reads back"),
             save()
+        );
+    }
+
+    #[test]
+    fn another_worlds_countries_come_before_the_teams() {
+        let mut save = save();
+        save.world_packs = Some(vec![WorldPack {
+            number: 200,
+            world: SaveString::from("2627"),
+            file: SaveString::from("ITALY.json"),
+        }]);
+        let bytes = CompetitionSaveFormat::export(&save).expect("writes");
+        let lines = lines(&bytes);
+        assert_eq!(
+            lines[8],
+            "  \"world_packs\":[{\"number\":200,\"world\":\"2627\",\"file\":\"ITALY.json\"}],"
+        );
+        assert!(lines[9].starts_with("  \"diy_teams\":["));
+        assert_eq!(
+            CompetitionSaveFormat::import(&bytes).expect("reads back"),
+            save
         );
     }
 

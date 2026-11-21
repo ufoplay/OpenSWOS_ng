@@ -20,6 +20,7 @@ the DOS game's binary `.DIY` (D9). The JSON saves are built on
 | `comp_slot` | the competition: a `CompetitionSlot` |
 | `competition_overrides` | its league table by team identity |
 | `comp_slot_stage` … `stage_score_pen` | a tournament's current stage, only for a tournament |
+| `world_packs` | `WorldPack`: another installed world's countries its teams are from (number, world, file), only when there are some |
 | `diy_teams` | the teams, as the team crate's `Team` |
 
 The layout is the writer's: one member a line, none written `"key": value`, the stage's

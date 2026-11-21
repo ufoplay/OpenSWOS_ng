@@ -94,6 +94,10 @@ pub struct ContiEdition {
     pub results_count: u8,
     /// The cup whose main round is in slot 3 (upstream `g_contiMainCup`).
     pub main_cup: u8,
+    /// The edition's flags (upstream `pad`: `CT_ED_G2`, the Mod 4.0.6's goals model;
+    /// `CT_ED_S1`); absent in a save made before them (0).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flags: Option<u8>,
     /// The entrants: team word, cup << 4 | round, strength / 16 | slot << 12.
     #[serde(with = "crate::flat")]
     pub entrants: Vec<[u16; 3]>,
@@ -136,6 +140,11 @@ mod tests {
             r#"{"mark":17731,"seed":4294967295,"manager_club":0,"results_count":0,"main_cup":3,"entrants":[1,2,3],"results":[0,0,0,1,1,1]}"#,
         );
         assert_eq!(edition.seed, u32::MAX);
+        assert_eq!(edition.flags, None);
+        let edition: ContiEdition = round_trip(
+            r#"{"mark":17731,"seed":1,"manager_club":0,"results_count":0,"main_cup":0,"flags":1,"entrants":[],"results":[]}"#,
+        );
+        assert_eq!(edition.flags, Some(1));
         assert!(rejects::<ContiHolders>(
             r#"{"mark":21571,"season":2,"holders":[300]}"#
         ));

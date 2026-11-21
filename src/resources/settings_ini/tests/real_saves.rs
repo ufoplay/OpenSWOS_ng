@@ -2,13 +2,20 @@
 //! back byte for byte, the game reads it without an error, a save of the values it holds
 //! leaves it alone, a changed value changes its line only, a missing key joins its section;
 //! read as the game's typed settings, a save adds only the keys it lacks and a changed setting
-//! changes its line. Skipped without the
-//! file; never committed (it holds your settings).
+//! changes its line. A file longer than the save reads (a fresh file of a newer build can be)
+//! is rewritten by every save, as the game does: then only that is checked. Skipped without
+//! the file; never committed (it holds your settings).
 
-use openswos_settings_ini_resource::{IniFile, IniFileFormat, Setting, Settings, SettingsTable};
+use openswos_settings_ini_resource::{
+    IniFile, IniFileFormat, SAVE_MAX_LINES, Setting, Settings, SettingsTable,
+};
 use openswos_test_utils::data::settings_file;
 use openswos_test_utils::fixtures::assert_round_trip;
 use openswos_test_utils::require;
+use openswos_test_utils::skip::{Skip, report};
+
+/// The most bytes a read of the save takes (`fgets` into 256 bytes, its NUL included).
+const SAVE_READ_BYTES: usize = 255;
 
 /// A key no build writes, added by the test.
 const TEST_KEY: &str = "openswos_ng_test_key";
@@ -45,6 +52,26 @@ fn own_settings(file: &IniFile) -> Vec<Setting> {
     settings
 }
 
+/// Whether the save reads all of `bytes`: at most [`SAVE_MAX_LINES`] reads, a line longer than a
+/// read taking more than one.
+fn fits_the_save(bytes: &[u8]) -> bool {
+    let reads: usize = bytes
+        .split_inclusive(|&byte| byte == b'\n')
+        .map(|line| line.len().div_ceil(SAVE_READ_BYTES))
+        .sum();
+    reads <= SAVE_MAX_LINES
+}
+
+/// Faithful to the original: a file longer than the save reads loses its last lines and the
+/// keys there come back as missing, so every save rewrites it. Reported as a skip of the rest.
+fn rewritten_past_the_saves_lines(saved: Option<&IniFile>) {
+    assert!(saved.is_some(), "a save rewrites a file past its lines");
+    report(&Skip::new(format!(
+        "your settings file is longer than the save's {SAVE_MAX_LINES} lines, which every save \
+         rewrites: only that is checked"
+    )));
+}
+
 fn save(settings: &[Setting], file: &IniFile) -> Option<IniFile> {
     SettingsTable {
         settings,
@@ -61,6 +88,10 @@ fn your_settings_file_reads_and_saves_as_the_game_does() {
     assert_eq!(file.read().first_error, None, "{}", path.display());
     let settings = own_settings(&file);
     assert!(!settings.is_empty());
+    if !fits_the_save(&bytes) {
+        rewritten_past_the_saves_lines(save(&settings, &file).as_ref());
+        return;
+    }
     assert_eq!(save(&settings, &file), None, "a save of its own values");
 
     let changed = {
@@ -107,6 +138,10 @@ fn your_settings_save_as_the_game_saves_them() {
     let path = require!(settings_file());
     let file = IniFile::new(std::fs::read(&path).expect("a readable settings file"));
     let settings = Settings::read(&file);
+    if !fits_the_save(file.as_bytes()) {
+        rewritten_past_the_saves_lines(settings.save(Some(&file), Some(&settings)).as_ref());
+        return;
+    }
     // Left as read, a save adds only the keys the file lacks (a file of an older build):
     // every line of it stays, in order, and it reads back as the same settings.
     let left = settings

@@ -1,18 +1,21 @@
 //! The JSON model to and from the typed team model (`openswos_team_resource`). The codes
 //! and skills are checked as the JSON is read; every other range is checked here on the way
 //! in. On the way out, nothing can fail: what the game does not read and JSON cannot keep
-//! (bytes after a name's end, the passing byte's high nibble) is not written.
+//! (bytes after a name's end but a look, the passing byte's high nibble) is not written.
+//!
+//! A world's entry holds more than the team record: its players' years of birth and its
+//! players 17.. ([`EntryExtras`]).
 
 use openswos_common::{FixedName, NameError, Nibble, TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_team_resource::{
-    Division, Form, GlobalTeamNumber, GoalCounts, Kit, Nationality, PLAYERS_PER_TEAM, Player,
-    PlayerRuntime, PriceId, Skills, Team, TeamRuntime,
+    Division, Form, GlobalTeamNumber, GoalCounts, Kit, LookBits, Nationality, PLAYERS_PER_TEAM,
+    Player, PlayerRuntime, PriceId, Skills, Team, TeamRuntime,
 };
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::ids::{derived_player_uuid, derived_team_uuid, team_checksum};
-use crate::model::{PlayerEntry, TeamChecksum, TeamEntry, TeamHeader};
+use crate::model::{BirthYear, PlayerEntry, PlayerKeyOrder, TeamChecksum, TeamEntry, TeamHeader};
 use openswos_common::json::{JsonByte, JsonWord};
 
 /// The JSON's `cards`: bits 0-1 of the cards-and-injuries byte.
@@ -84,7 +87,80 @@ impl EntryIds {
     }
 }
 
+/// What a world's entry holds beyond its team record and ids (upstream
+/// `scripts/world_import.py`; the game reads them with `DataJson_LoadTeamBorn` and
+/// `DataJson_LoadTeamExtras`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EntryExtras {
+    /// The record's players' years of birth, in squad order.
+    pub born: [Option<BirthYear>; PLAYERS_PER_TEAM],
+    /// The players from place 17 on (`extra_players`), in order; `None` when the entry has no
+    /// such key.
+    pub extra_players: Option<Vec<ExtraPlayer>>,
+}
+
+/// A world club's player from place 17 on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtraPlayer {
+    /// His id.
+    pub uuid: Uuid,
+    /// His record.
+    pub player: Player,
+    /// His year of birth.
+    pub born: Option<BirthYear>,
+}
+
 impl TeamEntry {
+    /// The players' years of birth and the players 17.., typed.
+    ///
+    /// # Errors
+    ///
+    /// When a player 17.. has a value out of range or a name that does not fit.
+    pub fn extras(&self) -> Result<EntryExtras, EntryError> {
+        let extra_players = self
+            .extra_players
+            .as_ref()
+            .map(|entries| {
+                entries
+                    .iter()
+                    .map(|entry| {
+                        Ok(ExtraPlayer {
+                            uuid: entry.uuid,
+                            player: player(entry)?,
+                            born: entry.born,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, EntryError>>()
+            })
+            .transpose()?;
+        Ok(EntryExtras {
+            born: self.players.each_ref().map(|player| player.born),
+            extra_players,
+        })
+    }
+
+    /// This entry with `extras`: its players' years of birth and its players 17...
+    #[must_use]
+    pub fn with_extras(mut self, extras: &EntryExtras) -> Self {
+        let EntryExtras {
+            born,
+            extra_players,
+        } = extras;
+        for (entry, year) in self.players.iter_mut().zip(born) {
+            entry.born = *year;
+        }
+        self.extra_players = extra_players.as_ref().map(|players| {
+            players
+                .iter()
+                .map(|ExtraPlayer { uuid, player, born }| PlayerEntry {
+                    born: *born,
+                    ..player_entry(player, *uuid)
+                })
+                .collect()
+        });
+        self
+    }
+
     /// The typed team.
     ///
     /// # Errors
@@ -217,18 +293,23 @@ impl TeamEntry {
             players: entries
                 .try_into()
                 .expect("a team has PLAYERS_PER_TEAM players"),
+            extra_players: None,
         }
     }
 }
 
-/// The typed player of an entry.
+/// The typed player of an entry. A look is written into the record's byte 25 whatever the
+/// name, as the game's reader does (its `looks` after its `player_name`).
 fn player(entry: &PlayerEntry) -> Result<Player, EntryError> {
     let PlayerEntry {
+        // The text's, not the record's.
+        key_order: _,
         uuid: _,
         nationality,
         cached_match_value,
         shirt_number,
         player_name,
+        looks,
         position,
         face,
         flags,
@@ -245,8 +326,10 @@ fn player(entry: &PlayerEntry) -> Result<Player, EntryError> {
         price,
         goal_stats: [league, domestic_cup, league_cup, continental_cup],
         form,
+        // Not in the record: `EntryExtras`.
+        born: _,
     } = entry;
-    Ok(Player {
+    let mut player = Player {
         nationality: Nationality(nationality.byte()),
         shirt_number: shirt_number.byte(),
         name: name(player_name, "player_name")?,
@@ -275,10 +358,21 @@ fn player(entry: &PlayerEntry) -> Result<Player, EntryError> {
             },
             form: Form::from(form.byte().cast_signed()),
         },
-    })
+    };
+    if let Some(bits) = looks {
+        player.set_look_byte(*bits);
+    }
+    Ok(player)
 }
 
-/// The entry of a player.
+/// The look an entry writes: the look's bits, when the name leaves room and they are one
+/// (upstream `jb_player`; `scripts/world_import.py`: none for a 22-letter name, none for 0).
+fn written_look(player: &Player) -> Option<LookBits> {
+    let bits = player.look_byte().look_bits();
+    (player.has_room_for_a_look() && !bits.is_empty()).then_some(bits)
+}
+
+/// The entry of a player, without a year of birth.
 fn player_entry(player: &Player, uuid: Uuid) -> PlayerEntry {
     let Player {
         nationality: Nationality(nationality),
@@ -315,11 +409,13 @@ fn player_entry(player: &Player, uuid: Uuid) -> PlayerEntry {
             },
     } = player;
     PlayerEntry {
+        key_order: PlayerKeyOrder::Record,
         uuid,
         nationality: JsonByte::from(*nationality),
         cached_match_value: JsonByte::from(cached_match_value.cast_unsigned()),
         shirt_number: JsonByte::from(*shirt_number),
         player_name: name.text(),
+        looks: written_look(player),
         position: *position,
         face: *face,
         flags: *flags,
@@ -336,6 +432,7 @@ fn player_entry(player: &Player, uuid: Uuid) -> PlayerEntry {
         price: JsonByte::from(*price),
         goal_stats: [*league, *domestic_cup, *league_cup, *continental_cup],
         form: JsonByte::from(i8::from(*form).cast_unsigned()),
+        born: None,
     }
 }
 
@@ -353,8 +450,12 @@ fn cards_injuries(cards: u8, injury: u8, status_bucket: u8) -> Result<u8, EntryE
         | (checked(status_bucket, STATUS_MASK, "status_bucket")? << STATUS_SHIFT))
 }
 
+/// The name field of `text`. Faithful to the original: a longer name is cut to the field, as
+/// the game's loader cuts it (`FLD_STR`: its first bytes; World 2026-27's national teams have
+/// coaches of 24 letters).
 fn name<const N: usize>(text: &str, field: &'static str) -> Result<FixedName<N>, EntryError> {
-    FixedName::from_text(text).map_err(|source| EntryError::Name { field, source })
+    let cut: String = text.chars().take(N).collect();
+    FixedName::from_text(&cut).map_err(|source| EntryError::Name { field, source })
 }
 
 fn out_of_range(field: &'static str, value: u8) -> EntryError {
@@ -367,7 +468,7 @@ mod tests {
     use super::*;
     use crate::ids::WORLD_1996_97_TAG;
     use openswos_common::Importer;
-    use openswos_team_resource::TeamFileFormat;
+    use openswos_team_resource::{Look, TeamFileFormat};
     use openswos_test_utils::assets_path;
 
     /// The four teams of the PC game's TEAM.085 (Oceania).
@@ -434,8 +535,8 @@ mod tests {
                 value: 8
             })
         );
-        let mut bad = entry;
-        bad.team.team_name = "A NAME FAR TOO LONG".to_owned();
+        let mut bad = entry.clone();
+        bad.team.team_name = "AUSTRALIA \u{3a9}".to_owned();
         assert!(matches!(
             bad.to_team(),
             Err(EntryError::Name {
@@ -443,6 +544,13 @@ mod tests {
                 ..
             })
         ));
+        // Faithful to the original: a name too long is cut to its field.
+        let mut long = entry;
+        long.team.coach_name = "R. PEDRO & DANIEL RAMSAM".to_owned();
+        assert_eq!(
+            long.to_team().map(|team| team.coach.text()),
+            Ok("R. PEDRO & DANIEL RAMSA".to_owned())
+        );
     }
 
     #[test]
@@ -529,12 +637,82 @@ mod tests {
         let mut bytes = *team.name.as_bytes();
         bytes[16] = b'X';
         team.name = FixedName::from_bytes(bytes);
-        let mut bytes = *team.players[4].name.as_bytes();
-        bytes[22] = b'Y';
-        team.players[4].name = FixedName::from_bytes(bytes);
+        // Bits 3-7 of the look byte are no look: not written either.
+        team.players[4].set_look_byte(LookBits::from(0xF8));
         assert!(!team.name.is_canonical());
         let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
         assert_eq!(entry.team.team_name, "AUSTRALIA");
+        assert_eq!(entry.players[4].looks, None);
         assert_eq!(entry.to_team(), Ok(clean));
+    }
+
+    #[test]
+    fn a_look_is_written_when_the_name_leaves_room() {
+        let mut team = oceania().remove(0);
+        assert!(team.players[1].set_look(Look::Shaved));
+        let entry = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team));
+        assert_eq!(
+            entry.players[1].looks,
+            Some(LookBits::BALD | LookBits::SHAVED)
+        );
+        assert_eq!(entry.players[0].looks, None);
+        assert_eq!(entry.to_team(), Ok(team.clone()));
+        // Its other bits are not written: the look alone comes back.
+        team.players[1].set_look_byte(LookBits::from(0b1000_0011));
+        let back = TeamEntry::from_team(&team, EntryIds::derived(WORLD_1996_97_TAG, &team))
+            .to_team()
+            .expect("converts");
+        assert_eq!(back.players[1].look_byte().bits(), 0b0000_0011);
+        // A full name leaves no room: the look's byte is the reader's, but not written back.
+        let mut entry = entry;
+        entry.players[2].player_name = "ABCDEFGHIJKLMNOPQRSTUV".to_owned();
+        entry.players[2].looks = Some(LookBits::WHITE);
+        let team = entry.to_team().expect("converts");
+        assert_eq!(team.players[2].look_byte(), LookBits::WHITE);
+        assert_eq!(team.players[2].look(), Look::None);
+        let back = TeamEntry::from_team(&team, EntryIds::of(&entry));
+        assert_eq!(back.players[2].looks, None);
+    }
+
+    #[test]
+    fn years_of_birth_and_players_17_on_are_the_entrys_extras() {
+        let team = oceania().remove(0);
+        let ids = EntryIds::derived(WORLD_1996_97_TAG, &team);
+        let plain = TeamEntry::from_team(&team, ids.clone());
+        assert_eq!(plain.extras(), Ok(EntryExtras::default()));
+        let mut born = [None; PLAYERS_PER_TEAM];
+        born[3] = Some(BirthYear(2004));
+        let mut extra = team.players[0];
+        assert!(extra.set_look(Look::White));
+        let extras = EntryExtras {
+            born,
+            extra_players: Some(vec![ExtraPlayer {
+                uuid: derived_player_uuid(WORLD_1996_97_TAG, team.id, PLAYERS_PER_TEAM),
+                player: extra,
+                born: Some(BirthYear(2007)),
+            }]),
+        };
+        let entry = TeamEntry::from_team(&team, ids).with_extras(&extras);
+        assert_eq!(entry.players[3].born, Some(BirthYear(2004)));
+        let written = entry.extra_players.as_ref().expect("players 17 on");
+        assert_eq!(written.len(), 1);
+        assert_eq!(written[0].looks, Some(LookBits::WHITE));
+        assert_eq!(written[0].born, Some(BirthYear(2007)));
+        assert_eq!(entry.extras(), Ok(extras));
+        // Not in the record, nor in its checksum.
+        assert_eq!(entry.to_team(), Ok(team.clone()));
+        assert_eq!(entry.checksum, crate::ids::team_checksum(&team));
+        // A bad player 17 is named.
+        let mut bad = entry;
+        if let Some(players) = bad.extra_players.as_mut() {
+            players[0].cards = 4;
+        }
+        assert_eq!(
+            bad.extras(),
+            Err(EntryError::OutOfRange {
+                field: "cards",
+                value: 4
+            })
+        );
     }
 }
