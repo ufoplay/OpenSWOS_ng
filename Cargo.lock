@@ -948,6 +948,9 @@ dependencies = [
  "openswos_upstream",
  "openswos_world_package_resource",
  "openswos_world_rules_resource",
+ "serde",
+ "serde_json",
+ "sha2",
  "tempfile",
  "thiserror",
 ]

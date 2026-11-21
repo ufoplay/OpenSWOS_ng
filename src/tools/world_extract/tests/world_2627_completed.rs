@@ -1,20 +1,19 @@
 //! World 2026-27 completed (`just world_complete_2627`): its download over World 1996-97, its
-//! rules and its European cups from its baked install, its pool unpacked: a valid world with
-//! valid game data. A file of its own: the baked install writes the
+//! rules, its European cups and its national cups from its baked install, its pool unpacked: a
+//! valid world with valid game data. A file of its own: the baked install writes the
 //! oracle's 96/97 tables for good, so it runs in a process of its own. Skipped without the
 //! oracle or the network.
 
 use openswos_common::{TeamFileNumber, TeamId, TeamOrdinal};
 use openswos_competitions_json_resource::{Continent, SymbolId};
-use openswos_core::world::{CompetitionRef, LeagueLink};
-use openswos_oracle::tables::InstallError;
-use openswos_test_utils::skip::{Skip, report};
+use openswos_core::world::{CompetitionRef, LeagueLink, TableContent};
 use openswos_test_utils::tactics_path;
 use openswos_world_extract::check::{builtin_tactics, game_data};
-use openswos_world_extract::commands::{Completed, complete_2627};
-use openswos_world_extract::error::ExtractError;
 use openswos_world_package_resource::WorldPackage;
 use openswos_world_rules_resource::OddRoundRobin;
+
+mod common;
+use common::completed;
 
 /// Its countries: 96/97's 71 and the 26 its leagues bring.
 const COUNTRIES: usize = 97;
@@ -41,26 +40,12 @@ const POOL_PLAYERS: usize = 900;
 /// The clubs of a league phase.
 const LEAGUE_PHASE_CLUBS: usize = 36;
 
-/// The completed world written into a new folder, or `None` (the skip reported) without the
-/// oracle or the network.
-fn completed(dir: &std::path::Path) -> Option<Completed> {
-    match complete_2627(Some(dir)) {
-        Ok(completed) => Some(completed),
-        Err(ExtractError::Oracle(unavailable)) => {
-            report(&Skip::new(unavailable.to_string()));
-            None
-        }
-        Err(ExtractError::Install(InstallError::Unavailable(unavailable))) => {
-            report(&Skip::new(unavailable.to_string()));
-            None
-        }
-        Err(ExtractError::Download(reason)) => {
-            report(&Skip::new(reason));
-            None
-        }
-        Err(error) => panic!("{error}"),
-    }
-}
+/// Its cups: 96/97's 76, and the 50 of its 101 national and league cups that are not 96/97's
+/// (`kWorld2627Cups`; the other 51 replace 96/97's of their ids).
+const CUPS: usize = 126;
+
+/// The clubs of its English cup's real bracket (`kWorld2627_englishCupExt`).
+const ENGLISH_CUP_CLUBS: usize = 64;
 
 #[test]
 fn world_2627_completes_into_a_valid_world() {
@@ -154,4 +139,29 @@ fn world_2627_completes_into_a_valid_world() {
         .competition(&SymbolId("_euroCup".to_owned()))
         .expect("96/97's record, a template");
     assert!(!world.is_played(euro_cup));
+
+    // Each national and league cup in its country's table, in its slot (`WorldCups_Install`).
+    assert_eq!(world.cups().len(), CUPS);
+    let cups_of = |number: u8| -> Vec<&str> {
+        world
+            .country_tables()
+            .iter()
+            .filter(|table| table.number == TeamFileNumber(number))
+            .flat_map(|table| match &table.content {
+                TableContent::Own { cups, .. } => cups.clone(),
+                TableContent::Region(_) => Vec::new(),
+            })
+            .map(|cup| world.competition_id(CompetitionRef::Cup(cup)).as_str())
+            .collect()
+    };
+    assert_eq!(cups_of(20), ["_italianCup", "_italianLeagueCup"]);
+    assert_eq!(cups_of(40), ["_welshCup", "_worldWalLeagueCup"], "grown");
+    assert_eq!(cups_of(47), ["_worldAndCup"], "a new country's");
+    let Some(english @ CompetitionRef::Cup(cup)) =
+        world.competition(&SymbolId("_englishCup".to_owned()))
+    else {
+        panic!("England's cup");
+    };
+    assert!(world.is_played(english));
+    assert_eq!(world.cup(cup).seeds.len(), ENGLISH_CUP_CLUBS);
 }

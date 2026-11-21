@@ -116,6 +116,24 @@ pub enum ExtractError {
     /// A compiled name that is not ASCII.
     #[error("a compiled name is not ASCII: {0:?}")]
     NotAscii(Vec<u8>),
+    /// The upstream checkout has no table of the world's cups.
+    #[error("{0}: no `kWorld2627Cups` table: run `just upstream_fetch`")]
+    NoCupTable(PathBuf),
+    /// A row of that table that does not read.
+    #[error("a row of upstream's table of the world's cups does not read: {0}")]
+    CupRow(String),
+    /// That table and the compiled cups disagree, from this row.
+    #[error("upstream's table of the world's cups and its compiled cups disagree at row {0}")]
+    CupsOutOfStep(usize),
+    /// A cup's slot that is none (1 the national cup, 2 the league cup).
+    #[error("a world cup's slot {0} is none")]
+    CupSlot(u8),
+    /// A cup's country without a table of its own.
+    #[error("a world cup's country {0} has no table of its own")]
+    NoCountryTable(u8),
+    /// A cup past upstream's tables (96 countries of 12 entries): upstream would drop it.
+    #[error("a world cup of country {0} is past upstream's cup tables")]
+    CupTablesFull(u8),
     /// The world's pool does not unpack.
     #[error("the world's pool: {0}")]
     Unpack(#[from] UnpackError),

@@ -9,6 +9,8 @@
 //!   its baked install (the oracle);
 //! - [`check`]: every package a valid world with valid game data (`openswos_core`) before it
 //!   is written;
+//! - [`diff`]: how a package's files differ from the ones kept for it (the committed files,
+//!   the completion's committed digests), for the re-extraction tests;
 //! - [`output`]: where packages go (`target/cache/worlds/`), and writing them;
 //! - [`commands`]: the commands, whole.
 
@@ -16,6 +18,7 @@ pub mod assemble;
 pub mod check;
 pub mod commands;
 pub mod complete;
+pub mod diff;
 pub mod error;
 pub mod extract;
 pub mod fetch;

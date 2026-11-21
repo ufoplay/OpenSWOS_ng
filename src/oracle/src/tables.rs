@@ -44,6 +44,33 @@ pub struct BakedWorld {
     /// Its European cups' league-phase records (`WorldData2627_LeaguePhaseCups`): the
     /// Champions', Cup Winners' and UEFA Cup's places, in that order.
     pub league_phase_cups: Vec<TournamentRecord>,
+    /// Its national and league cups (`WorldData2627_Cups`), in the order `WorldCups_Install`
+    /// installs them.
+    pub cups: Vec<WorldCupEntry>,
+}
+
+/// The base every competition record starts with (include/game_types.h `Competition`, 9
+/// bytes): its fields by their C names.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CompetitionBase {
+    /// `compId`.
+    pub comp_id: u8,
+    /// `type`.
+    pub kind: i8,
+    /// `teamNumber`.
+    pub team_number: i8,
+    /// `beginMonth`.
+    pub begin_month: i8,
+    /// `endMonth`.
+    pub end_month: i8,
+    /// `reserved1` (the JSON's `name_table_offset`).
+    pub reserved1: i8,
+    /// `isPlayoff` (the JSON's `reserved`).
+    pub is_playoff: i8,
+    /// `reserved2` (the JSON's `team_list_offset`).
+    pub reserved2: i8,
+    /// `seedReorderFlag`.
+    pub seed_reorder_flag: i8,
 }
 
 /// A tournament record as upstream compiles it (include/game_types.h `CompetitionLeaguePhase`,
@@ -51,24 +78,8 @@ pub struct BakedWorld {
 /// its seed list as `(country, ordinal)` pairs.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TournamentRecord {
-    /// `header.comp.compId`.
-    pub comp_id: u8,
-    /// `header.comp.type`.
-    pub kind: i8,
-    /// `header.comp.teamNumber`.
-    pub team_number: i8,
-    /// `header.comp.beginMonth`.
-    pub begin_month: i8,
-    /// `header.comp.endMonth`.
-    pub end_month: i8,
-    /// `header.comp.reserved1` (the JSON's `name_table_offset`).
-    pub reserved1: i8,
-    /// `header.comp.isPlayoff` (the JSON's `reserved`).
-    pub is_playoff: i8,
-    /// `header.comp.reserved2` (the JSON's `team_list_offset`).
-    pub reserved2: i8,
-    /// `header.comp.seedReorderFlag`.
-    pub seed_reorder_flag: i8,
+    /// `header.comp`.
+    pub comp: CompetitionBase,
     /// `header.seedingType`.
     pub seeding_type: i8,
     /// `header.menuState`.
@@ -91,6 +102,43 @@ pub struct TournamentRecord {
     pub names: Vec<Option<Vec<u8>>>,
     /// `teamSeedList`: `(country, ordinal)`.
     pub team_seed_list: Vec<(u8, u8)>,
+}
+
+/// A cup record as upstream compiles it (include/game_types.h `CompetitionCup`): its fields by
+/// their C names, its names as their text, its seed list as `(country, ordinal)` pairs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CupRecord {
+    /// `header.comp`.
+    pub comp: CompetitionBase,
+    /// `header.numRoundsOverride`.
+    pub num_rounds_override: i8,
+    /// `header.teams`.
+    pub teams: i8,
+    /// `header.awayGoalsMode`.
+    pub away_goals_mode: i8,
+    /// `header.subsAndPointsForWin`: substitutes high nibble, a win's points low.
+    pub subs_and_points_for_win: i8,
+    /// `header.roundStringBase`.
+    pub round_string_base: i8,
+    /// `roundRuleFlags`.
+    pub round_rule_flags: Vec<i8>,
+    /// `name`: each name's text, `None` for a null pointer.
+    pub names: Vec<Option<Vec<u8>>>,
+    /// `teamSeedList`: `(country, ordinal)`, as many as the record lists.
+    pub team_seed_list: Vec<(u8, u8)>,
+}
+
+/// A world's national or league cup (include/world_cups.h `WorldCup`): its country, its slot
+/// and its record. Its draw's other fields join with the M5 unit that reads them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorldCupEntry {
+    /// `country`: its country's number.
+    pub country: u8,
+    /// `slot`: 1 the national cup, 2 the league cup.
+    pub slot: u8,
+    /// `record`, its seed list the cup's `n` clubs: a list past the record's 32 continues
+    /// after it.
+    pub record: CupRecord,
 }
 
 /// A country's entry in upstream's `_countriesTable` (src/strings_data.c): its continent's

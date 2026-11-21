@@ -10,16 +10,20 @@
 //! - its foreign players' pool, unpacked (the caller unpacks it with upstream's decoder);
 //! - 96/97's competition files, its leagues replaced by the world's and its new leagues with
 //!   their countries and tables ([`competitions`]), its European cups the league phases
-//!   ([`european_cups`]);
+//!   ([`european_cups`]), its national and league cups the world's ([`national_cups`]);
 //! - 96/97's career params, which upstream plays every world with (D12);
 //! - the five rules files of M4 #5c1 ([`rules`]).
 //!
-//! Its national and league cups (the world cups baked into `world_data.c`) join with M4 #5d3,
-//! and its other rules with the units that read them.
+//! Its other rules join with the units that read them (its cups' draws: `national_cups.json`,
+//! M5).
 
 mod competitions;
 mod european_cups;
+mod national_cups;
+mod records;
 mod rules;
+
+pub use national_cups::{CupRow, cup_rows};
 
 use openswos_competitions_json_resource::CompetitionsFile;
 use openswos_oracle::tables::BakedWorld;
@@ -36,17 +40,20 @@ pub const GLOBAL_TEAM_NUMBERS: u16 = 2560;
 const LEAGUES: &str = "leagues.json";
 
 /// World 2026-27 completed: its `download` over World 1996-97's committed package `base`,
-/// with the rules and the European cups its baked install (`baked`) leaves, and its foreign
+/// with the rules, the European cups and the national cups its baked install (`baked`) leaves
+/// (its cups named by `cup_rows`, upstream's table of them: [`cup_rows`]), and its foreign
 /// players' `pool`, unpacked.
 ///
 /// # Errors
 ///
 /// When the download has no leagues, `base` lacks a competition file the merge edits, a new
-/// country has no roster, or the tables lack what the world needs.
+/// country has no roster, `cup_rows` and the baked cups disagree, a cup's country has no
+/// table, or the tables lack what the world needs.
 pub fn world_2627(
     base: &WorldPackage,
     download: &WorldPackage,
     baked: &BakedWorld,
+    cup_rows: &[CupRow],
     pool: Option<PoolFile>,
 ) -> Result<WorldPackage, ExtractError> {
     let Some(CompetitionsFile::Leagues(world_leagues)) = download
@@ -59,6 +66,7 @@ pub fn world_2627(
     let mut competitions = base.competitions.clone();
     competitions::merge(&mut competitions, world_leagues, &download.teams)?;
     european_cups::install(&mut competitions, &baked.league_phase_cups, &download.teams)?;
+    national_cups::install(&mut competitions, &baked.cups, cup_rows, &download.teams)?;
     let countries = competitions
         .values()
         .find_map(|document| match &document.file {

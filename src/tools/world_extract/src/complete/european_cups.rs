@@ -7,14 +7,14 @@
 
 use std::collections::BTreeMap;
 
-use openswos_common::{Nibble, TeamFileNumber, TeamOrdinal, json::JsonByte};
 use openswos_competitions_json_resource::{
-    CompCupEntry, CompetitionHeader, CompetitionType, CompetitionsDocument, CompetitionsFile,
-    Round, RoundRules, SeedCountry, SymbolId, TeamSeed, Tournament, TournamentKind,
+    CompCupEntry, CompetitionsDocument, CompetitionsFile, Round, SymbolId, Tournament,
+    TournamentKind,
 };
 use openswos_oracle::tables::TournamentRecord;
 use openswos_team_json_resource::TeamJsonDocument;
 
+use super::records::{ID_PREFIX, header, names, round_rules, seeds, signed, subs_and_points};
 use crate::error::ExtractError;
 
 /// The tournaments' file.
@@ -29,15 +29,6 @@ const QUALIFYING: &str = "qualifying.json";
 /// The group upstream points at the league phases: Europe's (src/league_phase.c,
 /// `_europeTable.compCup`).
 const EUROPE_GROUP: &str = "_europeTable";
-
-/// How far a byte's high nibble is shifted.
-const NIBBLE_SHIFT: u8 = 4;
-
-/// A nibble's bits.
-const NIBBLE_MASK: u8 = 0x0F;
-
-/// What starts an id.
-const ID_PREFIX: char = '_';
 
 /// Installs `records` (the world's league phases, the Champions', Cup Winners' and UEFA Cup's
 /// places in that order) into `competitions`, their seeds named after their clubs in
@@ -114,38 +105,23 @@ fn tournament(
     record: &TournamentRecord,
     teams: &BTreeMap<String, TeamJsonDocument>,
 ) -> Result<Tournament, ExtractError> {
-    let names = record
-        .names
-        .iter()
-        .map(|name| name.as_deref().map(text).transpose())
-        .collect::<Result<Vec<_>, _>>()?;
+    let names = names(&record.names)?;
     let name = names
         .first()
         .cloned()
         .flatten()
         .ok_or(ExtractError::Unnamed)?;
-    let subs_and_points = record.subs_and_points_for_win.cast_unsigned();
+    let (substitutes, points_for_win) = subs_and_points(record.subs_and_points_for_win);
     Ok(Tournament {
         id: id_of(&name),
         kind: TournamentKind::Tournament,
-        comp: CompetitionHeader {
-            comp_id: JsonByte::from(record.comp_id),
-            kind: CompetitionType::try_from(record.kind.cast_unsigned())
-                .map_err(|_| ExtractError::NoCompetitionType(record.kind))?,
-            team_number: signed(record.team_number),
-            begin_month: signed(record.begin_month),
-            end_month: signed(record.end_month),
-            name_table_offset: signed(record.reserved1),
-            reserved: signed(record.is_playoff),
-            team_list_offset: signed(record.reserved2),
-            seed_reorder_flag: signed(record.seed_reorder_flag),
-        },
+        comp: header(&record.comp)?,
         seeding_type: signed(record.seeding_type),
         menu_state: signed(record.menu_state),
         play_each_team: signed(record.play_each_team),
         away_goals_mode: signed(record.away_goals_mode),
-        substitutes: nibble(subs_and_points >> NIBBLE_SHIFT),
-        points_for_win: nibble(subs_and_points & NIBBLE_MASK),
+        substitutes,
+        points_for_win,
         round_string_base: signed(record.round_string_base),
         rounds: record
             .rounds
@@ -157,41 +133,10 @@ fn tournament(
             })
             .collect(),
         header_reserved: signed(record.reserved),
-        round_rule_flags: record
-            .round_rule_flags
-            .iter()
-            .map(|&flags| RoundRules::from(flags.cast_unsigned()))
-            .collect(),
+        round_rule_flags: round_rules(&record.round_rule_flags),
         name: names,
-        team_seed_list: record
-            .team_seed_list
-            .iter()
-            .map(|&(country, ordinal)| TeamSeed {
-                country: SeedCountry::Number(TeamFileNumber(country)),
-                ordinal: TeamOrdinal(ordinal),
-                team: club_name(teams, country, ordinal),
-            })
-            .collect(),
+        team_seed_list: seeds(&record.team_seed_list, teams),
     })
-}
-
-/// A signed byte as the JSON writes it.
-fn signed(byte: i8) -> JsonByte {
-    JsonByte::try_from(i16::from(byte)).expect("a signed byte is a byte")
-}
-
-/// The nibble `value` (under 16).
-fn nibble(value: u8) -> Nibble {
-    Nibble::try_from(value).expect("masked to a nibble")
-}
-
-/// A name's text, ASCII as upstream's names are.
-fn text(bytes: &[u8]) -> Result<String, ExtractError> {
-    if bytes.is_ascii() {
-        Ok(bytes.iter().copied().map(char::from).collect())
-    } else {
-        Err(ExtractError::NotAscii(bytes.to_vec()))
-    }
 }
 
 /// An id made of `name`: an underscore, then its words, the first in lower case and every
@@ -217,41 +162,19 @@ fn id_of(name: &str) -> SymbolId {
     SymbolId(id)
 }
 
-/// The name of club `ordinal` of country `country` in `teams`, if it has it.
-fn club_name(
-    teams: &BTreeMap<String, TeamJsonDocument>,
-    country: u8,
-    ordinal: u8,
-) -> Option<String> {
-    teams
-        .values()
-        .filter(|document| document.file.country == Some(country))
-        .flat_map(|document| &document.file.teams)
-        .find(|entry| entry.team.team_ordinal == ordinal)
-        .map(|entry| entry.team.team_name.clone())
-}
-
 #[cfg(test)]
 mod tests {
-    use openswos_common::Importer;
-    use openswos_team_json_resource::TeamJsonFormat;
-    use openswos_test_utils::{assets_path, world_1996_97_path};
+    use openswos_competitions_json_resource::CompetitionType;
+    use openswos_test_utils::world_1996_97_path;
 
     use super::*;
     use crate::assemble::committed;
+    use crate::complete::records::tests::{base, oceania};
 
     /// The Champions League's record as world_data.c compiles it, its list cut to two clubs.
     fn champions_league() -> TournamentRecord {
         TournamentRecord {
-            comp_id: 0,
-            kind: 2,
-            team_number: -1,
-            begin_month: 64,
-            end_month: 32,
-            reserved1: 35,
-            is_playoff: 0,
-            reserved2: 41,
-            seed_reorder_flag: 1,
+            comp: base(),
             seeding_type: 0,
             menu_state: 0,
             play_each_team: 1,
@@ -276,15 +199,6 @@ mod tests {
         }
     }
 
-    /// Oceania's roster (`assets/TEAM_JSON/OCEANIA.json`): AUSTRALIA, NEW ZEALAND…
-    fn teams() -> BTreeMap<String, TeamJsonDocument> {
-        let bytes = std::fs::read(assets_path().join("TEAM_JSON/OCEANIA.json")).expect("a roster");
-        BTreeMap::from([(
-            "OCEANIA.json".to_owned(),
-            TeamJsonFormat::import(&bytes).expect("a roster"),
-        )])
-    }
-
     #[test]
     fn an_id_is_made_of_a_name() {
         assert_eq!(
@@ -297,7 +211,7 @@ mod tests {
 
     #[test]
     fn a_record_is_the_tournament_upstream_compiles() {
-        let tournament = tournament(&champions_league(), &teams()).expect("a tournament");
+        let tournament = tournament(&champions_league(), &oceania()).expect("a tournament");
         assert_eq!(tournament.id.as_str(), "_uefaChampionsLeague");
         assert_eq!(tournament.comp.kind, CompetitionType::Tournament);
         assert_eq!(i16::from(tournament.comp.team_number), -1);
@@ -334,7 +248,7 @@ mod tests {
         for (record, name) in records.iter_mut().zip(["A", "B", "C"]) {
             record.names[0] = Some(name.as_bytes().to_vec());
         }
-        install(&mut competitions, &records, &teams()).expect("installed");
+        install(&mut competitions, &records, &oceania()).expect("installed");
         let Some(CompetitionsFile::Career(career)) = competitions.get(CAREER).map(|d| &d.file)
         else {
             panic!("the career index");
@@ -382,7 +296,7 @@ mod tests {
             .competitions;
         let mut record = champions_league();
         record.names[0] = Some(b"EURO CUP".to_vec());
-        let error = install(&mut competitions, &[record], &teams()).expect_err("_euroCup");
+        let error = install(&mut competitions, &[record], &oceania()).expect_err("_euroCup");
         assert!(error.to_string().contains("_euroCup"), "{error}");
     }
 }

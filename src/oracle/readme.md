@@ -14,8 +14,9 @@ differential tests live in its own `tests/`, which depend on the port.
   `SWOS_WORLDS`, the JSON saves, `-include include/swos_platform.h`), 64-bit as upstream's
   `X86_64=1`, macOS and aarch64 builds, plus `-fexceptions` (below);
 - the units the tests call, each with the functions bindgen binds (every one with the
-  `C-unwind` ABI), its globals by name and the constants it sees (enumerators, macros) by
-  pattern. A global the unit defines with a value bindgen can evaluate would come out a
+  `C-unwind` ABI), its globals by name, the constants it sees (enumerators, macros) by
+  pattern, and the types its tests read that nothing bound reaches (a record behind a
+  `void *`) by name. A global the unit defines with a value bindgen can evaluate would come out a
   Rust `const`: `build.rs` declares it the `static mut` it is, bindgen's type kept, and
   fails on a listed global that is not there;
 - the headers whose `static inline` functions the tests call: bound, not compiled. bindgen
@@ -55,7 +56,7 @@ The FFI module has one module a unit (`ffi::rng`, `ffi::math`, `ffi::style`) ove
 | `src/math68k.c` | `math` | `CalculateDeltaXAndY`, the movement scale in its two globals |
 | `include/math68k.h` (header) | `math` | `M68kShiftLeft32`, `M68kShiftLeft16` |
 | `src/strings_data.c`, `src/swos_amiga_data_imports.c`, `src/competition_data.c` (data) | `tables` | the 96/97 tables `world_extract` writes into World 1996-97's package: each country's entry in `_countriesTable` (continent, name, adjective), `_teamsCountryNumbers`, the season end's countries (`_careerCompetitionIdRemapTable`). Always built: without the checkout each is `Unavailable`, so the tool builds everywhere. The only use of the oracle outside its tests (docs/PLAN.md §4) |
-| `src/world_data.c` | `tables` | World 2026-27's baked install (`WorldData2627_InstallBaked`, `World_Current` stubbed to answer World 2026-27, `LeaguePhase_InstallCups` and `FixtureRounds_Install` recorded) and its accessors: what it leaves in the tables, and its league phases' records field by field (`world_2627`). It writes 96/97's tables for good, so it runs once a process and is remembered; afterwards `Oracle::lock` panics: a process that installs a world serves nothing else |
+| `src/world_data.c` | `tables` | World 2026-27's baked install (`WorldData2627_InstallBaked`, `World_Current` stubbed to answer World 2026-27, `LeaguePhase_InstallCups` and `FixtureRounds_Install` recorded) and its accessors: what it leaves in the tables, and its league phases' and its 101 national and league cups' records field by field (`world_2627`). It writes 96/97's tables for good, so it runs once a process and is remembered; afterwards `Oracle::lock` panics: a process that installs a world serves nothing else |
 | `src/rnc.c` | `unpack` | upstream's RNC decoders (`RncDecompressV1`, `RncDecompressV2`), for World 2026-27's packed pool: the header is checked in Rust (signature, method, sizes against the file), the stream is trusted (the checksum-pinned download's) |
 | `src/dos_gameplay.c` | `style` | `Gameplay_SetStyle`, `ApplyGameStyle`, and everything they set: the style's flags, frame rate and name, the formations selected (the stub of `TacticsData_SelectRelease` records it), the keepers', ball's and timers' constants, the movement scale; the tweaks `Tweaks_On` reports (stubbed) |
 
@@ -76,7 +77,8 @@ The FFI module has one module a unit (`ffi::rng`, `ffi::math`, `ffi::style`) ove
 - `tests/world_2627.rs` (a process of its own), `tables::world_2627`: the install resizes
   (Italy 256, Albania 10), adds (Andorra), renames (Serbia) and switches (squad numbers,
   rounds, league phases) as upstream's source states; its league phases' records (the
-  Champions League's 36 clubs, LASK first); it runs once; the oracle serves nothing else
+  Champions League's 36 clubs, LASK first); its 101 national and league cups (the Coppa
+  Italia first, 14 league cups, the English cup's 64 clubs past its record); it runs once; the oracle serves nothing else
   afterwards.
 - `tests/unpack.rs`, `unpack`: World 2026-27's pool unpacks to its 900 records (the download
   cache; skipped without the network); what is no RNC file, or states more than it holds, is

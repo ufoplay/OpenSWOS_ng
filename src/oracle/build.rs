@@ -65,6 +65,10 @@ struct Unit {
     /// The constants it sees (enumerators, macros), by pattern.
     #[serde(default)]
     constants: Vec<String>,
+    /// The types its tests read that no bound function or global reaches (a record behind a
+    /// `void *`), by name.
+    #[serde(default)]
+    types: Vec<String>,
 }
 
 /// A header whose `static inline` functions the tests call: bound, not compiled (its
@@ -143,6 +147,7 @@ fn main() {
             functions: &unit.functions,
             variables: &unit.variables,
             constants: &unit.constants,
+            types: &unit.types,
             wrapped: false,
         };
         bind(&upstream, &units.build, &binding, &out);
@@ -153,6 +158,7 @@ fn main() {
             functions: &[],
             variables: &data.variables,
             constants: &[],
+            types: &[],
             wrapped: false,
         };
         bind(&upstream, &units.build, &binding, &out);
@@ -163,6 +169,7 @@ fn main() {
             functions: &header.functions,
             variables: &[],
             constants: &[],
+            types: &[],
             wrapped: true,
         };
         let wrappers = bind(&upstream, &units.build, &binding, &out)
@@ -178,6 +185,7 @@ struct Binding<'a> {
     functions: &'a [String],
     variables: &'a [String],
     constants: &'a [String],
+    types: &'a [String],
     /// Whether its `static` functions are wrapped: a header's are (the wrappers include the
     /// file, so a unit's cannot be).
     wrapped: bool,
@@ -220,7 +228,7 @@ fn compile(upstream: &Path, build: &Build, sources: &[PathBuf]) {
     compiler.compile(LIBRARY);
 }
 
-/// Binds `binding`'s functions and globals into `<out>/<name>.rs`, every function with the
+/// Binds `binding`'s functions, globals and types into `<out>/<name>.rs`, every function with the
 /// `C-unwind` ABI (a stub may unwind through it). A header's `static` functions are wrapped
 /// in a C file of their own, returned.
 fn bind(upstream: &Path, build: &Build, binding: &Binding<'_>, out: &Path) -> Option<PathBuf> {
@@ -250,6 +258,9 @@ fn bind(upstream: &Path, build: &Build, binding: &Binding<'_>, out: &Path) -> Op
     }
     for variable in binding.variables.iter().chain(binding.constants) {
         builder = builder.allowlist_var(format!("^{variable}$"));
+    }
+    for type_name in binding.types {
+        builder = builder.allowlist_type(format!("^{type_name}$"));
     }
     let code = builder
         .generate()

@@ -93,7 +93,8 @@ not quite the original game:
 
 ## 3. Decisions for the owner
 
-All three taken as recommended on 2026-11-21: docs/PLAN.md D10, D11, D12.
+All three taken as recommended on 2026-11-21: docs/PLAN.md D10, D11, D12. A fourth world,
+World 1995-96, was decided the same day: D13 (§3.4).
 
 ### 3.1 Europe 1984-85 (decided: D10)
 
@@ -129,6 +130,38 @@ their own modules (`rules/finance.json`, §4).
 schema. Packages are self-contained, and the plan counts the career economy as world data. For
 World 1996-97 it is upstream's file as it is. The completion step copies the same file into
 2026-27 and 1984-85, since upstream plays them with it.
+
+### 3.4 World 1995-96, from the DOS SWOS 95/96 (decided: D13)
+
+Upstream has no 95/96 data, and none of its scripts reads a DOS executable: its 96/97 tables
+come from its own decompiled data (`scripts/export_competitions.py` reads
+`src/competition_data.c`). What a copy of the DOS SWOS 95/96 holds, checked on 2026-11-21:
+
+- **`DATA/`**: the 96/97 formats and the same 84 files (81 `TEAM.nnn`, `POOLPLYR.DAT`,
+  `EUROCUP.TMD`, `EUROCWC.TMD`). 36 team files hold a different number of teams from 96/97's,
+  so 96/97's competition tables cannot carry 95/96's rosters.
+- **`SWS.EXE`**: a DOS/4GW linear executable with two objects, code and data. The competition
+  records are in the data object, uncompressed, in the DOS layout. A record is variable
+  length: a league's name-table offset byte is 9 + 6 × its divisions, or 0 when it uses the
+  default names (upstream's C struct has a fixed 33). Its names are 32-bit pointers that
+  fixups make.
+- **The 96/97 executable proves a decoder.** In a copy of the DOS 96/97 game, `SWOS.BAT` runs
+  `SWS!!!_!.EXE`. Its leagues match upstream's committed `leagues.json` in every league's
+  divisions. Its competition ids are upstream's minus one (England's league: 45 there, 46
+  upstream). The same copy's `ENGLISH.EXE` is not the 96/97 game: its league records are
+  `SWS.EXE`'s, byte for byte.
+- **What 95/96 changes:**
+  - 14 leagues have other sizes (Croatia 18 clubs against 12, Spain's second division 18
+    against 20), matching its rosters;
+  - its competition ids are its own (England's league is 12);
+  - it has no World Cup qualifying groups, so its national-team competitions differ from
+    96/97's.
+
+**Decision:** in scope, as M4 #6, after World 2026-27's completion is finished (#5d3, #5e).
+`world_extract` decodes the executable, proven on 96/97's against upstream's files. The world
+plays with the port's engine (upstream's 96/97 logic), as World 2026-27 does: it is 95/96's
+data, not 95/96's code. Its competition ids stay data, which the engine already requires. Its
+package is derived from your copy and never committed.
 
 ## 4. The package: new files under `rules/`
 
@@ -355,7 +388,8 @@ the completion step does that merge once, ahead of time.
 
 **World 2026-27 and Europe 1984-85** (downloaded, then completed in `target/cache/worlds/<tag>/`;
 World 2026-27's steps 1-5 and 7, step 6 for the five rules files of M4 #5c1, its European
-cups and its unpacked pool are done: `world_extract complete-2627`, M4 #5d1-#5d2):
+cups, its national and league cups' records and tables, and its unpacked pool are done:
+`world_extract complete-2627`, M4 #5d1-#5d3):
 
 1. Start from World 1996-97's package.
 2. Team files: replace whole those the world has, and add its new countries' and pools'.

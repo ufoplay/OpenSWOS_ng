@@ -19,6 +19,25 @@ const EUROPEAN_CUPS: usize = 3;
 /// The clubs of a league phase (include/league_phase.h `LEAGUE_PHASE_CLUBS`).
 const LEAGUE_PHASE_CLUBS: usize = 36;
 
+/// World 2026-27's national and league cups (`kWorld2627Cups`).
+const WORLD_CUPS: usize = 101;
+
+/// Its league cups: those in slot 2.
+const LEAGUE_CUPS: usize = 14;
+
+/// The slot of a league cup (include/world_cups.h `WorldCup.slot`).
+const LEAGUE_CUP_SLOT: u8 = 2;
+
+/// The clubs of the Coppa Italia's real bracket (`kWorld2627Cups`).
+const COPPA_ITALIA_CLUBS: usize = 16;
+
+/// The clubs of the English cup's real bracket, past the record's 32
+/// (`kWorld2627_englishCupExt`).
+const ENGLISH_CUP_CLUBS: usize = 64;
+
+/// The rule bytes of a cup record (include/game_types.h `CompetitionCup.roundRuleFlags`).
+const ROUND_RULES: usize = 6;
+
 /// The countries of World 2026-27's season end (`kWorld2627SeasonCountries`: 96/97's 65 and
 /// its 26 new countries).
 const SEASON_COUNTRIES: usize = 91;
@@ -50,7 +69,7 @@ fn the_install_resizes_adds_renames_and_switches() {
         panic!("three league phases");
     };
     assert_eq!(baked.league_phase_cups.len(), EUROPEAN_CUPS);
-    assert_eq!((champions.comp_id, champions.kind), (0, 2));
+    assert_eq!((champions.comp.comp_id, champions.comp.kind), (0, 2));
     assert_eq!(champions.rounds.first(), Some(&[36, 2, 18]));
     assert_eq!(
         champions.names[0].as_deref(),
@@ -58,6 +77,45 @@ fn the_install_resizes_adds_renames_and_switches() {
     );
     assert_eq!(champions.team_seed_list.len(), LEAGUE_PHASE_CLUBS);
     assert_eq!(champions.team_seed_list.first(), Some(&(1, 0)), "LASK");
+    // `kWorld2627Cups`: the Coppa Italia first, its record `kWorld2627_italianCup`.
+    let [italian, ..] = baked.cups.as_slice() else {
+        panic!("the world's cups");
+    };
+    assert_eq!(baked.cups.len(), WORLD_CUPS);
+    let league_cups = baked.cups.iter().filter(|cup| cup.slot == LEAGUE_CUP_SLOT);
+    assert_eq!(league_cups.count(), LEAGUE_CUPS);
+    assert_eq!((italian.country, italian.slot), (20, 1));
+    let record = &italian.record;
+    assert_eq!(
+        (
+            record.comp.comp_id,
+            record.comp.kind,
+            record.comp.team_number
+        ),
+        (132, 1, 20)
+    );
+    assert_eq!((record.teams, record.subs_and_points_for_win), (16, 53));
+    assert_eq!(record.round_rule_flags, [84, 84, -108, 84, 0, 0]);
+    assert_eq!(
+        record.names,
+        [Some(b"COPPA ITALIA".to_vec()), Some(b"COPPA".to_vec())]
+    );
+    assert_eq!(record.team_seed_list.len(), COPPA_ITALIA_CLUBS);
+    assert_eq!(record.team_seed_list.first(), Some(&(20, 7)));
+    let english = baked
+        .cups
+        .iter()
+        .find(|cup| (cup.country, cup.slot) == (8, 1))
+        .expect("the English cup");
+    assert_eq!(english.record.comp.comp_id, 118);
+    assert_eq!(english.record.round_rule_flags.len(), ROUND_RULES);
+    assert_eq!(english.record.team_seed_list.len(), ENGLISH_CUP_CLUBS);
+    assert_eq!(english.record.team_seed_list.first(), Some(&(8, 51)));
+    assert_eq!(
+        english.record.team_seed_list.last(),
+        Some(&(8, 12)),
+        "the list continues past the record"
+    );
     assert_eq!(world_2627().expect("remembered"), baked, "installed once");
     let locked = std::panic::catch_unwind(|| drop(Oracle::lock()));
     assert!(

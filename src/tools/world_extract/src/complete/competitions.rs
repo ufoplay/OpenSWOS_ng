@@ -138,7 +138,7 @@ fn countries_mut(
 }
 
 /// The country tables' file of `base`.
-fn tables_mut(
+pub(super) fn tables_mut(
     base: &mut BTreeMap<String, CompetitionsDocument>,
 ) -> Result<&mut CountryCompetitionsFile, ExtractError> {
     let Some(CompetitionsFile::CountryCompetitions(file)) = base

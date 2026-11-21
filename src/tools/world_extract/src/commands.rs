@@ -181,6 +181,7 @@ pub fn complete_2627(out: Option<&Path>) -> Result<Completed, ExtractError> {
     // The oracle first: without it there is nothing to complete, and nothing to download.
     openswos_oracle::tables::team_file_bases()?;
     let fetched = fetch_2627()?;
+    let cup_rows = crate::complete::cup_rows(&upstream_checkout())?;
     // Unpacked before the install, after which the oracle serves nothing else.
     let pool = fetched
         .packed_pool
@@ -189,7 +190,8 @@ pub fn complete_2627(out: Option<&Path>) -> Result<Completed, ExtractError> {
         .transpose()?;
     let baked = openswos_oracle::tables::world_2627()?;
     let base = crate::assemble::committed(&world_1996_97_path())?;
-    let package = crate::complete::world_2627(&base, &fetched.opened.package, &baked, pool)?;
+    let package =
+        crate::complete::world_2627(&base, &fetched.opened.package, &baked, &cup_rows, pool)?;
     let data = game_data(&package, builtin_tactics(&tactics_path())?)?;
     let world = data.world();
     let (dir, existing) = match out {

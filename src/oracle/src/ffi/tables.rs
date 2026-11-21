@@ -9,7 +9,9 @@ use super::bindings::{
     competition_data_c, strings_data_c, swos_amiga_data_imports_c, world_data_c,
 };
 use super::stubs;
-use crate::tables::{BakedWorld, CountryEntry, TournamentRecord};
+use crate::tables::{
+    BakedWorld, CompetitionBase, CountryEntry, CupRecord, TournamentRecord, WorldCupEntry,
+};
 
 /// The entries of `_countriesTable` (src/strings_data.c).
 const COUNTRIES_TABLE_LEN: usize = 262;
@@ -126,7 +128,78 @@ pub(crate) fn install_world_2627() -> Result<BakedWorld, u16> {
         fixture_rounds,
         league_phases,
         league_phase_cups: league_phase_cups(),
+        cups: world_cups(),
     })
+}
+
+/// A record's base as upstream compiles it.
+fn base(comp: world_data_c::Competition) -> CompetitionBase {
+    CompetitionBase {
+        comp_id: comp.compId,
+        kind: comp.type_,
+        team_number: comp.teamNumber,
+        begin_month: comp.beginMonth,
+        end_month: comp.endMonth,
+        reserved1: comp.reserved1,
+        is_playoff: comp.isPlayoff,
+        reserved2: comp.reserved2,
+        seed_reorder_flag: comp.seedReorderFlag,
+    }
+}
+
+/// A name's text, none for a null pointer.
+///
+/// # Safety
+///
+/// A non-null `name` points at a string ended by a NUL.
+unsafe fn name_text(name: *const c_char) -> Option<Vec<u8>> {
+    // SAFETY: the caller's.
+    (!name.is_null()).then(|| unsafe { CStr::from_ptr(name) }.to_bytes().to_vec())
+}
+
+/// World 2026-27's national and league cups, in their order, none outside a world.
+fn world_cups() -> Vec<WorldCupEntry> {
+    let mut count = 0;
+    // SAFETY: the accessor writes its count and returns the static array of that many cups
+    // (or null). Each cup's record is a packed `CompetitionCup`, read unaligned; its names are
+    // static strings ended by a NUL; its `n` clubs start at the record's seed list, a list
+    // past the record's 32 continuing in the struct around it (`kWorld2627_englishCupExt`),
+    // as upstream reads them (src/world_cups.c `WorldCups_Install`).
+    unsafe {
+        let cups = world_data_c::WorldData2627_Cups(&raw mut count);
+        if cups.is_null() {
+            return Vec::new();
+        }
+        (0..usize::try_from(count).unwrap_or_default())
+            .map(|index| {
+                let cup = cups.add(index).read();
+                let record = cup.record.cast::<world_data_c::CompetitionCup>();
+                let read = record.read_unaligned();
+                let header = read.header;
+                let seeds = (&raw const (*record).teamSeedList).cast::<world_data_c::TeamId>();
+                WorldCupEntry {
+                    country: cup.country,
+                    slot: cup.slot,
+                    record: CupRecord {
+                        comp: base(header.comp),
+                        num_rounds_override: header.numRoundsOverride,
+                        teams: header.teams,
+                        away_goals_mode: header.awayGoalsMode,
+                        subs_and_points_for_win: header.subsAndPointsForWin,
+                        round_string_base: header.roundStringBase,
+                        round_rule_flags: read.roundRuleFlags.to_vec(),
+                        names: read.name.map(|name| name_text(name)).to_vec(),
+                        team_seed_list: (0..usize::from(cup.n))
+                            .map(|club| {
+                                let team = seeds.add(club).read_unaligned();
+                                (team.countryNumber, team.teamOrdinal)
+                            })
+                            .collect(),
+                    },
+                }
+            })
+            .collect()
+    }
 }
 
 /// The league-phase records of World 2026-27's European cups, none without them.
@@ -145,20 +218,8 @@ fn league_phase_cups() -> Vec<TournamentRecord> {
             .map(|index| {
                 let record = cups.add(index).read_unaligned();
                 let header = record.header;
-                let comp = header.comp;
-                let names = record.name.map(|name| {
-                    (!name.is_null()).then(|| CStr::from_ptr(name).to_bytes().to_vec())
-                });
                 TournamentRecord {
-                    comp_id: comp.compId,
-                    kind: comp.type_,
-                    team_number: comp.teamNumber,
-                    begin_month: comp.beginMonth,
-                    end_month: comp.endMonth,
-                    reserved1: comp.reserved1,
-                    is_playoff: comp.isPlayoff,
-                    reserved2: comp.reserved2,
-                    seed_reorder_flag: comp.seedReorderFlag,
+                    comp: base(header.comp),
                     seeding_type: header.seedingType,
                     menu_state: header.menuState,
                     play_each_team: header.playEachTeam,
@@ -172,7 +233,7 @@ fn league_phase_cups() -> Vec<TournamentRecord> {
                         .collect(),
                     reserved: header.reserved,
                     round_rule_flags: record.roundRuleFlags.to_vec(),
-                    names: names.to_vec(),
+                    names: record.name.map(|name| name_text(name)).to_vec(),
                     team_seed_list: record
                         .teamSeedList
                         .iter()

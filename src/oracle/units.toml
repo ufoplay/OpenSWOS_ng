@@ -30,8 +30,9 @@ defines = [
 include = "include/swos_platform.h"
 include_dirs = ["src", "include"]
 
-# The units the tests call: their functions, the globals they read and write (by name) and the
-# constants they see (by pattern), bound by bindgen into `ffi::bindings::<file name>`.
+# The units the tests call: their functions, the globals they read and write (by name), the
+# constants they see (by pattern) and the types read that nothing bound reaches (by name), bound
+# by bindgen into `ffi::bindings::<file name>`.
 
 [[unit]]
 path = "src/random.c"
@@ -108,8 +109,11 @@ functions = [
     "WorldData2627_SecondFile",
     "WorldData2627_SquadNumbers",
     "WorldData2627_LeaguePhaseCups",
+    "WorldData2627_Cups",
 ]
 variables = []
+# A world cup's record, behind `WorldCup.record` (a `void *`).
+types = ["CompetitionCup"]
 
 # Upstream's RNC unpacker (the game's own, SWOS2.s): World 2026-27's foreign pool is packed, and
 # `world_extract` unpacks it with this (`unpack`), so no importer reads RNC (D9).

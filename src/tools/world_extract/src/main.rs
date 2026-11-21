@@ -52,8 +52,8 @@ struct AssembleArgs {
 
 #[derive(Debug, Args)]
 struct ExtractArgs {
-    /// A new or empty folder to write the package into (default: data/worlds/1996-97,
-    /// replaced).
+    /// A new or empty folder to write the package into (default, replaced: data/worlds/1996-97
+    /// for extract-9697, target/cache/worlds/2026-27 for complete-2627).
     #[arg(long)]
     out: Option<PathBuf>,
 }

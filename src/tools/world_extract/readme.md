@@ -94,7 +94,18 @@ so the package is self-contained:
     their names, their seeds named after the world's clubs), named by the career index's first
     three contests and by Europe's group in place of 96/97's cups. 96/97's records stay:
     upstream's world modules copy them as templates, and the world does not play them
-    (`World::is_played`).
+    (`World::is_played`);
+  - its 101 national and league cups (upstream `WorldCups_Install`), in its order: each
+    cup's record, read by the oracle field for field (its whole list of clubs, up to the
+    English cup's 64), replaces 96/97's of its id in `cups.json` (51 do) or joins it (50).
+    Its country's table names it in its slot: 1 the national cup, 2 the league cup. The
+    table grows by one when the slot is the next, and a league cup whose country has no
+    national cup is dropped, as upstream drops it. A cup past upstream's tables (96
+    countries of 12 entries) is refused rather than dropped. The ids are spelled only in the
+    C: each row of upstream's generated table (`kWorld2627Cups` in `src/world_data.c`)
+    names its record (`&kWorld2627_italianCup`: `_italianCup`), and its country and slot are
+    checked against the oracle's. The cups' draws (the real bracket, the quotas, the
+    European place) join `rules/national_cups.json` with M5.
 - **96/97's career params** (D12).
 - **The five rules files**:
   - `calendar.json`: 2026;
@@ -111,14 +122,26 @@ The result is checked before it is written: a valid world with valid game data
 a competition it plays its own). Its fingerprint is its own: it is other data than the
 download.
 
-Not in it yet (M4 #5d3): its national and league cups baked into `world_data.c` (101 cups, the
-countries' tables point at them).
-
 ## Checks
 
 Before a package is written it must be a valid world, with valid game data: rosters, pool and
 the built-in tactics (`data/tactics/`) together, checked by `openswos_core`. The written
 folder is then opened again, and its `WORLD.ini` must state its files' fingerprint.
+
+## Re-extraction (M4 #5e)
+
+The tests extract again at the pin and diff (`diff`), so an upstream bump, or a change to the
+tool, that changes a package fails and names each file that differs, with its first line that
+does:
+
+- World 1996-97's extraction against the committed `data/worlds/1996-97/`
+  (`just world_extract_9697_data` writes it again);
+- World 2026-27's completion against its committed SHA-256 digests
+  (`assets/WORLD_2026_27/completion.json`): its files may not be committed, their digests
+  may, so the check holds on any machine. When the cached completion is the one the digests
+  know, the failure diffs against it line by line. After review,
+  `OPENSWOS_BLESS=1 just test world_2627_digests` writes the digests again, and
+  `just world_complete_2627` the cache.
 
 ## Tests
 
@@ -128,8 +151,15 @@ folder is then opened again, and its `WORLD.ini` must state its files' fingerpri
   - the committed package refusing a stray file;
   - the checks naming what is missing;
   - the pin's fingerprint read from upstream's generated code;
+  - the compiled records' bytes, names and seeds as the JSON writes them;
+  - the cups' rows read from upstream's generated table; a cup record converted field for
+    field; a cup taking its slot, growing its table, replacing its id; a league cup without
+    a national cup dropped; rows out of step, an unknown slot, a region's table and a cup
+    past upstream's tables refused;
   - a package out of step, or stating another fingerprint, refused;
-  - a folder refused or replaced.
+  - a folder refused or replaced;
+  - a file's digest its SHA-256; the digests written and read back; files differing by name
+    and by line, digests by name.
 - `tests/real_assets.rs` (`just test_real_assets <game_dir>`): World 1996-97 assembled from
   your copy (71 rosters, 1,583 teams, a pool of 900), opened again, every team canonical; and
   assembled twice to the same fingerprint.
@@ -139,8 +169,11 @@ folder is then opened again, and its `WORLD.ini` must state its files' fingerpri
   world with valid game data, from the download and the oracle (97 countries, 92 leagues, 107
   rosters, a pool of 900; Italy's 256 clubs, Europe's 55 national teams, the season's 91
   countries, the new countries' continents, England's play-off links kept; the league phases
-  in the career, 96/97's European cups unplayed). Skipped without the oracle or the
-  network.
+  in the career, 96/97's European cups unplayed; 126 cups, Italy's and Wales' tables with
+  their league cups, Andorra's with its cup, the English cup's 64 clubs). Skipped without the
+  oracle or the network.
 - `tests/committed.rs`: `data/worlds/1996-97/` is the extraction from the pinned checkout,
   file for file, byte for byte (after an upstream bump that changes it,
   `just world_extract_9697_data`). Skipped without the oracle.
+- `tests/world_2627_digests.rs` (a process of its own): World 2026-27's completion is the one
+  its committed digests know. Skipped without the oracle or the network.

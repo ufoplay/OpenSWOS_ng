@@ -14,6 +14,8 @@ Only the tests read these files. The files the game loads (upstream's GPL data: 
   Keep it small.
 - Synthetic fixtures for edge cases.
 - The expected outputs of the tests (sidecars, files written from a fixture).
+- The known answers of data that may not be committed, holding none of it: the SHA-256 of
+  each file of the completed World 2026-27.
 
 ## What must never be committed
 
@@ -22,7 +24,8 @@ Only the tests read these files. The files the game loads (upstream's GPL data: 
   / `OPENSWOS_ASSETS_DIR` (an OpenSWOS Setup output folder). Anything derived from it goes
   to `target/cache/`.
 - World 2026-27's data and the swos-port `.RGD` recordings. They are downloaded on demand
-  into `target/cache/` (their data is not ours to redistribute).
+  into `target/cache/` (their data is not ours to redistribute). Digests of them are not
+  their data, and may be committed.
 
 ## Provenance
 
@@ -45,3 +48,4 @@ Every committed file is listed here: where it comes from and under which license
 | `HIL/26-1111-1654-1-0.HIL` | SWOS 2020, `swos/highlights/26-1111-1654-1-0.HIL`: a DOS highlights file of one goal (Spain v Germany, World Cup), 64626 bytes | Game data © its rights holders; a small test excerpt (D2) |
 | `HIL/LATEST-100.RPL` | Cut from SWOS 2020's `swos/replays/LATEST.RPL` (Lazio v Advanced, team training, 2.35 MB): its header unchanged, the first 100 frames of its scene, then the end word; 15630 bytes | Game data © its rights holders; a small test excerpt (D2) |
 | `TAC/01_442DOS.TAC.json` | Written by `openswos_tac_resource`'s tests (`OPENSWOS_BLESS=1`), reviewed | The expected decoded model |
+| `WORLD_2026_27/completion.json` | Written by `openswos_world_extract`'s `tests/world_2627_digests.rs` (`OPENSWOS_BLESS=1`) from World 2026-27 completed at the upstream pin (`just world_complete_2627`): each file's path and SHA-256, reviewed | Digests only, none of the package's data (which is the SWOS 96/97 Mod's: never committed); the known answer of the re-extraction test (docs/PLAN.md M4 #5e) |

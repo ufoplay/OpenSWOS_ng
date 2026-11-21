@@ -205,6 +205,7 @@ mod tests {
             fixture_rounds: true,
             league_phases: true,
             league_phase_cups: Vec::new(),
+            cups: Vec::new(),
         }
     }
 
