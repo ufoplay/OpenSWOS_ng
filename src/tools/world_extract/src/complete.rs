@@ -12,7 +12,7 @@
 //!   their countries and tables ([`competitions`]), its European cups the league phases
 //!   ([`european_cups`]), its national and league cups the world's ([`national_cups`]);
 //! - 96/97's career params, which upstream plays every world with (D12);
-//! - the five rules files of M4 #5c1 ([`rules`]).
+//! - the five rules files of M4 #5c1, and the texts and classes of M5 #4b2 ([`rules`]).
 //!
 //! Its other rules join with the units that read them (its cups' draws: `national_cups.json`,
 //! M5).
@@ -82,7 +82,16 @@ pub fn world_2627(
             | CompetitionsFile::SeedBuckets(_) => None,
         })
         .ok_or(ExtractError::NoCountries)?;
-    let rules = rules::world_2627(countries, &download.teams, baked, &base.rules)?;
+    let continental = crate::texts::continental_records(&competitions);
+    let draws = crate::draws::draws(&competitions)?;
+    let rules = rules::world_2627(
+        countries,
+        &download.teams,
+        baked,
+        &base.rules,
+        continental,
+        draws,
+    )?;
     Ok(WorldPackage {
         identity: download.identity.clone(),
         manifest: download.manifest.clone(),

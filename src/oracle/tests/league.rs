@@ -1,8 +1,10 @@
 //! `openswos_core::competition::league` against upstream's src/diy_competition.c
 //! (`InitDIYCompetitionFromTableEntry`): from any image, any division of a league record, or
 //! of a cup played as a league, started alike, byte for byte (the C's name pointer, an
-//! address, aside), and an odd division refused as upstream halts. Without upstream's checkout
-//! the oracle is not built and these tests are not either (`tests/available.rs` says so).
+//! address, aside), and an odd division refused as upstream halts; and every division of
+//! World 1996-97's leagues, resolved from its package (`WorldDivision`), started as upstream
+//! starts its compiled records with its own tables. Without upstream's checkout the oracle is
+//! not built and these tests are not either (`tests/available.rs` says so).
 #![cfg(not(oracle_unavailable))]
 
 use std::sync::LazyLock;
@@ -12,18 +14,20 @@ use openswos_common::json::JsonByte;
 use openswos_competitions_json_resource::{
     CompetitionHeader, CompetitionType, Cup, CupKind, Division, League, RoundRules, SymbolId,
 };
-use openswos_core::World;
 use openswos_core::competition::league::{
-    DivisionStart, LeagueRecord, LoadedTeam, Pitch, StartError, start_division,
+    DivisionStart, LeagueRecord, StartError, WorldDivision, start_division,
 };
 use openswos_core::competition::running::{IMAGE_LEN, RunningCompetition};
 use openswos_core::competition::schedule::Schedules;
+use openswos_core::competition::start::{LoadedTeam, Pitch};
+use openswos_core::world::{CompetitionRef, Source, TableContent, World};
 use openswos_oracle::Oracle;
 use openswos_oracle::draw::Prices;
-use openswos_oracle::league::{DivisionSetup, RecordBytes};
+use openswos_oracle::league::{CompiledRecord, CompiledSetup, DivisionSetup, RecordBytes};
 use openswos_oracle::rng::RandState;
 use openswos_oracle::tables::country;
 use openswos_rng::{Generator, Rng};
+use openswos_team_resource::TeamControls;
 use openswos_test_utils::world_1996_97_path;
 use openswos_world_package_resource::{PackageFiles, WorldPackage};
 use proptest::collection::vec;
@@ -74,18 +78,18 @@ fn rounds() -> impl Strategy<Value = i8> {
     prop_oneof![Just(-1i8), 1..=MAX_ROUNDS]
 }
 
-/// World 1996-97's round robins (the original's tables, the ones the oracle's C reads).
-static SCHEDULES: LazyLock<Schedules> = LazyLock::new(|| {
+/// World 1996-97, from its committed package.
+static WORLD: LazyLock<World> = LazyLock::new(|| {
     let mut files = PackageFiles::read_dir(&world_1996_97_path()).expect("the committed package");
     files
         .insert("WORLD.ini", WORLD_INI.as_bytes().to_vec())
         .expect("a safe path");
     let opened = WorldPackage::from_files(&files).expect("the package opens");
-    World::from_package(&opened.package)
-        .expect("a valid world")
-        .schedules()
-        .clone()
+    World::from_package(&opened.package).expect("a valid world")
 });
+
+/// World 1996-97's round robins (the original's tables, the ones the oracle's C reads).
+static SCHEDULES: LazyLock<Schedules> = LazyLock::new(|| WORLD.schedules().clone());
 
 /// A name: ASCII letters and spaces, up to past the 35 the buffer takes.
 fn name() -> impl Strategy<Value = Vec<u8>> {
@@ -313,10 +317,14 @@ proptest! {
         let started = start_division(&mut ours, &start, &SCHEDULES, |team| {
             let [country, ordinal] = team;
             Some(if country == CAREER_COUNTRY {
-                LoadedTeam { identity: -1, prices: career_team }
+                LoadedTeam { identity: -1, controls: TeamControls::Computer, prices: career_team }
             } else {
                 let index = usize::from(ordinal) % SELECTED_TEAMS;
-                LoadedTeam { identity: i32::try_from(index).expect("160"), prices: teams[index] }
+                LoadedTeam {
+                    identity: i32::try_from(index).expect("160"),
+                    controls: TeamControls::Computer,
+                    prices: teams[index],
+                }
             })
         }, &mut rng);
         match upstream {
@@ -347,4 +355,164 @@ proptest! {
             }
         }
     }
+}
+
+/// The fewest league records of World 1996-97 the compiled check reaches: a league a
+/// country's table (66), the career's cups played as leagues, each from its record and its
+/// copy.
+const MIN_COMPILED_RECORDS: usize = 80;
+
+/// A record of World 1996-97 upstream compiles: how the oracle reaches it, and the world's
+/// competition and source for it.
+struct Compiled {
+    /// Upstream's record.
+    record: CompiledRecord,
+    /// The world's competition.
+    competition: CompetitionRef,
+    /// Whether the career's copy is started.
+    source: Source,
+    /// Its divisions.
+    divisions: usize,
+}
+
+/// Every league of World 1996-97 upstream's tables reach: each country table's league, and
+/// each career contest played as a league, from its record and from its copy.
+fn compiled_records(world: &World) -> Vec<Compiled> {
+    let mut records = Vec::new();
+    for table in world.country_tables() {
+        let TableContent::Own { leagues, .. } = &table.content else {
+            continue;
+        };
+        if let Some(&league) = leagues.first() {
+            records.push(Compiled {
+                record: CompiledRecord::CountryLeague(table.number.0),
+                competition: CompetitionRef::League(league),
+                source: Source::Record,
+                divisions: world.league(league).record.divisions.len(),
+            });
+        }
+    }
+    for contest in world.career() {
+        let Some(competition) = contest.competition else {
+            continue;
+        };
+        let record = match competition {
+            CompetitionRef::Cup(cup) => LeagueRecord::from_cup(&world.cup(cup).record).ok(),
+            CompetitionRef::League(_)
+            | CompetitionRef::Tournament(_)
+            | CompetitionRef::Playoff(_) => None,
+        };
+        let Some(record) = record else {
+            continue;
+        };
+        for (source, copy) in [(Source::Record, false), (Source::CareerCopy, true)] {
+            records.push(Compiled {
+                record: CompiledRecord::CareerContest {
+                    comp_id: record.comp_id,
+                    copy,
+                },
+                competition,
+                source,
+                divisions: record.divisions.len(),
+            });
+        }
+    }
+    records
+}
+
+#[test]
+fn world_1996_97s_leagues_start_as_upstreams_compiled_records() {
+    let world = &*WORLD;
+    let records = compiled_records(world);
+    assert!(
+        records.len() >= MIN_COMPILED_RECORDS,
+        "{} records",
+        records.len()
+    );
+    // The teams' prices told apart by ordinal, the image's team numbers all the first team's.
+    let teams: Vec<Prices> = (0..SELECTED_TEAMS)
+        .map(|ordinal| [u8::try_from(ordinal).expect("160"); 16])
+        .collect();
+    let career_team: Prices = [u8::MAX; 16];
+    let before = Box::new([0; IMAGE_LEN]);
+    let mut oracle = Oracle::lock();
+    let mut started_alike = 0;
+    for compiled in &records {
+        for division in 0..compiled.divisions {
+            let index = u16::try_from(division).expect("a few divisions");
+            oracle.set_rand2_state(RandState {
+                seed: 0,
+                xor_index: 0,
+                xor_key: 0,
+            });
+            let upstream = oracle
+                .start_compiled_division(&CompiledSetup {
+                    before: before.clone(),
+                    record: compiled.record,
+                    division: index,
+                    pitch_type: SEASONAL,
+                    teams: teams.clone(),
+                    career_team,
+                })
+                .unwrap_or_else(|| panic!("upstream has no {:?}", compiled.record));
+            let resolved =
+                WorldDivision::resolve(world, compiled.competition, compiled.source, division)
+                    .expect("a division of the world");
+            let mut rng = Rng::default();
+            rng.secondary = Generator::default();
+            let mut ours = RunningCompetition::from_image(&before);
+            let started = start_division(
+                &mut ours,
+                &resolved.start(Pitch::Seasonal),
+                world.schedules(),
+                |[country, ordinal]| {
+                    Some(if country == CAREER_COUNTRY {
+                        LoadedTeam {
+                            identity: -1,
+                            controls: TeamControls::Computer,
+                            prices: career_team,
+                        }
+                    } else {
+                        let index = usize::from(ordinal) % SELECTED_TEAMS;
+                        let identity = i32::try_from(index).expect("160");
+                        LoadedTeam {
+                            identity,
+                            controls: TeamControls::Computer,
+                            prices: teams[index],
+                        }
+                    })
+                },
+                &mut rng,
+            );
+            let id = world.competition_id(compiled.competition).as_str();
+            match upstream {
+                Err(halt) => {
+                    assert_eq!(halt, 0x1313, "{id} {division}");
+                    assert!(
+                        matches!(started, Err(StartError::NotRounds(_))),
+                        "{id} {division}: {started:?}"
+                    );
+                }
+                Ok(after) => {
+                    assert!(started.is_ok(), "{id} {division}: {started:?}");
+                    let mut theirs = *after;
+                    theirs[NAME_POINTER].copy_from_slice(&before[NAME_POINTER]);
+                    for (offset, (&mine, &upstream)) in
+                        ours.image().iter().zip(theirs.iter()).enumerate()
+                    {
+                        assert_eq!(
+                            mine, upstream,
+                            "{id} division {division} ({:?}): byte {offset}",
+                            compiled.source
+                        );
+                    }
+                    started_alike += 1;
+                }
+            }
+        }
+    }
+    assert!(
+        started_alike >= MIN_COMPILED_RECORDS,
+        "{started_alike} started"
+    );
 }

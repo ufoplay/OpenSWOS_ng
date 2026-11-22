@@ -1,13 +1,14 @@
 //! The 96/97 tables `world_extract` reads (`openswos_oracle::tables`), against what upstream's
 //! source states: the countries' table, the team files' first global numbers, the season
-//! end's countries, the round robins.
+//! end's countries, the round robins, the compiled strings and the lists of records.
 
 #![cfg(not(oracle_unavailable))]
 
 use std::collections::BTreeSet;
 
 use openswos_oracle::tables::{
-    CountryEntry, country, euro_championship_fixtures, fixture_schedules, season_countries,
+    CompiledString, CountryEntry, ListedRecord, competition_lists, country, default_names,
+    euro_championship_fixtures, fixture_schedules, season_countries, string_symbols,
     team_file_bases,
 };
 
@@ -22,6 +23,21 @@ const SCHEDULE_SIZES: usize = 23;
 
 /// The European Championships' groups: 4 clubs, 6 pairs (`_euroChampFixtureData`).
 const EURO_CHAMPIONSHIP_PAIR_BYTES: usize = 12;
+
+/// The records of `_nationalTeamCompetitionsAndQualifications1`, before its end.
+const NATIONAL_TEAMS_LISTED: usize = 38;
+
+/// The records of `_europeanCupsandNationalTeamCompetitionsAndQualifications`, before its end.
+const CONTINENTAL_LISTED: usize = 45;
+
+/// The World Cup's compId (`_worldCup`).
+const WORLD_CUP: u8 = 4;
+
+/// The World Cup 2's compId (`_worldCup2`, whose career copy the national list names).
+const WORLD_CUP_2: u8 = 3;
+
+/// The friendly's compId (`_friendly`).
+const FRIENDLY: u8 = 20;
 
 #[test]
 fn each_size_has_its_round_robin() {
@@ -106,4 +122,66 @@ fn the_season_end_takes_65_countries_in_its_order() {
     assert_eq!(countries.len(), SEASON_COUNTRIES);
     assert_eq!(&countries[..4], &[0, 1, 76, 2]);
     assert_eq!(countries.last(), Some(&62));
+}
+
+#[test]
+fn the_compiled_strings_are_listed_by_name() {
+    let symbols = string_symbols().expect("built");
+    let text = |name: &str| {
+        symbols
+            .iter()
+            .find(|(symbol, _)| symbol == name)
+            .map(|(_, text)| text.as_slice())
+    };
+    // src/strings_data.c, src/swos_amiga_strings.c.
+    assert_eq!(text("_aDivision1_0"), Some(&b"DIVISION 1"[..]));
+    assert_eq!(text("_aDiyLeague"), Some(&b"DIY LEAGUE"[..]));
+    assert_eq!(text("_aNoSuchString"), None);
+}
+
+#[test]
+fn a_league_a_cup_and_a_tournament_fall_back_on_the_resets_and_default_names() {
+    let names = default_names().expect("built");
+    let named = |symbol: &str, text: &[u8]| CompiledString {
+        symbol: Some(symbol.to_owned()),
+        text: text.to_vec(),
+    };
+    assert_eq!(names.league_reset, named("_aDiyLeague", b"DIY LEAGUE"));
+    assert_eq!(names.cup_reset, named("_aDiyCup", b"DIY CUP"));
+    assert_eq!(names.cup, named("_aCup_0", b"CUP"));
+    assert_eq!(
+        names.tournament_reset,
+        named("_aDiyTournament", b"DIY TOURNAMENT")
+    );
+    assert_eq!(names.tournament, named("_aLeague_1", b"LEAGUE"));
+    // `_divisionStringTable`.
+    assert_eq!(
+        names.divisions,
+        [
+            named("_aPremierDivisio", b"PREMIER DIVISION"),
+            named("_aDivision1_0", b"DIVISION 1"),
+            named("_aDivision2_0", b"DIVISION 2"),
+            named("_aDivision3_0", b"DIVISION 3"),
+        ]
+    );
+}
+
+#[test]
+fn the_lists_name_records_and_career_copies() {
+    let lists = competition_lists().expect("built");
+    assert_eq!(
+        (lists.national_teams.len(), lists.continental.len()),
+        (NATIONAL_TEAMS_LISTED, CONTINENTAL_LISTED)
+    );
+    let record = |comp_id, copy| ListedRecord { comp_id, copy };
+    // `_worldCup, _worldCup2Copy, ...`: a copy is its template's id.
+    assert_eq!(
+        lists.national_teams.get(..2),
+        Some(&[record(WORLD_CUP, false), record(WORLD_CUP_2, true)][..])
+    );
+    // `... _friendly, _friendlyCopy, END`.
+    assert_eq!(
+        lists.continental.get(CONTINENTAL_LISTED - 2..),
+        Some(&[record(FRIENDLY, false), record(FRIENDLY, true)][..])
+    );
 }

@@ -12,8 +12,8 @@ use openswos_world_extract::error::ExtractError;
 use openswos_world_extract::extract::{committed_files, world_1996_97};
 use openswos_world_package_resource::PackageFiles;
 
-/// The committed package's files: ten competition files, the career params, five rules.
-const COMMITTED_FILES: usize = 16;
+/// The committed package's files: ten competition files, the career params, eight rules.
+const COMMITTED_FILES: usize = 19;
 
 #[test]
 fn the_committed_package_is_the_extraction() {

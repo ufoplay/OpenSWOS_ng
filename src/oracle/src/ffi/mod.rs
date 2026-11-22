@@ -4,15 +4,18 @@
 //! the holder of the oracle's lock ([`crate::Oracle`]).
 #![allow(unsafe_code)]
 
+pub(crate) mod cup;
 pub(crate) mod draw;
 pub(crate) mod league;
 pub(crate) mod math;
+pub(crate) mod play;
 pub(crate) mod rng;
 pub(crate) mod running;
 mod stubs;
 pub(crate) mod style;
 pub(crate) mod table;
 pub(crate) mod tables;
+pub(crate) mod tournament;
 pub(crate) mod unpack;
 
 use std::hint::black_box;
@@ -97,6 +100,22 @@ mod bindings {
         include!(concat!(env!("OUT_DIR"), "/fixture_data_c.rs"));
     }
 
+    /// src/swos_amiga_ptr_imports.c (data): the round robins by size, the divisions' default
+    /// names, the lists of records.
+    pub(crate) mod swos_amiga_ptr_imports_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_amiga_ptr_imports_c.rs"));
+    }
+
+    /// src/string_symbols.c (data): the compiled strings by name.
+    pub(crate) mod string_symbols_c {
+        include!(concat!(env!("OUT_DIR"), "/string_symbols_c.rs"));
+    }
+
+    /// src/swos_amiga_strings.c (data): the name a running competition's reset writes.
+    pub(crate) mod swos_amiga_strings_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_amiga_strings_c.rs"));
+    }
+
     /// src/swos_data_bulk_imports.c (data): the European Championships' round robin.
     pub(crate) mod swos_data_bulk_imports_c {
         include!(concat!(env!("OUT_DIR"), "/swos_data_bulk_imports_c.rs"));
@@ -122,7 +141,6 @@ pub(crate) fn reset() {
     black_box(stubs::TacticsData_SelectRelease as extern "C-unwind" fn(_));
     black_box(stubs::Tweaks_On as extern "C-unwind" fn(_) -> _);
     black_box(stubs::World_Current as extern "C-unwind" fn() -> _);
-    black_box(&raw const stubs::_fixtureSchedulePtrTable);
     black_box(stubs::LeaguePhase_InstallCups as extern "C-unwind" fn(_));
     black_box(stubs::World_SyncSecondFiles as extern "C-unwind" fn());
     black_box(stubs::LeaguePhase_Sort as extern "C-unwind" fn() -> _);
@@ -130,5 +148,31 @@ pub(crate) fn reset() {
     black_box(stubs::VerifyTeamLoaded as extern "C-unwind" fn(_) -> _);
     black_box(stubs::LeagueSplit_Init as extern "C-unwind" fn(_, _, _));
     black_box(stubs::SuperCup_UefaTie as extern "C-unwind" fn() -> _);
+    black_box(stubs::WorldCups_CupMade as extern "C-unwind" fn(_));
+    black_box(stubs::WorldEurope_DrawMade as extern "C-unwind" fn(_));
+    black_box(stubs::LeaguePhase_StageDays as extern "C-unwind" fn(_, _, _) -> _);
+    black_box(stubs::States_StageDays as extern "C-unwind" fn(_, _, _) -> _);
+    black_box(stubs::LeaguePhase_StageStart as extern "C-unwind" fn());
+    black_box(stubs::LeaguePhase_KnockoutDraw as extern "C-unwind" fn(_, _) -> _);
+    black_box(stubs::States_StageStart as extern "C-unwind" fn());
+    black_box(stubs::States_KnockoutStart as extern "C-unwind" fn());
+    black_box(stubs::InitInGameTeams_WithMatchParam as extern "C-unwind" fn(_, _));
+    black_box(stubs::SetupPlayers as extern "C-unwind" fn(_, _, _, _, _, _));
+    black_box(stubs::CupRecord_Match as extern "C-unwind" fn(_, _, _, _, _, _, _, _));
+    black_box(stubs::UpdateCareerPlayersFormAfterMatch as extern "C-unwind" fn(_, _, _, _, _));
+    black_box(stubs::BeginContractNegotiationSequence as extern "C-unwind" fn(_, _, _));
+    black_box(stubs::Career_UpdateStatsAfterMatch as extern "C-unwind" fn(_, _, _, _, _, _, _));
+    black_box(stubs::ModHooks_CareerEvent as extern "C-unwind" fn(_, _, _, _));
+    black_box(stubs::LongBench_LeagueMatch as extern "C-unwind" fn(_));
+    black_box(stubs::CalculateViewResult as extern "C-unwind" fn(_, _, _, _, _, _, _, _, _));
+    black_box(
+        stubs::InitializeInGameTeamsAndStartGame as extern "C-unwind" fn(_, _, _, _, _, _, _),
+    );
+    black_box(stubs::LeagueSplit_Pair as extern "C-unwind" fn(_, _) -> _);
+    black_box(stubs::LeaguePhase_Pair as extern "C-unwind" fn(_, _) -> _);
+    black_box(stubs::States_Pair as extern "C-unwind" fn(_, _) -> _);
+    black_box(stubs::LeagueSplit_Count as extern "C-unwind" fn() -> _);
+    black_box(stubs::LeagueSplit_AfterResult as extern "C-unwind" fn(_, _, _, _));
+    black_box(stubs::LeaguePhase_Result as extern "C-unwind" fn(_, _, _, _));
     black_box(stubs::StringCopy as unsafe extern "C-unwind" fn(_, _) -> _);
 }

@@ -167,6 +167,56 @@ pub struct CountryEntry {
     pub adjective: Vec<u8>,
 }
 
+/// A compiled string: its symbol's name, when upstream's `_stringSymbols` lists it
+/// (src/string_symbols.c), and its text.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompiledString {
+    /// Its symbol's name (`_aDiyLeague`), `None` when it is not listed.
+    pub symbol: Option<String>,
+    /// Its bytes, up to its NUL.
+    pub text: Vec<u8>,
+}
+
+/// The names a league, a cup and a tournament fall back on (src/diy_competition.c): the one
+/// each one's reset writes first, each division's when a league's record names none, and a
+/// cup's and a tournament's when its record names none.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DefaultNames {
+    /// A league's reset's (`DIY_InitCompetitionDefaults`: `_aDiyLeague`).
+    pub league_reset: CompiledString,
+    /// A cup's reset's (`InitDIYCup`: `_aDiyCup`).
+    pub cup_reset: CompiledString,
+    /// A tournament's reset's (`InitDIYTournament`: `_aDiyTournament`).
+    pub tournament_reset: CompiledString,
+    /// Each division's, by index (`_divisionStringTable`).
+    pub divisions: Vec<CompiledString>,
+    /// A cup's (`InitDIYCupFromRecord`: `_aCup_0`).
+    pub cup: CompiledString,
+    /// A tournament's (`InitDIYLeagueFromRecord`: `_aLeague_1`).
+    pub tournament: CompiledString,
+}
+
+/// A record one of upstream's lists names: its compId, and whether the list names a career's
+/// copy of it (`_careerContests`) rather than the record itself.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListedRecord {
+    /// Its `compId`.
+    pub comp_id: u8,
+    /// Whether it is the career's copy.
+    pub copy: bool,
+}
+
+/// Upstream's lists of records that set a competition's class (src/swos_amiga_ptr_imports.c).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompetitionLists {
+    /// The national teams' competitions, whose names take no country
+    /// (`_nationalTeamCompetitionsAndQualifications1`).
+    pub national_teams: Vec<ListedRecord>,
+    /// The contests whose suspensions are the continental track's
+    /// (`_europeanCupsandNationalTeamCompetitionsAndQualifications`).
+    pub continental: Vec<ListedRecord>,
+}
+
 /// The entry of country `number` in `_countriesTable`, if it has one.
 ///
 /// # Errors
@@ -251,6 +301,60 @@ pub fn euro_championship_fixtures() -> Result<Vec<u8>, Unavailable> {
     {
         let _held = crate::Oracle::lock();
         Ok(crate::ffi::tables::euro_championship_fixtures())
+    }
+    #[cfg(oracle_unavailable)]
+    {
+        Err(Unavailable)
+    }
+}
+
+/// Every compiled string upstream lists by name (`_stringSymbols`, src/string_symbols.c), in
+/// its order: its symbol's name and its text.
+///
+/// # Errors
+///
+/// [`Unavailable`] without the checkout.
+pub fn string_symbols() -> Result<Vec<(String, Vec<u8>)>, Unavailable> {
+    #[cfg(not(oracle_unavailable))]
+    {
+        let _held = crate::Oracle::lock();
+        Ok(crate::ffi::tables::string_symbols())
+    }
+    #[cfg(oracle_unavailable)]
+    {
+        Err(Unavailable)
+    }
+}
+
+/// The names a league, a cup and a tournament fall back on: the resets', each division's, a
+/// cup's and a tournament's.
+///
+/// # Errors
+///
+/// [`Unavailable`] without the checkout.
+pub fn default_names() -> Result<DefaultNames, Unavailable> {
+    #[cfg(not(oracle_unavailable))]
+    {
+        let _held = crate::Oracle::lock();
+        Ok(crate::ffi::tables::default_names())
+    }
+    #[cfg(oracle_unavailable)]
+    {
+        Err(Unavailable)
+    }
+}
+
+/// Upstream's lists of the national teams' competitions and of the continental suspensions'
+/// contests.
+///
+/// # Errors
+///
+/// [`Unavailable`] without the checkout.
+pub fn competition_lists() -> Result<CompetitionLists, Unavailable> {
+    #[cfg(not(oracle_unavailable))]
+    {
+        let _held = crate::Oracle::lock();
+        Ok(crate::ffi::tables::competition_lists())
     }
     #[cfg(oracle_unavailable)]
     {

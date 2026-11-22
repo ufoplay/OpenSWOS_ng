@@ -12,6 +12,7 @@ use openswos_oracle::tables::CompetitionBase;
 use openswos_team_json_resource::TeamJsonDocument;
 
 use crate::error::ExtractError;
+use crate::texts::text;
 
 /// What starts an id (upstream's C symbols: `_euroCup`).
 pub(super) const ID_PREFIX: char = '_';
@@ -92,15 +93,6 @@ pub(super) fn seeds(
 /// The nibble `value` (under 16).
 fn nibble(value: u8) -> Nibble {
     Nibble::try_from(value).expect("masked to a nibble")
-}
-
-/// A name's text.
-fn text(bytes: &[u8]) -> Result<String, ExtractError> {
-    if bytes.is_ascii() {
-        Ok(bytes.iter().copied().map(char::from).collect())
-    } else {
-        Err(ExtractError::NotAscii(bytes.to_vec()))
-    }
 }
 
 /// The name of club `ordinal` of country `country` in `teams`, if it has it.

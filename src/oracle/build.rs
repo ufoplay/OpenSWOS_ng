@@ -319,21 +319,33 @@ fn bind(
 /// `code` with each of `variables` declared a `static mut`. bindgen declares a global the
 /// unit defines with a value it can evaluate as a Rust `const` holding that value; it is
 /// redeclared as the global it is, bindgen's type kept. Each variable must be declared one
-/// way or the other: its name is returned otherwise.
+/// way or the other (a C `const` global as a `static`): its name is returned otherwise.
 fn as_statics(code: &str, variables: &[String]) -> Result<String, String> {
     let mut code = code.to_owned();
     for variable in variables {
         let constant = format!("pub const {variable}: ");
         let declared = format!("pub static mut {variable}: ");
         if let Some(start) = code.find(&constant) {
-            let end = start + code[start..].find(';').ok_or_else(|| variable.clone())?;
-            let declaration = &code[start + constant.len()..end];
-            let (ty, _value) = declaration
+            // (the type may hold a `;`, an array's: the value starts at the first ` = `)
+            let declaration = &code[start + constant.len()..];
+            let (ty, value) = declaration
                 .split_once(" = ")
                 .ok_or_else(|| variable.clone())?;
+            let end = start
+                + constant.len()
+                + ty.len()
+                + " = ".len()
+                + value.find(';').ok_or_else(|| variable.clone())?;
+            // (a C `char` array a string initialises is a `&[u8; N]` constant: the global is
+            // the array)
+            let ty = ty.strip_prefix('&').unwrap_or(ty);
             let global = format!("unsafe extern \"C\" {{\n    {declared}{ty};\n}}");
             code.replace_range(start..=end, &global);
-        } else if !code.contains(&declared) {
+        } else if !code.contains(declared.trim_end())
+            && !code.contains(&format!("pub static {variable}:"))
+        {
+            // (bindgen breaks a long declaration's line after its colon, and declares a
+            // `const` global without `mut`)
             return Err(variable.clone());
         }
     }

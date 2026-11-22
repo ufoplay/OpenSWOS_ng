@@ -22,7 +22,7 @@ the PC game's rosters, and World 2026-27's data is the SWOS 96/97 Mod's (D8).
 - the other `rules/` files (`openswos_world_rules_resource`):
   - read from upstream's 96/97 tables as compiled, through the oracle's `tables`
     (`openswos_oracle`, linked by this tool alone), so no table is transcribed by hand:
-    - `country_details.json`: each country's continent, from `_countriesTable`;
+    - `country_details.json`: each country's continent and adjective, from `_countriesTable`;
     - `team_files.json`: the team files' bases, from `_teamsCountryNumbers`;
     - `season.json`: the season end's countries, from `_careerCompetitionIdRemapTable`;
     - `fixtures.json`: each size's round robin (2 to 24 clubs, `_fixtureSchedulePtrTable`
@@ -30,6 +30,19 @@ the PC game's rosters, and World 2026-27's data is the SWOS 96/97 Mod's (D8).
       Championships' own (`_euroChampFixtureData`'s first pairs, as many as their groups of
       4 play), the two records named by the competition ids upstream's code checks
       (`src/schedules.rs`);
+    - `strings.json`: the texts of the compiled strings (`_stringSymbols`) the records'
+      names name, the resets' names (`_aDiyLeague`, `_aDiyCup`, `_aDiyTournament`), the
+      default division names (`_divisionStringTable`), cup name (`_aCup_0`) and tournament
+      name (`_aLeague_1`), each by its symbol
+      (`src/texts.rs`);
+    - `competition_classes.json`: `_nationalTeamCompetitionsAndQualifications1` and
+      `_europeanCupsandNationalTeamCompetitionsAndQualifications`, each record by its id (by
+      competition id) and each career copy by `career.json`'s name for it
+      (`_careerContests` pairs them), then the records of the ids `continental_record` names
+      (the Copa) (`src/texts.rs`);
+    - `draws.json`: the tournaments upstream draws by its own tables, which its code picks by
+      competition id (the World Cup's first stage keeping 24 places, the European
+      Championships' 16), each the world's tournament records of the ids (`src/draws.rs`);
   - the facts upstream keeps in code, not in a table: `src/extract.rs`'s constants, each
     citing its source (the first year, a club coach's own country first, no second team
     files or kept squad numbers, odd-sized tournament groups refused).
@@ -112,10 +125,10 @@ so the package is self-contained:
     checked against the oracle's. The cups' draws (the real bracket, the quotas, the
     European place) join `rules/national_cups.json` with M5.
 - **96/97's career params** (D12).
-- **The five rules files**:
+- **The seven rules files**:
   - `calendar.json`: 2026;
-  - `country_details.json`: each country's continent, from the countries' table the install
-    leaves;
+  - `country_details.json`: each country's continent and adjective, from the countries'
+    table the install leaves;
   - `team_files.json`: the bases the install leaves, each national file then grown to the
     world's national teams as upstream's SDL build grows it (`fit_world_national_files`:
     Europe's 55); the second files and kept squad numbers the accessors give;
@@ -123,7 +136,12 @@ so the package is self-contained:
   - `fixtures.json`: the round robins the install leaves (`FixtureRounds_Install`: the odd
     sizes 5 to 23 as real rounds), read through the oracle; the competitions that play their
     own, as World 1996-97's (upstream picks them by id in every world); odd-sized tournament
-    groups allowed.
+    groups allowed;
+  - `strings.json`, `competition_classes.json`: World 1996-97's (upstream's compiled strings
+    and lists, which name 96/97's records and copies: the world keeps them), the world's
+    records of `continental_record`'s ids joining the continental class;
+  - `draws.json`: the world's tournament records of the ids upstream's own draws name (the
+    same as World 1996-97's: the world keeps them).
 
 The result is checked before it is written: a valid world with valid game data
 (`openswos_core`: its 107 rosters, its pool of 900, the built-in tactics; every seeded team of

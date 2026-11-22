@@ -6,13 +6,14 @@
 use std::ffi::{CStr, c_char, c_void};
 
 use super::bindings::{
-    competition_data_c, fixture_data_c, fixture_rounds_c, strings_data_c,
-    swos_amiga_data_imports_c, swos_data_bulk_imports_c, world_data_c,
+    competition_data_c, fixture_data_c, fixture_rounds_c, string_symbols_c, strings_data_c,
+    swos_amiga_data_imports_c, swos_amiga_ptr_imports_c, swos_amiga_strings_c,
+    swos_data_bulk_imports_c, world_data_c,
 };
-use super::stubs;
+use super::stubs::{self, LIST_END};
 use crate::tables::{
-    BakedWorld, CompetitionBase, CountryEntry, CupRecord, FixtureSchedule, TournamentRecord,
-    WorldCupEntry,
+    BakedWorld, CompetitionBase, CompetitionLists, CompiledString, CountryEntry, CupRecord,
+    DefaultNames, FixtureSchedule, ListedRecord, TournamentRecord, WorldCupEntry,
 };
 
 /// The entries of `_countriesTable` (src/strings_data.c).
@@ -91,7 +92,8 @@ pub(crate) fn season_countries() -> Vec<u8> {
 }
 
 /// Points `_fixtureSchedulePtrTable` at the original's round robins, as upstream's data
-/// section does (src/swos_amiga_ptr_imports.c).
+/// section does (src/swos_amiga_ptr_imports.c): a world's install may have pointed its odd
+/// ones at its rounds.
 fn point_at_original_schedules() {
     macro_rules! originals {
         ($($table:ident),+ $(,)?) => {
@@ -124,7 +126,7 @@ fn point_at_original_schedules() {
         _fixtureSchedule24Teams,
     );
     // SAFETY: a plain write to a global the lock's holder owns.
-    unsafe { stubs::_fixtureSchedulePtrTable = originals };
+    unsafe { swos_amiga_ptr_imports_c::_fixtureSchedulePtrTable = originals };
 }
 
 /// The round robins `_fixtureSchedulePtrTable` points at, each with whether it plays real
@@ -132,7 +134,7 @@ fn point_at_original_schedules() {
 fn schedules() -> Vec<FixtureSchedule> {
     // SAFETY: a plain read of a global the lock's holder owns; each entry points at a table of
     // `teams * (teams - 1)` bytes (the original's, or `FixtureRounds_Install`'s rounds).
-    let table = unsafe { stubs::_fixtureSchedulePtrTable };
+    let table = unsafe { swos_amiga_ptr_imports_c::_fixtureSchedulePtrTable };
     (FIRST_SCHEDULE_SIZE..)
         .zip(table)
         .map(|(teams, pointer)| {
@@ -169,6 +171,146 @@ pub(crate) fn euro_championship_fixtures() -> Vec<u8> {
             .read()
     };
     table.iter().map(|&byte| byte.cast_unsigned()).collect()
+}
+
+/// Every compiled string `_stringSymbols` lists, in its order: its symbol's name and its text.
+fn string_table() -> Vec<(String, *const c_void)> {
+    // SAFETY: upstream defines `_stringSymbols` with `_stringSymbolsCount` entries (the
+    // binding declares it of none); each name is a static string ended by a NUL.
+    unsafe {
+        let count = usize::try_from(string_symbols_c::_stringSymbolsCount).unwrap_or_default();
+        let first =
+            (&raw const string_symbols_c::_stringSymbols).cast::<string_symbols_c::StringSymbol>();
+        (0..count)
+            .map(|index| {
+                let entry = first.add(index).read();
+                let name = CStr::from_ptr(entry.name).to_string_lossy().into_owned();
+                (name, entry.addr.cast_const())
+            })
+            .collect()
+    }
+}
+
+/// The text of the string at `address`, up to its NUL.
+///
+/// # Safety
+///
+/// `address` points at a string ended by a NUL.
+unsafe fn text_at(address: *const c_void) -> Vec<u8> {
+    // SAFETY: the caller's.
+    unsafe { CStr::from_ptr(address.cast::<c_char>()) }
+        .to_bytes()
+        .to_vec()
+}
+
+/// Every compiled string `_stringSymbols` lists (src/string_symbols.c), in its order: its
+/// symbol's name and its text.
+pub(crate) fn string_symbols() -> Vec<(String, Vec<u8>)> {
+    string_table()
+        .into_iter()
+        // SAFETY: each listed address is a compiled string, ended by a NUL.
+        .map(|(name, address)| (name, unsafe { text_at(address) }))
+        .collect()
+}
+
+/// The string at `address`, by its symbol's name when `table` lists it.
+///
+/// # Safety
+///
+/// `address` points at a string ended by a NUL.
+unsafe fn compiled_string(
+    table: &[(String, *const c_void)],
+    address: *const c_void,
+) -> CompiledString {
+    CompiledString {
+        symbol: table
+            .iter()
+            .find(|&&(_, listed)| listed == address)
+            .map(|(name, _)| name.clone()),
+        // SAFETY: the caller's.
+        text: unsafe { text_at(address) },
+    }
+}
+
+/// The names a league, a cup and a tournament fall back on: the resets' (`_aDiyLeague`,
+/// `_aDiyCup`, `_aDiyTournament`), each division's (`_divisionStringTable`), a cup's
+/// (`_aCup_0`) and a tournament's (`_aLeague_1`).
+pub(crate) fn default_names() -> DefaultNames {
+    let table = string_table();
+    // SAFETY: plain reads of globals the lock's holder owns; each is a compiled string, ended by
+    // a NUL (the division table's entries point at upstream's static strings).
+    unsafe {
+        let divisions = swos_amiga_ptr_imports_c::_divisionStringTable;
+        DefaultNames {
+            league_reset: compiled_string(
+                &table,
+                (&raw const swos_amiga_strings_c::_aDiyLeague).cast(),
+            ),
+            cup_reset: compiled_string(&table, (&raw const swos_amiga_strings_c::_aDiyCup).cast()),
+            tournament_reset: compiled_string(
+                &table,
+                (&raw const swos_amiga_strings_c::_aDiyTournament).cast(),
+            ),
+            divisions: divisions
+                .iter()
+                .map(|&name| compiled_string(&table, name.cast_const()))
+                .collect(),
+            cup: compiled_string(&table, (&raw const swos_amiga_strings_c::_aCup_0).cast()),
+            tournament: compiled_string(
+                &table,
+                (&raw const swos_amiga_strings_c::_aLeague_1).cast(),
+            ),
+        }
+    }
+}
+
+/// The records a list of upstream's names (`entries`, up to its end), each by its compId and
+/// whether it is a career's copy of the record (`_careerContests`): a copy is blank until a
+/// career makes it, so its id is its template's.
+///
+/// # Safety
+///
+/// Each entry before the end points at a compiled record or at a copy `_careerContests` pairs.
+unsafe fn listed_records(entries: &[*mut c_void]) -> Vec<ListedRecord> {
+    // SAFETY: a plain read of a global the lock's holder owns.
+    let contests = unsafe { competition_data_c::_careerContests };
+    entries
+        .iter()
+        .take_while(|&&entry| entry.addr() != LIST_END)
+        .map(|&entry| {
+            let template = contests
+                .iter()
+                .find(|contest| {
+                    !contest.competitionCopy.is_null() && contest.competitionCopy.cast() == entry
+                })
+                .map(|contest| contest.competition.cast::<c_void>());
+            let record = template
+                .unwrap_or(entry)
+                .cast::<competition_data_c::Competition>();
+            ListedRecord {
+                // SAFETY: the caller's: a record starts with its base, compId first.
+                comp_id: unsafe { record.read_unaligned() }.compId,
+                copy: template.is_some(),
+            }
+        })
+        .collect()
+}
+
+/// The national teams' competitions (`_nationalTeamCompetitionsAndQualifications1`) and the
+/// contests of the continental suspensions' track
+/// (`_europeanCupsandNationalTeamCompetitionsAndQualifications`).
+pub(crate) fn competition_lists() -> CompetitionLists {
+    // SAFETY: plain reads of globals the lock's holder owns; upstream's lists hold compiled
+    // records and copies `_careerContests` pairs, up to their end.
+    unsafe {
+        let national = swos_amiga_ptr_imports_c::_nationalTeamCompetitionsAndQualifications1;
+        let continental =
+            swos_amiga_ptr_imports_c::_europeanCupsandNationalTeamCompetitionsAndQualifications;
+        CompetitionLists {
+            national_teams: listed_records(&national),
+            continental: listed_records(&continental),
+        }
+    }
 }
 
 /// World 2026-27's baked install over 96/97's tables (upstream src/world_data.c

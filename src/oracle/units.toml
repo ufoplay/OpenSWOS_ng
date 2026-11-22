@@ -140,11 +140,27 @@ functions = [
     "DIY_ShuffleTeamOrderList",
     "DIY_ShuffleTeamGridPairs",
     "InitDIYCompetitionFromTableEntry",
+    "InitDIYCupFromRecord",
+    "InitDIYTournament",
+    "DIYTournament_RecalculateMatchesPerTeam",
+    "InitDIYLeagueFromRecord",
+    "DIY_PlayOrSimulateLeagueFixture",
+    "DIY_GetCurrentFixtureTeamPtrs",
+    "DIY_AdvanceLeagueProgressAfterMatch",
+    "DIY_UpdateLeagueQualifiers",
+    "DIY_UpdatePromotionRelegationScratchCounts",
 ]
-variables = ["_diyCompetitionStart", "_selectedTeams", "_careerTeam"]
+variables = [
+    "_diyCompetitionStart",
+    "_diyFileBufferCopy",
+    "_selectedTeams",
+    "_careerTeam",
+    "_fixtureTeam1CompPtr",
+    "_fixtureTeam2CompPtr",
+]
 # The tournament's state the shuffles take behind a byte pointer; the league and cup records a
-# league is started from.
-types = ["DIYTournamentState", "CompetitionLeague", "CompetitionCup"]
+# league is started from; the play-off records a cup is started from; the tournament records.
+types = ["DIYTournamentState", "CompetitionLeague", "CompetitionCup", "Playoffs", "CompetitionTournament"]
 
 # Upstream's RNC unpacker (the game's own, SWOS2.s): World 2026-27's foreign pool is packed, and
 # `world_extract` unpacks it with this (`unpack`), so no importer reads RNC (D9).
@@ -167,8 +183,9 @@ functions = ["M68kShiftLeft32", "M68kShiftLeft16"]
 
 [[data]]
 path = "src/swos_data_bulk_imports.c"
-# The European Championships' round robin (diy_competition.c `getCurrentFixtureTeamPtrs`).
-variables = ["_euroChampFixtureData"]
+# The European Championships' round robin (diy_competition.c `getCurrentFixtureTeamPtrs`); the
+# season's scratch of the teams' divisions (`DIY_UpdatePromotionRelegationScratchCounts`).
+variables = ["_euroChampFixtureData", "_diyLeagueScratchBuffer"]
 
 [[data]]
 path = "src/selected_teams.c"
@@ -218,13 +235,51 @@ variables = ["_countriesTable"]
 
 [[data]]
 path = "src/swos_amiga_strings.c"
+# The names a league's, a cup's and a tournament's resets write first; a cup's and a
+# tournament's when its record names none.
+variables = ["_aDiyLeague", "_aDiyCup", "_aDiyTournament", "_aCup_0", "_aLeague_1"]
 
 [[data]]
 path = "src/swos_amiga_data_imports.c"
-# Each team file's first global team number.
-variables = ["_teamsCountryNumbers"]
+# Each team file's first global team number; the cached result a league match takes
+# (`getCachedOrCalcViewResult`), which the oracle gives instead of a simulated one.
+variables = ["_teamsCountryNumbers", "_cachedViewResultTeam1Goals", "_cachedViewResultTeam2Goals"]
 
 [[data]]
 path = "src/competition_data.c"
-# The countries of the season end, in its order.
-variables = ["_careerCompetitionIdRemapTable"]
+# The countries of the season end, in its order; the career index's records and their copies;
+# each country's records; the play-offs, which leagues and their blocks link to (the compiled
+# records a cup is started from); the tournaments no table of records reaches.
+variables = [
+    "_careerCompetitionIdRemapTable",
+    "_careerContests",
+    "_competitionsTable",
+    "_div1Playoffs",
+    "_div2Playoffs",
+    "_div3Playoffs",
+    "_dutchPlayoffs",
+    "_scottishPlayoffs",
+    "_spanishPlayoffs",
+    "_uruguayanPlayoffs",
+    "_worldCup",
+    "_europeanChampionships",
+]
+
+[[data]]
+path = "src/career_comp_copies.c"
+
+[[data]]
+path = "src/swos_amiga_ptr_imports.c"
+# The round robins by size; the divisions' default names; the national teams' competitions and
+# the continental suspensions' track (lists of records).
+variables = [
+    "_fixtureSchedulePtrTable",
+    "_divisionStringTable",
+    "_nationalTeamCompetitionsAndQualifications1",
+    "_europeanCupsandNationalTeamCompetitionsAndQualifications",
+]
+
+[[data]]
+path = "src/string_symbols.c"
+# Every compiled string by its symbol's name, and their count.
+variables = ["_stringSymbols", "_stringSymbolsCount"]

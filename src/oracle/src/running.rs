@@ -7,10 +7,10 @@ use crate::ffi;
 
 pub use crate::ffi::running::IMAGE_LEN;
 
-/// Every field of a competition under way, as upstream's C reads it (team ids as the native
-/// word their two bytes make).
+/// Every field of upstream's competition header (`DIYCompetition`), as its C reads it: a
+/// competition under way and a tournament's state begin with it.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompetitionFields {
+pub struct HeaderFields {
     /// `competitionType`.
     pub competition_type: i16,
     /// `isActive`.
@@ -75,6 +75,14 @@ pub struct CompetitionFields {
     pub sub_round_counter: i16,
     /// `playEachTeam`.
     pub play_each_team: i16,
+}
+
+/// Every field of a competition under way, as upstream's C reads it (team ids as the native
+/// word their two bytes make).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompetitionFields {
+    /// The header (`base`).
+    pub header: HeaderFields,
     /// `minSubstitutes`.
     pub min_substitutes: u16,
     /// `pointsForAWin`.

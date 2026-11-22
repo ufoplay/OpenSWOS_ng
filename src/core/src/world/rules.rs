@@ -1,6 +1,7 @@
 //! The world's rules (`rules/`, docs/WORLD_INVENTORY.md §4) that core reads so far: its
-//! calendar, its countries' continents, how its clubs are numbered, its season end's
-//! countries, its fixture behaviours. Each is checked against the world's countries.
+//! calendar, its countries' continents and adjectives, how its clubs are numbered, its season
+//! end's countries, its fixture behaviours, its texts and its classes of competition. Each is
+//! checked against the world's countries.
 
 use std::collections::BTreeMap;
 
@@ -8,10 +9,12 @@ use openswos_common::{TeamFileNumber, TeamId};
 use openswos_competitions_json_resource::Continent;
 use openswos_world_package_resource::RULES_FOLDER;
 use openswos_world_rules_resource::{
-    Calendar, CountryDetails, Fixtures, Rules, RulesFile, Season, SeasonEnd, SecondFile, TeamFiles,
+    Calendar, CompetitionClasses, CountryDetails, Draws, Fixtures, Rules, RulesFile, Season,
+    SeasonEnd, SecondFile, Strings, TeamFiles,
 };
 
 use super::countries::Countries;
+use super::texts::bytes;
 use crate::validation::{Field, Location, Problem, Problems};
 
 /// The team files a world numbers its clubs over: one a file number.
@@ -56,6 +59,12 @@ pub(crate) struct RulesFiles<'a> {
     pub(crate) season: &'a Season,
     /// `fixtures.json`.
     pub(crate) fixtures: &'a Fixtures,
+    /// `strings.json`.
+    pub(crate) strings: &'a Strings,
+    /// `competition_classes.json`.
+    pub(crate) competition_classes: &'a CompetitionClasses,
+    /// `draws.json`.
+    pub(crate) draws: &'a Draws,
 }
 
 /// The path of a rules file.
@@ -83,28 +92,47 @@ pub(crate) fn pick<'a>(rules: &'a Rules, problems: &mut Problems) -> Option<Rule
     let team_files = required(rules.team_files.as_ref(), problems);
     let season = required(rules.season.as_ref(), problems);
     let fixtures = required(rules.fixtures.as_ref(), problems);
+    let strings = required(rules.strings.as_ref(), problems);
+    let competition_classes = required(rules.competition_classes.as_ref(), problems);
+    let draws = required(rules.draws.as_ref(), problems);
     Some(RulesFiles {
         calendar: calendar?,
         country_details: country_details?,
         team_files: team_files?,
         season: season?,
         fixtures: fixtures?,
+        strings: strings?,
+        competition_classes: competition_classes?,
+        draws: draws?,
     })
 }
 
-/// Each country's continent: one entry for each country of the world, and none for another
-/// number.
-pub(crate) fn continents(
+/// What the world knows of a country beyond its competitions.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Details {
+    /// Its continent.
+    pub(crate) continent: Continent,
+    /// Its adjective, a byte a character.
+    pub(crate) adjective: Vec<u8>,
+}
+
+/// Each country's details: one entry for each country of the world, and none for another
+/// number; each adjective a byte a character.
+pub(crate) fn country_details(
     details: &CountryDetails,
     countries: &Countries,
     problems: &mut Problems,
-) -> Option<BTreeMap<TeamFileNumber, Continent>> {
+) -> Option<BTreeMap<TeamFileNumber, Details>> {
     let field = Field::key("countries");
-    let mut continents = BTreeMap::new();
+    let mut checked = BTreeMap::new();
     let mut listed_at = BTreeMap::new();
     let mut valid = true;
     for (index, detail) in details.countries.iter().enumerate() {
-        let location = at::<CountryDetails>(&field.index(index).then("number"));
+        let entry = field.index(index);
+        let location = at::<CountryDetails>(&entry.then("number"));
+        let adjective = bytes(&detail.adjective).map_err(|problem| {
+            problems.push(at::<CountryDetails>(&entry.then("adjective")), problem);
+        });
         if countries.get(detail.number).is_none() {
             problems.push(location, Problem::UnknownCountry(detail.number));
             valid = false;
@@ -117,12 +145,21 @@ pub(crate) fn continents(
                 },
             );
             valid = false;
+        } else if let Ok(adjective) = adjective {
+            let continent = detail.continent;
+            checked.insert(
+                detail.number,
+                Details {
+                    continent,
+                    adjective,
+                },
+            );
         } else {
-            continents.insert(detail.number, detail.continent);
+            valid = false;
         }
     }
     for country in countries.iter() {
-        if !continents.contains_key(&country.number) {
+        if !listed_at.contains_key(&country.number) {
             problems.push(
                 at::<CountryDetails>(&field),
                 Problem::NoCountryDetails(country.number),
@@ -130,7 +167,7 @@ pub(crate) fn continents(
             valid = false;
         }
     }
-    valid.then_some(continents)
+    valid.then_some(checked)
 }
 
 /// How the world numbers its clubs: 256 bases never going down, second files of countries
@@ -241,6 +278,7 @@ mod tests {
         CountryDetail {
             number: TeamFileNumber(number),
             continent,
+            adjective: format!("ADJECTIVE {number}"),
         }
     }
 
@@ -261,13 +299,35 @@ mod tests {
     }
 
     #[test]
-    fn every_country_has_its_continent() {
+    fn every_country_has_its_continent_and_adjective() {
         let details = CountryDetails {
-            countries: vec![detail(8, Continent::Europe), detail(0, Continent::Europe)],
+            countries: vec![detail(8, Continent::Europe), detail(0, Continent::Asia)],
         };
-        let continents =
-            checked(|problems| continents(&details, &countries(), problems)).expect("valid");
-        assert_eq!(continents.get(&TeamFileNumber(8)), Some(&Continent::Europe));
+        let details =
+            checked(|problems| country_details(&details, &countries(), problems)).expect("valid");
+        assert_eq!(
+            details.get(&TeamFileNumber(0)),
+            Some(&Details {
+                continent: Continent::Asia,
+                adjective: b"ADJECTIVE 0".to_vec()
+            })
+        );
+    }
+
+    #[test]
+    fn an_adjective_beyond_a_byte_a_character_is_reported() {
+        let mut england = detail(8, Continent::Europe);
+        england.adjective = "ENGLISH ✓".to_owned();
+        let details = CountryDetails {
+            countries: vec![detail(0, Continent::Europe), england],
+        };
+        let error = checked(|problems| country_details(&details, &countries(), problems))
+            .expect_err("not a byte");
+        assert_eq!(
+            error,
+            "rules/country_details.json: countries[1].adjective: '✓' is no character of the \
+             game's texts (one byte each, not NUL)"
+        );
     }
 
     #[test]
@@ -279,7 +339,7 @@ mod tests {
                 detail(9, Continent::Europe),
             ],
         };
-        let error = checked(|problems| continents(&details, &countries(), problems))
+        let error = checked(|problems| country_details(&details, &countries(), problems))
             .expect_err("three problems");
         assert_eq!(
             error,
@@ -381,7 +441,10 @@ mod tests {
              rules/country_details.json: the file is missing\n\
              rules/team_files.json: the file is missing\n\
              rules/season.json: the file is missing\n\
-             rules/fixtures.json: the file is missing"
+             rules/fixtures.json: the file is missing\n\
+             rules/strings.json: the file is missing\n\
+             rules/competition_classes.json: the file is missing\n\
+             rules/draws.json: the file is missing"
         );
         let rules = Rules {
             calendar: Some(Calendar { first_year: 1996 }),
@@ -399,6 +462,22 @@ mod tests {
                 odd_tournament_groups: true,
                 schedules: Vec::new(),
                 competition_schedules: Vec::new(),
+            }),
+            strings: Some(Strings {
+                symbols: BTreeMap::new(),
+                league_reset_name: String::new(),
+                cup_reset_name: String::new(),
+                tournament_reset_name: String::new(),
+                division_names: Vec::new(),
+                cup_name: String::new(),
+                tournament_name: String::new(),
+            }),
+            competition_classes: Some(CompetitionClasses {
+                national_teams: Vec::new(),
+                continental: Vec::new(),
+            }),
+            draws: Some(Draws {
+                own_draws: Vec::new(),
             }),
         };
         let picked = checked(|problems| pick(&rules, problems)).expect("picked");

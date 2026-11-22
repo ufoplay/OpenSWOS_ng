@@ -112,6 +112,8 @@ impl Expected {
     pub(crate) const LEAGUE: Self = Self(&[Kind::League]);
     /// A cup.
     pub(crate) const CUP: Self = Self(&[Kind::Cup]);
+    /// A tournament.
+    pub(crate) const TOURNAMENT: Self = Self(&[Kind::Tournament]);
     /// A play-off.
     pub(crate) const PLAYOFF: Self = Self(&[Kind::Playoff]);
     /// A league block.
@@ -356,6 +358,25 @@ pub enum Problem {
     /// A knockout given a round robin.
     #[error("the competition is a knockout: it plays no round robin")]
     NoRoundRobin,
+    /// A text with a character the game's texts cannot hold: they are a byte a character
+    /// (Latin-1), NUL ending them.
+    #[error("{character:?} is no character of the game's texts (one byte each, not NUL)")]
+    Unrepresentable {
+        /// The character.
+        character: char,
+    },
+    /// An id that names neither a competition nor the copy a career plays one in.
+    #[error("no competition or career copy is called {}", .0.as_str())]
+    UnknownContest(SymbolId),
+    /// A tournament given an own draw again.
+    #[error("the tournament has an own draw already (at {first})")]
+    RepeatedDraw {
+        /// Where it is named first.
+        first: Location,
+    },
+    /// An own draw keeping no place of its first stage, or more than its draw holds.
+    #[error("an own draw keeping {0} places: 1 to 64")]
+    DrawPlaces(u8),
 }
 
 /// One problem and where it is.

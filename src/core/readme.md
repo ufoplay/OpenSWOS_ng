@@ -22,15 +22,18 @@ files come (docs/WORLD_INVENTORY.md §4; M4 #5c, M5, M7).
 | part | from | what it is |
 |---|---|---|
 | `Countries` | `countries.json` | each country by number (its team file's) and `CN_*` name, with its roster's file; the list in its order |
-| `League`, `Cup`, `Tournament`, `Playoff` | `leagues.json`, `cups.json`, `tournaments.json`, `playoffs.json` | the record as read, its links resolved (a league's play-off links, a draw's seeded teams as `TeamId`s) |
+| `League`, `Cup`, `Tournament`, `Playoff` | `leagues.json`, `cups.json`, `tournaments.json`, `playoffs.json` | the record as read, its links resolved (a league's play-off links, a draw's seeded teams as `TeamId`s), its names resolved to their bytes (`rules/strings.json`) |
 | `QualifyingGroup` | `qualifying.json` | its competitions and markers, its countries up to the end byte |
 | `LeagueBlock` | `league_blocks.json` | its leagues, play-offs and next block |
 | `CareerContest` | `career.json` | the career index's competitions, and their copies' names |
 | `CountryTable` | `country_competitions.json` | a slot of upstream's `_competitionsTable`: a country's own leagues and cups, or a region's qualifying group |
 | `SeedBucket` | `seed_buckets.json` | the UEFA Cup berths, by country |
-| `first_year`, `continent` | `rules/calendar.json`, `rules/country_details.json` | the year the first season starts; each country's continent |
+| `first_year`, `continent`, `adjective` | `rules/calendar.json`, `rules/country_details.json` | the year the first season starts; each country's continent and adjective |
 | `TeamNumbering` | `rules/team_files.json` | each team file's first global team number (a club's global number: its file's base plus its place), the second team files, whether squad numbers are kept |
 | `SeasonEnd` | `rules/season.json` | the season end's countries, in its order; a club coach's own country first |
+| `Texts` | `rules/strings.json` | the texts the records' names name (a name is its symbol's text, or itself, a byte a character), the names a league's, a cup's and a tournament's resets write first, the default division names and the cup's and tournament's names |
+| `is_national_teams`, `is_continental`, `name_prefix` | `rules/competition_classes.json` | the national teams' competitions and the continental suspensions' contests, each played from its record or from the career's copy (`Source`); the adjective a competition's name takes (its record's country's, none for a national teams' one) |
+| `own_draw` | `rules/draws.json` | the tournaments whose stages are drawn by their own tables (upstream picks the World Cup and the European Championships by id), with the places a first stage keeps in order |
 | `Schedules` | `rules/fixtures.json` | the round robins (`competition::schedule`): each size's pairs in playing order and whether it plays real rounds, and the competitions that play their own (`Schedules::of`: a competition's own, else its size's); whether tournament groups may be odd-sized |
 
 References become typed handles (`LeagueRef`, `CupRef`, `CompetitionRef`, `GroupRef`,
@@ -61,9 +64,12 @@ competitions/cups.json: competitions[1] (_cupWinnersCup).team_seed_list[0].count
 - a country listed again must be listed the same, and a table slot listed once.
   Faithful to the original: upstream's list starts with BRAZIL, which it lists again in
   its place;
-- the rules files `calendar.json`, `country_details.json`, `team_files.json`, `season.json`
-  and `fixtures.json`, each required (no world's behaviour is a default): every country with one entry of details
-  and no other number; 256 bases never going down; a second file a country's, numbered as
+- the rules files `calendar.json`, `country_details.json`, `team_files.json`, `season.json`,
+  `fixtures.json`, `strings.json`, `competition_classes.json` and `draws.json`, each required (no world's
+  behaviour is a default): every country with one entry of details and no other number;
+  every name, string and adjective a byte a character (Latin-1, no NUL); each class's id a
+  competition's or a career copy's; each own draw's ids tournaments, each once, keeping 1 to
+  64 places; 256 bases never going down; a second file a country's, numbered as
   no country is; the season end's countries the world's, each once; each round robin every
   pair of its two or more clubs once, real rounds where it says so, a size once; a
   competition's own round robin of the size its record states (a league's divisions, a
@@ -155,4 +161,36 @@ The generic engine of docs/PLAN.md M5, unit by unit. Today:
   `InitDIYCompetitionFromTableEntry` does: the reset, the record's fields, the name, the
   derived counts and months, each team's identity and the strength, the places shuffled. Its
   texts and classes (the division's name, the country's adjective, the default name, the
-  continental track) come in resolved (`DivisionStart`).
+  continental track) come in resolved (`DivisionStart`); `WorldDivision::resolve` resolves
+  them from a world, for a league or a cup played as one, a division, and the record it is
+  played from (`Source`). A league is played: `fixture` (the next pair, from the round robin
+  its groups play), `advance` (the progress after a match), `play_result` (a match's result
+  recorded: the progress, the table, and at the season's end the qualifiers),
+  `sort_table`, `update_qualifiers` (the winner and the play-offs' qualifiers),
+  `season_moves` (the promoted and relegated, by identity).
+- `cup`: a cup started. `start_cup` makes a `CupRecord` (a `cups.json` knockout, or a
+  `playoffs.json` play-off, read through the cup's layout as upstream reads it) the
+  competition under way, as upstream's `InitDIYCupFromRecord` does: the reset
+  (`InitDIYCup`), the record's fields and its bracket's rounds' rules, the name, the bracket
+  (`DIY_InitCupBracketState`: each team's identity and the teams the computer does not
+  control, the pairs and rounds, the first round's format, the matches' months with a
+  replay's date, the strength), the record's rounds, the pairings shuffled unless the record
+  keeps its order. `WorldKnockout::resolve` resolves its texts and classes from a world
+  (`CupStart`).
+- `tournament`: a tournament's state and its stages. `TournamentState` is upstream's
+  `DIYTournamentState` image (1,120 bytes), each field a typed accessor as `running`'s (the
+  same header accessors; the team ids, group map and team order; the six stage slots by
+  stage: `slot_num_teams(stage)`, `slot_month(stage, index)`…). `reset` gives it a DIY
+  tournament's defaults (`InitDIYTournament`); `recalculate` counts each stage's matches,
+  their months and the teams' strength (`DIYTournament_RecalculateMatchesPerTeam`).
+  `start_tournament` starts a `TournamentRecord` (a `tournaments.json` record, its seeds the
+  world's identities) as upstream's `InitDIYLeagueFromRecord` does: the reset, the seeds
+  ordering the first stage, the stages into the slots, the stages counted, then the first
+  stage loaded into the competition under way (`DIY_LoadCurrentCompetitionSlot`): a stage of
+  groups as a league (its draw: kept, shuffled, or seeded into pots and dealt into the
+  groups; each team's group), a knockout as a cup (kept, shuffled, or seeded into quarters
+  and each pair's home side drawn; its bracket). `WorldTournament::resolve` resolves its
+  texts, classes, own draw and odd groups from a world (`TournamentStart`).
+- `start`: what both starts share: the session's `Pitch`, a `LoadedTeam` as upstream's
+  loader finds it (its identity, who controls it, its prices), the name written into its
+  buffer, the months a competition's matches are played in.

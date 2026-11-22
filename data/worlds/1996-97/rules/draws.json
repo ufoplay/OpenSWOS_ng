@@ -1,0 +1,17 @@
+{
+  "own_draws": [
+    {
+      "competitions": [
+        "_worldCup"
+      ],
+      "first_stage": 24
+    },
+    {
+      "competitions": [
+        "_europeanChampionships2",
+        "_europeanChampionships"
+      ],
+      "first_stage": 16
+    }
+  ]
+}

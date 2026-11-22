@@ -79,7 +79,7 @@ not quite the original game:
   About 20 more rows are not branches, kept for context.
 - **No world check is needed.** Nearly every difference is data the engine can read. 20
   behaviour components cover the rest (§5).
-- **23 new files under `rules/`** (§4). No new fields in upstream's files: upstream's schemas
+- **26 new files under `rules/`** (§4). No new fields in upstream's files: upstream's schemas
   are reused exactly (docs/PLAN.md §5.2). A fact that upstream keeps in C, such as a country's
   continent or a world's first year, gets a `rules/` file of its own.
 - **Which world drives what:**
@@ -151,7 +151,10 @@ default. The sources are upstream files. The
 | file | holds | 96/97 | 2026-27 | 1984-85 |
 |---|---|---|---|---|
 | `season.json` | `end.countries` (the season end's order), `end.own_country_first`, `end.steps` (§7); `start.slots`, `start.continental_order`; `league_tweaks` | competition_data.c `_careerCompetitionIdRemapTable` (65); the original's steps; tweaks apply | `kWorld2627SeasonCountries` (91); tweaks don't | `kWorld8485SeasonCountries` (32); tweaks don't |
+| `strings.json` | `symbols` (the texts of the compiled strings the records' names name), `league_reset_name`, `division_names` (M5 #4b2), `cup_reset_name`, `cup_name` (M5 #4c), `tournament_reset_name`, `tournament_name` (M5 #4d1) | string_symbols.c `_stringSymbols`; swos_amiga_strings.c `_aDiyLeague`, `_aDiyCup`, `_aCup_0`, `_aDiyTournament`, `_aLeague_1`; swos_amiga_ptr_imports.c `_divisionStringTable` | as 96/97 (its names name no other symbol) | as 96/97 |
+| `competition_classes.json` | `national_teams` (no country before their names), `continental` (the suspensions' track), each a competition's id or a career copy's name (M5 #4b2) | swos_amiga_ptr_imports.c `_nationalTeamCompetitionsAndQualifications1`, `_europeanCupsandNationalTeamCompetitionsAndQualifications`; the Copa (diy_competition.c `continental_record`'s ids) | as 96/97; the Super Cup's tie (249) while `SuperCup_UefaTie` (M5 #9) | as 96/97 |
 | `fixtures.json` | `schedules` (each size's round robin: its pairs in playing order, whether it plays real rounds), `competition_schedules` (competitions that play their own), `odd_tournament_groups` (M5 #1) | the original's tables (`_fixtureSchedulePtrTable`); the European Championships' own (`_euroChampFixtureData`); odd groups refused (panic 0x1313) | the tables after `FixtureRounds_Install` (odd sizes 5 to 23 as rounds with a rest day); the same competitions'; allowed | the same as 2026-27 |
+| `draws.json` | `own_draws` (the tournaments upstream draws by its own tables, picked by competition id, and the places their first stage keeps in order; their later stages' tables with M5 #7) (M5 #4d2) | diy_competition.c `buildCompSpecificTeamList` (`COMPID_worldCup`: 24), `buildCompSpecificTeamShuffle` (`COMPID_europeanChampionships`, `…2`: 16) | as 96/97 (the same records) | as 96/97 |
 | `league_playoffs.json` | per country: divisions, promoted and relegated by place, the play-off component with its data (`fixed_tiers` or `spec`), names, `then`, round names, record lines, B-team rules, promedio history | absent: the leagues' own play-off links (`leagues.json`, `league_blocks.json`) | `kWorld2627Playoffs` (35 countries), `kWorld2627Promedio43` | absent |
 | `league_splits.json` | per (country, division, clubs): meetings, split days, stages, groups, points rules, stage tables | absent | `kWorld2627Splits` (38) | absent |
 | `league_groups.json` | leagues with parallel groups: levels, clubs and their areas | absent | `kWorld2627Groups` (4 countries) | absent |
@@ -443,6 +446,8 @@ upstream's result in every world it runs in:
 - the Euro qualifying draw placing the coach's team in 7 of its 8 groups
   (career_season.c:1284-1341);
 - an odd career league refused (0x1313);
+- a record whose name table has no first name named with the default division name: the
+  tour's is PREMIER DIVISION (diy_competition.c `comp_name_table`, M5 #4b2);
 - the gate wrapping at 16 bits (career_status.c:1370);
 - the seed tables shuffled in place, which makes them career state, saved;
 - a cup primary played through the league path (career_season.c:1666-1680);

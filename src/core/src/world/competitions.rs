@@ -1,17 +1,18 @@
 //! The world's competitions: the leagues, cups, tournaments and play-offs, each the record
-//! its file holds with its references resolved. What their numbers mean is the competition
-//! engine's (M5); here each record is checked to be of a type its file holds.
+//! its file holds with its references and its names resolved. What their numbers mean is the
+//! competition engine's (M5); here each record is checked to be of a type its file holds.
 
 use openswos_common::TeamId;
 use openswos_competitions_json_resource::{
-    CompetitionType, Cup as CupRecord, League as LeagueRecord, Playoff as PlayoffRecord, SymbolId,
-    TeamSeed, Tournament as TournamentRecord,
+    CompetitionType, Cup as CupRecord, League as LeagueRecord, Names, Playoff as PlayoffRecord,
+    SymbolId, TeamSeed, Tournament as TournamentRecord,
 };
 
 use super::countries::Countries;
 use super::files::{CompetitionFiles, Slot};
 use super::ids::Ids;
 use super::tables::BlockRef;
+use super::texts::{NameBytes, Texts};
 use crate::validation::{Expected, Field, Kind, Location, Problem, Problems};
 
 /// A league of a world.
@@ -57,6 +58,8 @@ pub enum LeagueLink {
 pub struct League {
     /// The record, as `leagues.json` holds it.
     pub record: LeagueRecord,
+    /// Its `name`s, resolved (`rules/strings.json`): two a division.
+    pub names: Vec<NameBytes>,
     /// Its `playoff_links`, resolved (`None` for a `null` link); `None` when it has none.
     pub playoff_links: Option<Vec<Option<LeagueLink>>>,
 }
@@ -66,6 +69,8 @@ pub struct League {
 pub struct Cup {
     /// The record, as `cups.json` holds it.
     pub record: CupRecord,
+    /// Its `name`s, resolved (`rules/strings.json`).
+    pub names: Vec<NameBytes>,
     /// Its `team_seed_list`, each team by its identity.
     pub seeds: Vec<TeamId>,
 }
@@ -75,6 +80,8 @@ pub struct Cup {
 pub struct Tournament {
     /// The record, as `tournaments.json` holds it.
     pub record: TournamentRecord,
+    /// Its `name`s, resolved (`rules/strings.json`).
+    pub names: Vec<NameBytes>,
     /// Its `team_seed_list`, each team by its identity.
     pub seeds: Vec<TeamId>,
 }
@@ -84,6 +91,8 @@ pub struct Tournament {
 pub struct Playoff {
     /// The record, as `playoffs.json` holds it.
     pub record: PlayoffRecord,
+    /// Its `name`s, resolved (`rules/strings.json`).
+    pub names: Vec<NameBytes>,
 }
 
 /// `check` applied to every item, all of them (so every problem is reported); `None` when
@@ -111,12 +120,14 @@ pub(crate) fn competition_ref(ids: &Ids, id: &SymbolId) -> Option<CompetitionRef
     })
 }
 
-/// What resolving needs: the ids, the countries and where problems go.
+/// What resolving needs: the ids, the countries, the texts and where problems go.
 pub(crate) struct Resolver<'a> {
     /// The ids.
     pub(crate) ids: &'a Ids,
     /// The countries.
     pub(crate) countries: &'a Countries,
+    /// The texts names resolve to.
+    pub(crate) texts: &'a Texts,
     /// The problems.
     pub(crate) problems: &'a mut Problems,
 }
@@ -212,6 +223,12 @@ impl Resolver<'_> {
         }
     }
 
+    /// A record's names, resolved; the record's field is `field` of `path`.
+    fn names(&mut self, names: &Names, path: &str, field: &Field) -> Option<Vec<NameBytes>> {
+        let location = |index| Location::field(path, &field.index(index));
+        self.texts.names(names, location, self.problems)
+    }
+
     /// The teams a draw starts from, each by its country's number and its place in the
     /// country's team file.
     fn seeds(&mut self, seeds: &[TeamSeed], path: &str, field: &Field) -> Option<Vec<TeamId>> {
@@ -265,10 +282,12 @@ pub(crate) fn leagues(
             .map(Some),
             None => Some(None),
         };
+        let names = resolver.names(&record.name, &path, &field.then("name"));
         kind?;
         new_country?;
         Some(League {
             record: record.clone(),
+            names: names?,
             playoff_links: playoff_links?,
         })
     })
@@ -286,9 +305,11 @@ pub(crate) fn cups(files: &CompetitionFiles<'_>, resolver: &mut Resolver<'_>) ->
             || Location::field(&path, &field.then("comp").then("type")),
         );
         let seeds = resolver.seeds(&record.team_seed_list, &path, &field.then("team_seed_list"));
+        let names = resolver.names(&record.name, &path, &field.then("name"));
         kind?;
         Some(Cup {
             record: record.clone(),
+            names: names?,
             seeds: seeds?,
         })
     })
@@ -306,9 +327,11 @@ pub(crate) fn tournaments(
             Location::field(&path, &field.then("comp").then("type"))
         });
         let seeds = resolver.seeds(&record.team_seed_list, &path, &field.then("team_seed_list"));
+        let names = resolver.names(&record.name, &path, &field.then("name"));
         kind?;
         Some(Tournament {
             record: record.clone(),
+            names: names?,
             seeds: seeds?,
         })
     })
@@ -322,11 +345,14 @@ pub(crate) fn playoffs(
     let path = Slot::Playoffs.path();
     each(&files.playoffs.playoffs, |index, record| {
         let field = Field::key("playoffs").record(index, &record.id);
-        resolver.check_type(record.comp.kind, &[CompetitionType::Cup], || {
+        let kind = resolver.check_type(record.comp.kind, &[CompetitionType::Cup], || {
             Location::field(&path, &field.then("comp").then("type"))
-        })?;
+        });
+        let names = resolver.names(&record.name, &path, &field.then("name"));
+        kind?;
         Some(Playoff {
             record: record.clone(),
+            names: names?,
         })
     })
 }

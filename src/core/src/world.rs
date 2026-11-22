@@ -10,21 +10,25 @@
 //! [`CompetitionRef`]…) into the world that made them. The records' numbers are kept as
 //! read: their meaning is the competition engine's (M5).
 
+mod classes;
 mod competitions;
 mod countries;
+mod draws;
 mod files;
 mod ids;
 mod rules;
 mod schedules;
 mod tables;
+mod texts;
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use openswos_common::TeamFileNumber;
-use openswos_competitions_json_resource::{Continent, SymbolId};
+use openswos_competitions_json_resource::{CompetitionHeader, Continent, SymbolId};
 use openswos_world_package_resource::{WorldPackage, WorldTag};
 use openswos_world_rules_resource::SeasonEnd;
 
+pub use classes::Source;
 pub use competitions::{
     CompetitionRef, Cup, CupRef, League, LeagueLink, LeagueRef, Playoff, PlayoffRef, Tournament,
     TournamentRef,
@@ -35,10 +39,13 @@ pub use tables::{
     Berths, BlockLeague, BlockRef, CareerContest, CountryTable, GroupEntry, GroupRef, LeagueBlock,
     QualifyingGroup, SeedBucket, TableContent,
 };
+pub use texts::{NameBytes, Texts};
 
+use self::classes::Classes;
 use self::competitions::{Resolver, competition_ref};
 pub(crate) use self::files::Slot;
 use self::ids::Ids;
+use self::rules::Details;
 use crate::competition::schedule::Schedules;
 use crate::validation::{Invalid, Problems};
 
@@ -73,8 +80,8 @@ pub struct World {
     seed_buckets: Vec<SeedBucket>,
     /// The year its first season starts.
     first_year: u16,
-    /// Each country's continent.
-    continents: BTreeMap<TeamFileNumber, Continent>,
+    /// Each country's continent and adjective.
+    details: BTreeMap<TeamFileNumber, Details>,
     /// How it numbers its clubs.
     team_numbering: TeamNumbering,
     /// How its seasons end.
@@ -83,6 +90,12 @@ pub struct World {
     schedules: Schedules,
     /// Whether its tournaments' groups may hold an odd number of clubs.
     odd_tournament_groups: bool,
+    /// Its texts.
+    texts: Texts,
+    /// Its classes of competition.
+    classes: Classes,
+    /// Its tournaments drawn by their own tables, with the places a first stage keeps.
+    own_draws: BTreeMap<TournamentRef, u8>,
     /// The competitions it plays: those its career index, its country tables or its
     /// qualifying groups name, and the play-offs and blocks their leagues lead to.
     played: BTreeSet<CompetitionRef>,
@@ -132,6 +145,17 @@ impl World {
             CompetitionRef::Cup(cup) => &self.cup(cup).record.id,
             CompetitionRef::Tournament(tournament) => &self.tournament(tournament).record.id,
             CompetitionRef::Playoff(playoff) => &self.playoff(playoff).record.id,
+        }
+    }
+
+    /// The header of `competition`'s record.
+    #[must_use]
+    pub fn header(&self, competition: CompetitionRef) -> &CompetitionHeader {
+        match competition {
+            CompetitionRef::League(league) => &self.league(league).record.comp,
+            CompetitionRef::Cup(cup) => &self.cup(cup).record.comp,
+            CompetitionRef::Tournament(tournament) => &self.tournament(tournament).record.comp,
+            CompetitionRef::Playoff(playoff) => &self.playoff(playoff).record.comp,
         }
     }
 
@@ -235,7 +259,59 @@ impl World {
     /// has one.
     #[must_use]
     pub fn continent(&self, country: TeamFileNumber) -> Option<Continent> {
-        self.continents.get(&country).copied()
+        self.details.get(&country).map(|details| details.continent)
+    }
+
+    /// The adjective of `country`, a byte a character (`rules/country_details.json`); every
+    /// country of the world has one.
+    #[must_use]
+    pub fn adjective(&self, country: TeamFileNumber) -> Option<&[u8]> {
+        self.details
+            .get(&country)
+            .map(|details| details.adjective.as_slice())
+    }
+
+    /// Its texts (`rules/strings.json`): the names a league falls back on. The records' names
+    /// are resolved already (`League::names`…).
+    #[must_use]
+    pub fn texts(&self) -> &Texts {
+        &self.texts
+    }
+
+    /// Whether `competition`, played from `source`, is a national teams' competition: its
+    /// name takes no country (`rules/competition_classes.json`).
+    #[must_use]
+    pub fn is_national_teams(&self, competition: CompetitionRef, source: Source) -> bool {
+        self.classes.national_teams.contains(&(competition, source))
+    }
+
+    /// The adjective `competition`'s name takes before it, played from `source`: its record's
+    /// country's, unless it is a national teams' competition (upstream diy_competition.c
+    /// `prependCountryNameIfClub`); none for a record of no country.
+    #[must_use]
+    pub fn name_prefix(&self, competition: CompetitionRef, source: Source) -> Option<&[u8]> {
+        if self.is_national_teams(competition, source) {
+            return None;
+        }
+        let country = self.header(competition).team_number.byte();
+        self.adjective(TeamFileNumber(country))
+    }
+
+    /// The places `competition`'s first stage keeps in their order when its stages are drawn
+    /// by their own tables (`rules/draws.json`): none for the engine's draw.
+    #[must_use]
+    pub fn own_draw(&self, competition: CompetitionRef) -> Option<u8> {
+        match competition {
+            CompetitionRef::Tournament(tournament) => self.own_draws.get(&tournament).copied(),
+            CompetitionRef::League(_) | CompetitionRef::Cup(_) | CompetitionRef::Playoff(_) => None,
+        }
+    }
+
+    /// Whether `competition`, played from `source`, is a contest of the continental
+    /// suspensions' track (`rules/competition_classes.json`).
+    #[must_use]
+    pub fn is_continental(&self, competition: CompetitionRef, source: Source) -> bool {
+        self.classes.continental.contains(&(competition, source))
     }
 
     /// How it numbers its clubs (`rules/team_files.json`).
@@ -361,9 +437,11 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
     let (files, rules) = (files?, rules?);
     let countries = Countries::build(files.countries, problems);
     let ids = Ids::build(&files, problems);
+    let texts = Texts::build(rules.strings, problems);
     let mut resolver = Resolver {
         ids: &ids,
         countries: &countries,
+        texts: &texts,
         problems,
     };
     let leagues = competitions::leagues(&files, &mut resolver);
@@ -375,12 +453,14 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
     let career = tables::career(&files, &mut resolver);
     let country_tables = tables::country_tables(&files, &mut resolver);
     let seed_buckets = tables::seed_buckets(&files, &mut resolver);
-    let continents = rules::continents(rules.country_details, &countries, problems);
+    let details = rules::country_details(rules.country_details, &countries, problems);
     let team_numbering = rules::team_numbering(rules.team_files, &countries, problems);
     let season_end = rules::season_end(rules.season, &countries, problems);
     // Every builder has run, its problems reported: what is missing now ends the world.
     let (career, country_tables, qualifying_groups) =
         (career?, country_tables?, qualifying_groups?);
+    let classes = classes::classes(rules.competition_classes, &ids, &career, problems);
+    let own_draws = draws::own_draws(rules.draws, &ids, problems);
     let (leagues, league_blocks) = (leagues?, league_blocks?);
     let (cups, tournaments) = (cups?, tournaments?);
     let played = played(&Parts {
@@ -400,6 +480,7 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
         &mut Resolver {
             ids: &ids,
             countries: &countries,
+            texts: &texts,
             problems,
         },
     );
@@ -416,11 +497,14 @@ fn build(package: &WorldPackage, problems: &mut Problems) -> Option<World> {
         country_tables,
         seed_buckets: seed_buckets?,
         first_year: rules.calendar.first_year,
-        continents: continents?,
+        details: details?,
         team_numbering: team_numbering?,
         season_end: season_end?,
         schedules: schedules?,
         odd_tournament_groups: rules.fixtures.odd_tournament_groups,
+        texts,
+        classes: classes?,
+        own_draws: own_draws?,
         played,
         countries,
         ids,
@@ -432,6 +516,7 @@ mod tests {
     use openswos_common::{TeamFileNumber, TeamId, TeamOrdinal};
     use openswos_competitions_json_resource::{Marker, SymbolId};
     use openswos_world_package_resource::WorldPackage;
+    use openswos_world_rules_resource::OwnDraw;
 
     use super::*;
     use crate::competition::schedule::{Pair, Schedule};
@@ -546,6 +631,139 @@ mod tests {
                 "rules/team_files.json: the file is missing",
                 "rules/season.json: the file is missing",
                 "rules/fixtures.json: the file is missing",
+                "rules/strings.json: the file is missing",
+                "rules/competition_classes.json: the file is missing",
+                "rules/draws.json: the file is missing",
+            ]
+        );
+    }
+
+    #[test]
+    fn the_records_names_are_resolved_through_the_texts() {
+        let world = World::from_package(&package_with(&[(
+            "leagues.json",
+            r#""reserved1": 0, "name": []},"#,
+            r#""reserved1": 0, "name": ["_aDivision1", "D1", "SUPERLIGA Ë"]},"#,
+        )]))
+        .expect("a valid world");
+        let league = world
+            .competition(&id("_albanianLeague"))
+            .and_then(|competition| match competition {
+                CompetitionRef::League(league) => Some(world.league(league)),
+                CompetitionRef::Cup(_)
+                | CompetitionRef::Tournament(_)
+                | CompetitionRef::Playoff(_) => None,
+            })
+            .expect("a league");
+        assert_eq!(
+            league.names,
+            [
+                Some(b"DIVISION 1".to_vec()),
+                Some(b"D1".to_vec()),
+                Some(b"SUPERLIGA \xCB".to_vec())
+            ]
+        );
+        let playoff = &world.playoffs()[0];
+        assert_eq!(playoff.names[1].as_deref(), Some(&b"PLAY-OFFS"[..]));
+        assert_eq!(world.texts().league_reset_name(), b"DIY LEAGUE");
+        assert_eq!(world.texts().cup_reset_name(), b"DIY CUP");
+        assert_eq!(world.texts().cup_name(), b"CUP");
+        assert_eq!(world.texts().tournament_reset_name(), b"DIY TOURNAMENT");
+        assert_eq!(world.texts().tournament_name(), b"LEAGUE");
+        assert_eq!(world.texts().division_name(1), Some(&b"DIVISION 1"[..]));
+        assert_eq!(world.adjective(ENGLAND), Some(&b"ENGLISH"[..]));
+        assert_eq!(world.adjective(TeamFileNumber(9)), None);
+    }
+
+    #[test]
+    fn a_name_beyond_a_byte_a_character_is_reported() {
+        let package = package_with(&[(
+            "cups.json",
+            r#""name": [], "team_seed_list": []}]}"#,
+            r#""name": [null, "COPA ✓"], "team_seed_list": []}]}"#,
+        )]);
+        assert_eq!(
+            problems(&package),
+            [
+                "competitions/cups.json: competitions[2] (_friendly).name[1]: '✓' is no character \
+              of the game's texts (one byte each, not NUL)"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_class_names_records_and_career_copies_apart() {
+        let world = World::from_package(&package()).expect("a valid world");
+        let friendly = world.competition(&id("_friendly")).expect("the friendly");
+        let euro_cup = world
+            .competition(&id("_euroCup"))
+            .expect("the European Cup");
+        assert!(world.is_national_teams(friendly, Source::CareerCopy));
+        assert!(!world.is_national_teams(friendly, Source::Record));
+        assert!(world.is_continental(euro_cup, Source::Record));
+        assert!(world.is_continental(euro_cup, Source::CareerCopy));
+        let league = world.competition(&id("_albanianLeague")).expect("a league");
+        assert!(!world.is_continental(league, Source::Record));
+    }
+
+    #[test]
+    fn a_class_names_only_competitions_and_career_copies() {
+        let mut package = package();
+        let classes = package
+            .rules
+            .competition_classes
+            .as_mut()
+            .expect("the classes");
+        classes.national_teams = ["_albanianLeagueCopy", "_europeTable", "_euroCupCopy"]
+            .map(id)
+            .to_vec();
+        assert_eq!(
+            problems(&package),
+            [
+                "rules/competition_classes.json: national_teams[0]: no competition or career \
+                 copy is called _albanianLeagueCopy",
+                "rules/competition_classes.json: national_teams[1]: no competition or career \
+                 copy is called _europeTable",
+            ]
+        );
+    }
+
+    #[test]
+    fn an_own_draw_is_a_tournament_s_once() {
+        let mut package = package();
+        let draws = package.rules.draws.as_mut().expect("the draws");
+        draws.own_draws = vec![OwnDraw {
+            competitions: vec![id("_euroCup")],
+            first_stage: 16,
+        }];
+        let world = World::from_package(&package).expect("a valid world");
+        let euro_cup = world
+            .competition(&id("_euroCup"))
+            .expect("the European Cup");
+        assert_eq!(world.own_draw(euro_cup), Some(16));
+        let cup = world.competition(&id("_albanianCup")).expect("a cup");
+        assert_eq!(world.own_draw(cup), None);
+        let draws = package.rules.draws.as_mut().expect("the draws");
+        draws.own_draws = vec![
+            OwnDraw {
+                competitions: vec![id("_euroCup"), id("_albanianCup")],
+                first_stage: 0,
+            },
+            OwnDraw {
+                competitions: vec![id("_euroCup")],
+                first_stage: 65,
+            },
+        ];
+        assert_eq!(
+            problems(&package),
+            [
+                "rules/draws.json: own_draws[0].first_stage: an own draw keeping 0 places: 1 to 64",
+                "rules/draws.json: own_draws[0].competitions[1]: _albanianCup is a cup, not a \
+                 tournament",
+                "rules/draws.json: own_draws[1].first_stage: an own draw keeping 65 places: 1 to \
+                 64",
+                "rules/draws.json: own_draws[1].competitions[0]: the tournament has an own draw \
+                 already (at rules/draws.json: own_draws[0].competitions[0])",
             ]
         );
     }

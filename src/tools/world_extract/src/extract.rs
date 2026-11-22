@@ -9,7 +9,7 @@ use std::path::Path;
 
 use openswos_common::{Exporter, TeamFileNumber};
 use openswos_competitions_json_resource::{CompetitionsFile, Continent};
-use openswos_oracle::tables;
+use openswos_oracle::tables::{self, CountryEntry};
 use openswos_world_package_resource::{
     CAREER_PARAMS_JSON, COMPETITIONS_FOLDER, Fingerprint, PackageFiles, RULES_FOLDER, WORLD_INI,
     WorldIni, WorldIniFormat, WorldPackage,
@@ -21,6 +21,7 @@ use openswos_world_rules_resource::{
 use crate::assemble::identity;
 use crate::error::ExtractError;
 use crate::schedules;
+use crate::texts::{self, text};
 
 /// Upstream's 96/97 data files, in its checkout.
 const DATA_JSON: &str = "bin/data_json";
@@ -125,6 +126,16 @@ fn rules(package: &WorldPackage, bases: Vec<u16>) -> Result<Rules, ExtractError>
             schedules,
             competition_schedules: vec![euro_championships],
         }),
+        strings: Some(texts::strings(
+            &package.competitions,
+            &tables::string_symbols()?,
+            &tables::default_names()?,
+        )?),
+        competition_classes: Some(texts::classes(
+            &package.competitions,
+            &tables::competition_lists()?,
+        )?),
+        draws: Some(crate::draws::draws(&package.competitions)?),
     })
 }
 
@@ -153,24 +164,38 @@ fn country_numbers(package: &WorldPackage) -> Result<BTreeSet<u8>, ExtractError>
         .ok_or(ExtractError::NoCountries)
 }
 
-/// Each of `numbers`' continent, from upstream's `_countriesTable`.
+/// Each of `numbers`' details, from upstream's `_countriesTable`.
 fn country_details(numbers: &BTreeSet<u8>) -> Result<CountryDetails, ExtractError> {
     let countries = numbers
         .iter()
         .map(|&number| {
             let entry = tables::country(number)?.ok_or(ExtractError::NoCountryEntry(number))?;
-            let continent =
-                Continent::try_from(entry.continent).map_err(|_| ExtractError::NoContinent {
-                    number,
-                    code: entry.continent,
-                })?;
-            Ok(CountryDetail {
-                number: TeamFileNumber(number),
-                continent,
-            })
+            country_detail(number, &entry)
         })
         .collect::<Result<_, ExtractError>>()?;
     Ok(CountryDetails { countries })
+}
+
+/// The details of country `number`, its `_countriesTable` entry `entry`: its continent and its
+/// adjective.
+///
+/// # Errors
+///
+/// When the entry's continent code is none, or its adjective is not ASCII.
+pub(crate) fn country_detail(
+    number: u8,
+    entry: &CountryEntry,
+) -> Result<CountryDetail, ExtractError> {
+    let continent =
+        Continent::try_from(entry.continent).map_err(|_| ExtractError::NoContinent {
+            number,
+            code: entry.continent,
+        })?;
+    Ok(CountryDetail {
+        number: TeamFileNumber(number),
+        continent,
+        adjective: text(&entry.adjective)?,
+    })
 }
 
 /// The committed package's files: every file of `package` but `WORLD.ini`, whose

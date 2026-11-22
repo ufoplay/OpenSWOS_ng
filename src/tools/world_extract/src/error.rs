@@ -116,6 +116,15 @@ pub enum ExtractError {
     /// A compiled name that is not ASCII.
     #[error("a compiled name is not ASCII: {0:?}")]
     NotAscii(Vec<u8>),
+    /// No record has a competition id an upstream list names.
+    #[error("no record has the competition id {0}")]
+    NoRecordOfId(u8),
+    /// Records of one competition id: an upstream list's record is not one of them.
+    #[error("several records have the competition id {0}")]
+    RepeatedCompId(u8),
+    /// An upstream list names the career's copy of a record the career index does not copy.
+    #[error("the career index makes no copy of {0}")]
+    NoCareerCopy(String),
     /// No tournament has an id upstream's code names.
     #[error("no tournament has the competition id {0}")]
     NoCompetitionOfId(u8),

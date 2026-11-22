@@ -21,8 +21,8 @@ use openswos_team_resource::{TeamFile, TeamFileFormat};
 use openswos_test_utils::{assets_path, tactics_path};
 use openswos_world_package_resource::{WorldIdentity, WorldPackage, WorldTag};
 use openswos_world_rules_resource::{
-    Calendar, CompetitionSchedule, CountryDetail, CountryDetails, Fixtures, Rules, Schedule,
-    Season, SeasonEnd, TeamFiles,
+    Calendar, CompetitionClasses, CompetitionSchedule, CountryDetail, CountryDetails, Draws,
+    Fixtures, Rules, Schedule, Season, SeasonEnd, Strings, TeamFiles,
 };
 
 /// Albania's number.
@@ -191,19 +191,67 @@ pub(crate) fn fixtures() -> Fixtures {
     }
 }
 
-/// The small world's rules: its calendar, its countries' continents, ten global numbers a
-/// team file, its season ending through England then Albania, its fixture behaviours.
+/// The small world's texts: its records' symbols, a reset name and three division names.
+pub(crate) fn strings() -> Strings {
+    let symbols = [
+        ("_aCup_0", "CUP"),
+        ("_aDiv1Playoffs", "DIVISION 1 PLAY-OFFS"),
+        ("_aDiyCup", "DIY CUP"),
+        ("_aDiyLeague", "DIY LEAGUE"),
+        ("_aDiyTournament", "DIY TOURNAMENT"),
+        ("_aDivision1", "DIVISION 1"),
+        ("_aEuroCwCup", "EURO CW CUP"),
+        ("_aEuropeanChampi_1", "EUROPEAN CHAMPIONS' CUP"),
+        ("_aEuropeanCup", "EUROPEAN CUP"),
+        ("_aEuropeanCupWin", "EUROPEAN CUP WINNERS' CUP"),
+        ("_aLeague_1", "LEAGUE"),
+        ("_aPlayoffs", "PLAY-OFFS"),
+    ];
+    Strings {
+        symbols: symbols
+            .into_iter()
+            .map(|(symbol, text)| (symbol.to_owned(), text.to_owned()))
+            .collect(),
+        league_reset_name: "_aDiyLeague".to_owned(),
+        cup_reset_name: "_aDiyCup".to_owned(),
+        tournament_reset_name: "_aDiyTournament".to_owned(),
+        division_names: ["PREMIER DIVISION", "_aDivision1", "DIVISION 2"]
+            .map(str::to_owned)
+            .to_vec(),
+        cup_name: "_aCup_0".to_owned(),
+        tournament_name: "_aLeague_1".to_owned(),
+    }
+}
+
+/// The small world's classes: the friendly's career copy a national teams' competition, the
+/// European Cup and the friendly, each from its record and its copy, the continental track's.
+pub(crate) fn competition_classes() -> CompetitionClasses {
+    let ids = |ids: &[&str]| ids.iter().map(|&id| SymbolId(id.to_owned())).collect();
+    CompetitionClasses {
+        national_teams: ids(&["_friendlyCopy"]),
+        continental: ids(&["_euroCup", "_euroCupCopy", "_friendly", "_friendlyCopy"]),
+    }
+}
+
+/// The small world's rules: its calendar, its countries' continents and adjectives, ten global
+/// numbers a team file, its season ending through England then Albania, its fixture
+/// behaviours, its texts and its classes; no own draw.
 pub(crate) fn rules() -> Rules {
-    let detail = |number: TeamFileNumber| CountryDetail {
+    let detail = |number: TeamFileNumber, adjective: &str| CountryDetail {
         number,
         continent: Continent::Europe,
+        adjective: adjective.to_owned(),
     };
     Rules {
         calendar: Some(Calendar {
             first_year: FIRST_YEAR,
         }),
         country_details: Some(CountryDetails {
-            countries: vec![detail(ALBANIA), detail(ENGLAND), detail(EUROPE)],
+            countries: vec![
+                detail(ALBANIA, "ALBANIAN"),
+                detail(ENGLAND, "ENGLISH"),
+                detail(EUROPE, "EUROPEAN"),
+            ],
         }),
         team_files: Some(TeamFiles {
             bases: (0..crate::world::TEAM_FILES)
@@ -219,6 +267,11 @@ pub(crate) fn rules() -> Rules {
             },
         }),
         fixtures: Some(fixtures()),
+        strings: Some(strings()),
+        competition_classes: Some(competition_classes()),
+        draws: Some(Draws {
+            own_draws: Vec::new(),
+        }),
     }
 }
 

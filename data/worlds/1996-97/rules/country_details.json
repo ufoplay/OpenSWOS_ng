@@ -2,287 +2,358 @@
   "countries": [
     {
       "number": 0,
-      "continent": 0
+      "continent": 0,
+      "adjective": "ALBANIAN"
     },
     {
       "number": 1,
-      "continent": 0
+      "continent": 0,
+      "adjective": "AUSTRIAN"
     },
     {
       "number": 2,
-      "continent": 0
+      "continent": 0,
+      "adjective": "BELGIAN"
     },
     {
       "number": 3,
-      "continent": 0
+      "continent": 0,
+      "adjective": "BULGARIAN"
     },
     {
       "number": 4,
-      "continent": 0
+      "continent": 0,
+      "adjective": "CROATIAN"
     },
     {
       "number": 5,
-      "continent": 0
+      "continent": 0,
+      "adjective": "CYPRIOT"
     },
     {
       "number": 6,
-      "continent": 0
+      "continent": 0,
+      "adjective": "CZECH"
     },
     {
       "number": 7,
-      "continent": 0
+      "continent": 0,
+      "adjective": "DANISH"
     },
     {
       "number": 8,
-      "continent": 0
+      "continent": 0,
+      "adjective": "ENGLISH"
     },
     {
       "number": 10,
-      "continent": 0
+      "continent": 0,
+      "adjective": "ESTONIAN"
     },
     {
       "number": 11,
-      "continent": 0
+      "continent": 0,
+      "adjective": "FAROE ISLES"
     },
     {
       "number": 12,
-      "continent": 0
+      "continent": 0,
+      "adjective": "FINNISH"
     },
     {
       "number": 13,
-      "continent": 0
+      "continent": 0,
+      "adjective": "FRENCH"
     },
     {
       "number": 14,
-      "continent": 0
+      "continent": 0,
+      "adjective": "GERMAN"
     },
     {
       "number": 15,
-      "continent": 0
+      "continent": 0,
+      "adjective": "GREEK"
     },
     {
       "number": 16,
-      "continent": 0
+      "continent": 0,
+      "adjective": "HUNGARIAN"
     },
     {
       "number": 17,
-      "continent": 0
+      "continent": 0,
+      "adjective": "ICELANDIC"
     },
     {
       "number": 18,
-      "continent": 0
+      "continent": 0,
+      "adjective": "IRISH"
     },
     {
       "number": 19,
-      "continent": 0
+      "continent": 0,
+      "adjective": "ISRAELI"
     },
     {
       "number": 20,
-      "continent": 0
+      "continent": 0,
+      "adjective": "ITALIAN"
     },
     {
       "number": 21,
-      "continent": 0
+      "continent": 0,
+      "adjective": "LATVIAN"
     },
     {
       "number": 22,
-      "continent": 0
+      "continent": 0,
+      "adjective": "LITHUANIAN"
     },
     {
       "number": 23,
-      "continent": 0
+      "continent": 0,
+      "adjective": "LUXEMBOURG"
     },
     {
       "number": 24,
-      "continent": 0
+      "continent": 0,
+      "adjective": "MALTESE"
     },
     {
       "number": 25,
-      "continent": 0
+      "continent": 0,
+      "adjective": "DUTCH"
     },
     {
       "number": 26,
-      "continent": 0
+      "continent": 0,
+      "adjective": "NORTHERN IRISH"
     },
     {
       "number": 27,
-      "continent": 0
+      "continent": 0,
+      "adjective": "NORWEGIAN"
     },
     {
       "number": 28,
-      "continent": 0
+      "continent": 0,
+      "adjective": "POLISH"
     },
     {
       "number": 29,
-      "continent": 0
+      "continent": 0,
+      "adjective": "PORTUGESE"
     },
     {
       "number": 30,
-      "continent": 0
+      "continent": 0,
+      "adjective": "ROMANIAN"
     },
     {
       "number": 31,
-      "continent": 0
+      "continent": 0,
+      "adjective": "RUSSIAN"
     },
     {
       "number": 32,
-      "continent": 0
+      "continent": 0,
+      "adjective": "SAN MARINO"
     },
     {
       "number": 33,
-      "continent": 0
+      "continent": 0,
+      "adjective": "SCOTTISH"
     },
     {
       "number": 34,
-      "continent": 0
+      "continent": 0,
+      "adjective": "SLOVENIAN"
     },
     {
       "number": 35,
-      "continent": 0
+      "continent": 0,
+      "adjective": "SPANISH"
     },
     {
       "number": 36,
-      "continent": 0
+      "continent": 0,
+      "adjective": "SWEDISH"
     },
     {
       "number": 37,
-      "continent": 0
+      "continent": 0,
+      "adjective": "SWISS"
     },
     {
       "number": 38,
-      "continent": 0
+      "continent": 0,
+      "adjective": "TURKISH"
     },
     {
       "number": 39,
-      "continent": 0
+      "continent": 0,
+      "adjective": "UKRAINIAN"
     },
     {
       "number": 40,
-      "continent": 0
+      "continent": 0,
+      "adjective": "WELSH"
     },
     {
       "number": 41,
-      "continent": 0
+      "continent": 0,
+      "adjective": "YUGOSLAVIAN"
     },
     {
       "number": 42,
-      "continent": 5
+      "continent": 5,
+      "adjective": "ALGERIAN"
     },
     {
       "number": 43,
-      "continent": 2
+      "continent": 2,
+      "adjective": "ARGENTINIAN"
     },
     {
       "number": 44,
-      "continent": 4
+      "continent": 4,
+      "adjective": "AUSTRALIAN"
     },
     {
       "number": 45,
-      "continent": 2
+      "continent": 2,
+      "adjective": "BOLIVIAN"
     },
     {
       "number": 46,
-      "continent": 2
+      "continent": 2,
+      "adjective": "BRAZILIAN"
     },
     {
       "number": 48,
-      "continent": 2
+      "continent": 2,
+      "adjective": "CHILEAN"
     },
     {
       "number": 49,
-      "continent": 2
+      "continent": 2,
+      "adjective": "COLOMBIAN"
     },
     {
       "number": 50,
-      "continent": 2
+      "continent": 2,
+      "adjective": "ECUADOR"
     },
     {
       "number": 51,
-      "continent": 1
+      "continent": 1,
+      "adjective": "EL SALVADOR"
     },
     {
       "number": 55,
-      "continent": 3
+      "continent": 3,
+      "adjective": "JAPANESE"
     },
     {
       "number": 60,
-      "continent": 1
+      "continent": 1,
+      "adjective": "MEXICAN"
     },
     {
       "number": 62,
-      "continent": 4
+      "continent": 4,
+      "adjective": "NEW ZEALAND"
     },
     {
       "number": 64,
-      "continent": 2
+      "continent": 2,
+      "adjective": "PARAGUAYAN"
     },
     {
       "number": 65,
-      "continent": 2
+      "continent": 2,
+      "adjective": "PERUVIAN"
     },
     {
       "number": 66,
-      "continent": 2
+      "continent": 2,
+      "adjective": "SURINAM"
     },
     {
       "number": 67,
-      "continent": 3
+      "continent": 3,
+      "adjective": "TAIWANESE"
     },
     {
       "number": 69,
-      "continent": 5
+      "continent": 5,
+      "adjective": "SOUTH AFRICAN"
     },
     {
       "number": 71,
-      "continent": 2
+      "continent": 2,
+      "adjective": "URUGUAYAN"
     },
     {
       "number": 73,
-      "continent": 1
+      "continent": 1,
+      "adjective": "AMERICAN"
     },
     {
       "number": 75,
-      "continent": 3
+      "continent": 3,
+      "adjective": "INDIAN"
     },
     {
       "number": 76,
-      "continent": 0
+      "continent": 0,
+      "adjective": "BELARUSSIAN"
     },
     {
       "number": 77,
-      "continent": 2
+      "continent": 2,
+      "adjective": "VENEZUELAN"
     },
     {
       "number": 78,
-      "continent": 0
+      "continent": 0,
+      "adjective": "SLOVAKIAN"
     },
     {
       "number": 79,
-      "continent": 5
+      "continent": 5,
+      "adjective": "GHANA"
     },
     {
       "number": 80,
-      "continent": 0
+      "continent": 0,
+      "adjective": "EUROPEAN"
     },
     {
       "number": 81,
-      "continent": 5
+      "continent": 5,
+      "adjective": "AFRICAN"
     },
     {
       "number": 82,
-      "continent": 2
+      "continent": 2,
+      "adjective": "SOUTH AMERICAN"
     },
     {
       "number": 83,
-      "continent": 1
+      "continent": 1,
+      "adjective": "NORTH AMERICAN"
     },
     {
       "number": 84,
-      "continent": 3
+      "continent": 3,
+      "adjective": "ASIAN"
     },
     {
       "number": 85,
-      "continent": 4
+      "continent": 4,
+      "adjective": "OCEANIAN"
     }
   ]
 }

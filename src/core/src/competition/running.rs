@@ -30,7 +30,7 @@ pub const PHASE_MONTHS: usize = 470;
 const ROW_LEN: usize = 18;
 
 /// The offset of the competition's name buffer (`competitionName`).
-const NAME: usize = 4;
+pub(super) const NAME: usize = 4;
 
 /// The bytes of the name buffer.
 pub const NAME_LEN: usize = 36;
@@ -135,6 +135,102 @@ macro_rules! arrays {
     };
 }
 
+/// Generates the accessors of upstream's competition header (`DIYCompetition`, 104 bytes at the
+/// image's start: its name pointer, an address, at 40; 4 bytes of padding after
+/// `playEachTeam`), which a competition under way and a tournament's state both begin with.
+macro_rules! header_fields {
+    () => {
+        /// The competition's name buffer (`competitionName[36]`): its text, then 0s.
+        #[must_use]
+        pub fn name(&self) -> [u8; NAME_LEN] {
+            self.bytes(NAME)
+        }
+
+        /// Sets the name buffer.
+        pub fn set_name(&mut self, name: [u8; NAME_LEN]) {
+            self.image[NAME..NAME + NAME_LEN].copy_from_slice(&name);
+        }
+
+        fields! {
+            /// The competition's type (`competitionType`): 0 a league, 1 a cup, 2 a tournament.
+            competition_type, set_competition_type: i16 = 0;
+            /// In use, a cup's (`isActive`); over, a slot's (`competitionOver`).
+            is_active, set_is_active: u16 = 2;
+            /// The slot's cache key byte (`compSlot`).
+            comp_slot, set_comp_slot: u8 = 48;
+            /// The slot's index for cache matching (`slotId`).
+            slot_id, set_slot_id: u8 = 49;
+            /// The competition's id (`field_2E`, which the code reads as its `compId`).
+            comp_id, set_comp_id: u8 = 50;
+            /// The month or phase for scheduling (`viewRandomPhase`).
+            view_random_phase, set_view_random_phase: u8 = 51;
+            /// The teams' average skill, a cup's (`avgSkill`); a trophy's bonus, a slot's
+            /// (`trophyBonusValue`).
+            avg_skill, set_avg_skill: u8 = 52;
+            /// The strength tier (`strengthTier`).
+            strength_tier, set_strength_tier: u8 = 53;
+            /// The teams (`numTeams`).
+            num_teams, set_num_teams: i16 = 54;
+            /// The pitch type or the season (`pitchTypeOrSeason`).
+            pitch_type_or_season, set_pitch_type_or_season: i16 = 56;
+            /// The pitch type (`pitchType`).
+            pitch_type, set_pitch_type: i16 = 58;
+            /// The first month (`startMonth`).
+            start_month, set_start_month: i8 = 60;
+            /// The last month (`endMonth`).
+            end_month, set_end_month: i8 = 61;
+            /// The result code, a cup's (`resultCode`).
+            result_code, set_result_code: i16 = 62;
+            /// The winner, a slot's (`winnerTeam`): the same bytes as the result code.
+            winner_team, set_winner_team: u16 = 62;
+            /// The substitutes, a cup's (`substitutesCount`); the squad view's parameter, a slot's
+            /// (`squadViewParam`).
+            substitutes_count, set_substitutes_count: i16 = 64;
+            /// Slot state A (`slotStateA`).
+            slot_state_a, set_slot_state_a: i16 = 66;
+            /// Slot state B (`slotStateB`).
+            slot_state_b, set_slot_state_b: i16 = 68;
+            /// Slot state C (`slotStateC`).
+            slot_state_c, set_slot_state_c: i16 = 70;
+            /// 1 once a match has begun (`matchStarted`).
+            match_started, set_match_started: i16 = 72;
+            /// 1 when the career club takes part (`careerTeamInvolved`).
+            career_team_involved, set_career_team_involved: i16 = 74;
+            /// 0 no groups, 1 groups, 2 groups and a final (`hasGroups`).
+            has_groups, set_has_groups: i16 = 76;
+            /// The cup menu's state (`menuState`).
+            menu_state, set_menu_state: i16 = 78;
+            /// The round iterator, a cup's (`roundIterator`); finished, a slot's
+            /// (`compFinished`).
+            round_iterator, set_round_iterator: i16 = 80;
+            /// The teams in the current stage (`numTeamsInStage`).
+            num_teams_in_stage, set_num_teams_in_stage: i16 = 82;
+            /// The match pairs a round (`matchPairsPerRound`): a league's groups.
+            match_pairs_per_round, set_match_pairs_per_round: i16 = 84;
+            /// The matches of a round (`totalMatchesInRound`): a league group's teams.
+            total_matches_in_round, set_total_matches_in_round: i16 = 86;
+            /// The round complete, a cup's (`roundComplete`); the lowest division, a league's
+            /// (`minDivisionIndex`).
+            round_complete, set_round_complete: i16 = 88;
+            /// The competition finished, a cup's (`competitionFinished`); the highest division's
+            /// offset, a league's (`maxDivisionOffset`).
+            competition_finished, set_competition_finished: i16 = 90;
+            /// The round's index, a cup's (`currentRoundIndex`); the promotions, a league's
+            /// (`promotionCount`).
+            current_round_index, set_current_round_index: i16 = 92;
+            /// The rounds, a cup's (`numRounds`); the relegations, a league's
+            /// (`relegationCount`).
+            num_rounds, set_num_rounds: i16 = 94;
+            /// The sub-round counter (`subRoundCounter`).
+            sub_round_counter, set_sub_round_counter: i16 = 96;
+            /// Each team plays the others this many times (`playEachTeam`).
+            play_each_team, set_play_each_team: i16 = 98;
+        }
+    };
+}
+
+pub(super) use {arrays, fields, header_fields};
+
 /// A competition under way: upstream's image of it, read and written field by field.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RunningCompetition {
@@ -179,17 +275,6 @@ impl RunningCompetition {
     /// The bytes from `offset` on, `N` of them.
     fn bytes<const N: usize>(&self, offset: usize) -> [u8; N] {
         self.image[offset..offset + N].try_into().expect("N bytes")
-    }
-
-    /// The competition's name buffer (`competitionName[36]`): its text, then 0s.
-    #[must_use]
-    pub fn name(&self) -> [u8; NAME_LEN] {
-        self.bytes(NAME)
-    }
-
-    /// Sets the name buffer.
-    pub fn set_name(&mut self, name: [u8; NAME_LEN]) {
-        self.image[NAME..NAME + NAME_LEN].copy_from_slice(&name);
     }
 
     /// The offset of word `field` of standings row `index`'s line.
@@ -243,83 +328,7 @@ impl RunningCompetition {
         }
     }
 
-    // The header (`DIYCompetition`, 104 bytes: its name pointer, an address, at 40; 4 bytes of
-    // padding after `playEachTeam`).
-    fields! {
-        /// The competition's type (`competitionType`): 0 a league, 1 a cup, 2 a tournament.
-        competition_type, set_competition_type: i16 = 0;
-        /// In use, a cup's (`isActive`); over, a slot's (`competitionOver`).
-        is_active, set_is_active: u16 = 2;
-        /// The slot's cache key byte (`compSlot`).
-        comp_slot, set_comp_slot: u8 = 48;
-        /// The slot's index for cache matching (`slotId`).
-        slot_id, set_slot_id: u8 = 49;
-        /// The competition's id (`field_2E`, which the code reads as its `compId`).
-        comp_id, set_comp_id: u8 = 50;
-        /// The month or phase for scheduling (`viewRandomPhase`).
-        view_random_phase, set_view_random_phase: u8 = 51;
-        /// The teams' average skill, a cup's (`avgSkill`); a trophy's bonus, a slot's
-        /// (`trophyBonusValue`).
-        avg_skill, set_avg_skill: u8 = 52;
-        /// The strength tier (`strengthTier`).
-        strength_tier, set_strength_tier: u8 = 53;
-        /// The teams (`numTeams`).
-        num_teams, set_num_teams: i16 = 54;
-        /// The pitch type or the season (`pitchTypeOrSeason`).
-        pitch_type_or_season, set_pitch_type_or_season: i16 = 56;
-        /// The pitch type (`pitchType`).
-        pitch_type, set_pitch_type: i16 = 58;
-        /// The first month (`startMonth`).
-        start_month, set_start_month: i8 = 60;
-        /// The last month (`endMonth`).
-        end_month, set_end_month: i8 = 61;
-        /// The result code, a cup's (`resultCode`).
-        result_code, set_result_code: i16 = 62;
-        /// The winner, a slot's (`winnerTeam`): the same bytes as the result code.
-        winner_team, set_winner_team: u16 = 62;
-        /// The substitutes, a cup's (`substitutesCount`); the squad view's parameter, a slot's
-        /// (`squadViewParam`).
-        substitutes_count, set_substitutes_count: i16 = 64;
-        /// Slot state A (`slotStateA`).
-        slot_state_a, set_slot_state_a: i16 = 66;
-        /// Slot state B (`slotStateB`).
-        slot_state_b, set_slot_state_b: i16 = 68;
-        /// Slot state C (`slotStateC`).
-        slot_state_c, set_slot_state_c: i16 = 70;
-        /// 1 once a match has begun (`matchStarted`).
-        match_started, set_match_started: i16 = 72;
-        /// 1 when the career club takes part (`careerTeamInvolved`).
-        career_team_involved, set_career_team_involved: i16 = 74;
-        /// 0 no groups, 1 groups, 2 groups and a final (`hasGroups`).
-        has_groups, set_has_groups: i16 = 76;
-        /// The cup menu's state (`menuState`).
-        menu_state, set_menu_state: i16 = 78;
-        /// The round iterator, a cup's (`roundIterator`); finished, a slot's
-        /// (`compFinished`).
-        round_iterator, set_round_iterator: i16 = 80;
-        /// The teams in the current stage (`numTeamsInStage`).
-        num_teams_in_stage, set_num_teams_in_stage: i16 = 82;
-        /// The match pairs a round (`matchPairsPerRound`): a league's groups.
-        match_pairs_per_round, set_match_pairs_per_round: i16 = 84;
-        /// The matches of a round (`totalMatchesInRound`): a league group's teams.
-        total_matches_in_round, set_total_matches_in_round: i16 = 86;
-        /// The round complete, a cup's (`roundComplete`); the lowest division, a league's
-        /// (`minDivisionIndex`).
-        round_complete, set_round_complete: i16 = 88;
-        /// The competition finished, a cup's (`competitionFinished`); the highest division's
-        /// offset, a league's (`maxDivisionOffset`).
-        competition_finished, set_competition_finished: i16 = 90;
-        /// The round's index, a cup's (`currentRoundIndex`); the promotions, a league's
-        /// (`promotionCount`).
-        current_round_index, set_current_round_index: i16 = 92;
-        /// The rounds, a cup's (`numRounds`); the relegations, a league's
-        /// (`relegationCount`).
-        num_rounds, set_num_rounds: i16 = 94;
-        /// The sub-round counter (`subRoundCounter`).
-        sub_round_counter, set_sub_round_counter: i16 = 96;
-        /// Each team plays the others this many times (`playEachTeam`).
-        play_each_team, set_play_each_team: i16 = 98;
-    }
+    header_fields!();
 
     // After the header.
     fields! {

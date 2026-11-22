@@ -1,7 +1,7 @@
 //! `DIYCompetitionEx` read through bindgen's declaration of it.
 
-use super::bindings::diy_competition_c::{self as diy, DIYCompetitionEx};
-use crate::running::CompetitionFields;
+use super::bindings::diy_competition_c::{self as diy, DIYCompetition, DIYCompetitionEx};
+use crate::running::{CompetitionFields, HeaderFields};
 
 /// The bytes of the struct in upstream's 64-bit build.
 pub const IMAGE_LEN: usize = 2640;
@@ -28,38 +28,7 @@ pub(crate) fn fields(image: &[u8; IMAGE_LEN]) -> CompetitionFields {
         let section = c.leagueSectionState;
         let scratch = c.__bindgen_anon_1.bracketScratch;
         CompetitionFields {
-            competition_type: base.competitionType,
-            is_active: base.__bindgen_anon_1.isActive,
-            name: base.competitionName.map(i8::cast_unsigned),
-            comp_slot: base.compSlot,
-            slot_id: base.slotId,
-            comp_id: base.field_2E,
-            view_random_phase: base.viewRandomPhase,
-            avg_skill: base.__bindgen_anon_2.avgSkill,
-            strength_tier: base.strengthTier,
-            num_teams: base.numTeams,
-            pitch_type_or_season: base.pitchTypeOrSeason,
-            pitch_type: base.pitchType,
-            start_month: base.startMonth,
-            end_month: base.endMonth,
-            result_code: base.__bindgen_anon_3.resultCode,
-            winner_team: base.__bindgen_anon_3.winnerTeam,
-            substitutes_count: base.__bindgen_anon_4.substitutesCount,
-            slot_states: [base.slotStateA, base.slotStateB, base.slotStateC],
-            match_started: base.matchStarted,
-            career_team_involved: base.careerTeamInvolved,
-            has_groups: base.hasGroups,
-            menu_state: base.menuState,
-            round_iterator: base.__bindgen_anon_5.roundIterator,
-            num_teams_in_stage: base.numTeamsInStage,
-            match_pairs_per_round: base.matchPairsPerRound,
-            total_matches_in_round: base.totalMatchesInRound,
-            round_complete: base.__bindgen_anon_6.roundComplete,
-            competition_finished: base.__bindgen_anon_7.competitionFinished,
-            current_round_index: base.__bindgen_anon_8.currentRoundIndex,
-            num_rounds: base.__bindgen_anon_9.numRounds,
-            sub_round_counter: base.subRoundCounter,
-            play_each_team: base.playEachTeam,
+            header: header(&base),
             min_substitutes: c.minSubstitutes,
             points_for_win: c.pointsForAWin,
             league_words: [
@@ -122,6 +91,47 @@ pub(crate) fn fields(image: &[u8; IMAGE_LEN]) -> CompetitionFields {
                     )
                 })
                 .collect(),
+        }
+    }
+}
+
+/// The header `base` as the C reads it.
+pub(super) fn header(base: &DIYCompetition) -> HeaderFields {
+    // SAFETY: the header's unions are plain integers, each view a reading of the same bytes.
+    unsafe {
+        HeaderFields {
+            competition_type: base.competitionType,
+            is_active: base.__bindgen_anon_1.isActive,
+            name: base.competitionName.map(i8::cast_unsigned),
+            comp_slot: base.compSlot,
+            slot_id: base.slotId,
+            comp_id: base.field_2E,
+            view_random_phase: base.viewRandomPhase,
+            avg_skill: base.__bindgen_anon_2.avgSkill,
+            strength_tier: base.strengthTier,
+            num_teams: base.numTeams,
+            pitch_type_or_season: base.pitchTypeOrSeason,
+            pitch_type: base.pitchType,
+            start_month: base.startMonth,
+            end_month: base.endMonth,
+            result_code: base.__bindgen_anon_3.resultCode,
+            winner_team: base.__bindgen_anon_3.winnerTeam,
+            substitutes_count: base.__bindgen_anon_4.substitutesCount,
+            slot_states: [base.slotStateA, base.slotStateB, base.slotStateC],
+            match_started: base.matchStarted,
+            career_team_involved: base.careerTeamInvolved,
+            has_groups: base.hasGroups,
+            menu_state: base.menuState,
+            round_iterator: base.__bindgen_anon_5.roundIterator,
+            num_teams_in_stage: base.numTeamsInStage,
+            match_pairs_per_round: base.matchPairsPerRound,
+            total_matches_in_round: base.totalMatchesInRound,
+            round_complete: base.__bindgen_anon_6.roundComplete,
+            competition_finished: base.__bindgen_anon_7.competitionFinished,
+            current_round_index: base.__bindgen_anon_8.currentRoundIndex,
+            num_rounds: base.__bindgen_anon_9.numRounds,
+            sub_round_counter: base.subRoundCounter,
+            play_each_team: base.playEachTeam,
         }
     }
 }

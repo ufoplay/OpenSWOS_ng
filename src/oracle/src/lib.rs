@@ -1,6 +1,8 @@
 #![doc = include_str!("../readme.md")]
 
 #[cfg(not(oracle_unavailable))]
+pub mod cup;
+#[cfg(not(oracle_unavailable))]
 pub mod draw;
 #[cfg(not(oracle_unavailable))]
 mod ffi;
@@ -8,6 +10,8 @@ mod ffi;
 pub mod league;
 #[cfg(not(oracle_unavailable))]
 pub mod math;
+#[cfg(not(oracle_unavailable))]
+pub mod play;
 #[cfg(not(oracle_unavailable))]
 pub mod rng;
 #[cfg(not(oracle_unavailable))]
@@ -17,6 +21,8 @@ pub mod style;
 #[cfg(not(oracle_unavailable))]
 pub mod table;
 pub mod tables;
+#[cfg(not(oracle_unavailable))]
+pub mod tournament;
 pub mod unpack;
 
 #[cfg(not(oracle_unavailable))]

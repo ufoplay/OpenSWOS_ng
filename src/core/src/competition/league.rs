@@ -6,18 +6,31 @@
 //!
 //! The texts and the record's classes come in resolved ([`DivisionStart`]): the division's name,
 //! the country's adjective that prefixes it, the default name the reset writes first, whether
-//! its suspensions are the continental track's. Where the world's data states them is the next
-//! step's (M5 #4b2).
+//! its suspensions are the continental track's. [`WorldDivision`] resolves them from a world's
+//! data (M5 #4b2). A league is then played ([`play_result`], M5 #5).
+
+mod play;
+mod world_division;
+
+pub use play::{
+    Fixture, Moves, PlayError, advance, fixture, play_result, season_moves, sort_table,
+    update_qualifiers,
+};
+pub use world_division::{ResolveError, WorldDivision};
 
 use openswos_competitions_json_resource::{CompetitionType, Cup, League};
 use openswos_rng::Rng;
 use thiserror::Error;
 
 use super::draw::shuffle;
-use super::running::{NAME_LEN, RunningCompetition, STANDINGS_ROWS, StandingsRow, TeamBytes};
+use super::running::{RunningCompetition, STANDINGS_ROWS, StandingsRow, TeamBytes};
 use super::schedule::Schedules;
+use super::start::{
+    LoadedTeam, NIBBLE_MASK, NIBBLE_SHIFT, Pitch, copy_string, defaults as common, low_word,
+    months, set_pitch, write_name,
+};
 use super::table::Line;
-use super::value::{Prices, strength};
+use super::value::strength;
 
 /// The bytes of a division in a league record (upstream `Division`: its clubs, promoted,
 /// promoted through play-offs, relegated, relegated through play-offs, its qualifier link).
@@ -29,44 +42,12 @@ const PLACES: usize = 64;
 /// The bytes of a standings row: a place's entry offset counts in them.
 const ROW_BYTES: u16 = 18;
 
-/// The longest name the name buffer takes, its end aside (`copyCompetitionName`).
-const NAME_ROOM: usize = NAME_LEN - 1;
-
-/// The bytes of upstream's name scratch (`copyCompetitionName`'s `tmp[96]`): the adjective,
-/// the space and the name, its end aside, fit in them.
-const NAME_SCRATCH: usize = 96;
-
-/// How far a substitutes byte's high nibble (the fewest) is shifted.
-const NIBBLE_SHIFT: u8 = 4;
-
-/// A substitutes byte's low nibble (the most).
-const NIBBLE_MASK: u8 = 0x0F;
-
 /// The most match days whose months the image holds: from the months' table to its end.
 const MAX_MATCH_DAYS: usize = super::running::IMAGE_LEN - super::running::PHASE_MONTHS;
 
-/// The months the season's progression wraps by when it ends before it starts (upstream
-/// `DIY_RecomputeCompetitionDerivedProgressionTable`: twelve months of eight steps).
-const MONTHS_WRAP: u8 = 0x60;
-
-/// The reset's defaults (upstream `DIY_InitCompetitionDefaults`).
+/// The league reset's own defaults (upstream `DIY_InitCompetitionDefaults`; the ones a cup's
+/// shares are [`common`]'s).
 mod defaults {
-    /// No result yet (`resultCode`).
-    pub const RESULT_CODE: i16 = -1;
-    /// Slot state A (a menu ordinal).
-    pub const SLOT_STATE_A: i16 = 3;
-    /// Slot state B.
-    pub const SLOT_STATE_B: i16 = 2;
-    /// Slot state C (a menu ordinal).
-    pub const SLOT_STATE_C: i16 = 8;
-    /// No competition id.
-    pub const COMP_ID: u8 = 0xFF;
-    /// The first month: the season's start, in eighths of a month.
-    pub const START_MONTH: i8 = 0x38;
-    /// The last month.
-    pub const END_MONTH: i8 = 0x20;
-    /// No pitch type: the season's.
-    pub const PITCH_TYPE: i16 = -1;
     /// The teams.
     pub const TEAMS: i16 = 2;
     /// A win's points.
@@ -169,25 +150,6 @@ impl LeagueRecord {
             ]],
         })
     }
-}
-
-/// The pitch the session plays on (upstream `_pitchType`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Pitch {
-    /// The season's (`_pitchType` -2).
-    Seasonal,
-    /// This type, all season.
-    Type(i16),
-}
-
-/// A team of the league, as upstream finds it (`VerifyTeamLoaded`): its identity in the
-/// standings and its valued players' prices.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct LoadedTeam {
-    /// -1 the career club, otherwise its index among the selected teams.
-    pub identity: i32,
-    /// Its valued players' prices.
-    pub prices: Prices,
 }
 
 /// What a division is started from: its record and place, and what the world's data resolves
@@ -301,26 +263,26 @@ pub fn start_division(
 
 /// The reset (upstream `DIY_InitCompetitionDefaults`): a DIY league's defaults, the name
 /// `default_name`, the table's lines cleared (their teams kept), the places in order.
-fn reset(competition: &mut RunningCompetition, default_name: &[u8]) {
+pub(super) fn reset(competition: &mut RunningCompetition, default_name: &[u8]) {
     competition.set_competition_type(0);
     competition.set_comp_slot(0);
     competition.set_slot_id(0);
     competition.set_is_active(0);
     competition.set_match_started(0);
     competition.set_career_team_involved(0);
-    competition.set_result_code(defaults::RESULT_CODE);
+    competition.set_result_code(common::RESULT_CODE);
     competition.set_substitutes_count(1);
     competition.set_has_groups_diy(0);
-    competition.set_slot_state_a(defaults::SLOT_STATE_A);
-    competition.set_slot_state_b(defaults::SLOT_STATE_B);
-    competition.set_slot_state_c(defaults::SLOT_STATE_C);
-    competition.set_comp_id(defaults::COMP_ID);
+    competition.set_slot_state_a(common::SLOT_STATE_A);
+    competition.set_slot_state_b(common::SLOT_STATE_B);
+    competition.set_slot_state_c(common::SLOT_STATE_C);
+    competition.set_comp_id(common::COMP_ID);
     competition.set_has_groups(0);
     copy_string(competition, default_name);
-    competition.set_start_month(defaults::START_MONTH);
-    competition.set_end_month(defaults::END_MONTH);
+    competition.set_start_month(common::START_MONTH);
+    competition.set_end_month(common::END_MONTH);
     competition.set_pitch_type_or_season(1);
-    competition.set_pitch_type(defaults::PITCH_TYPE);
+    competition.set_pitch_type(common::PITCH_TYPE);
     competition.set_num_teams(defaults::TEAMS);
     competition.set_play_each_team(1);
     competition.set_points_for_win(defaults::POINTS_FOR_WIN);
@@ -348,43 +310,6 @@ fn reset(competition: &mut RunningCompetition, default_name: &[u8]) {
     }
 }
 
-/// `text` (up to its first 0) and its end into the name buffer, as upstream's `StringCopy`
-/// does: the bytes after its end are left.
-fn copy_string(competition: &mut RunningCompetition, text: &[u8]) {
-    let mut name = competition.name();
-    let text = until_nul(text);
-    let len = text.len().min(NAME_ROOM);
-    name[..len].copy_from_slice(&text[..len]);
-    name[len] = 0;
-    competition.set_name(name);
-}
-
-/// The competition's name into its buffer (upstream `copyCompetitionName`): the adjective and
-/// a space, then the name, at most 35 bytes and their end; the bytes after its end are left.
-fn write_name(competition: &mut RunningCompetition, prefix: Option<&[u8]>, name: &[u8]) {
-    let mut text: Vec<u8> = prefix
-        .map(|adjective| {
-            let mut prefix = until_nul(adjective).to_vec();
-            prefix.push(b' ');
-            prefix
-        })
-        .unwrap_or_default();
-    let room = (NAME_SCRATCH - 1).saturating_sub(text.len());
-    text.extend(until_nul(name).iter().take(room));
-    copy_string(competition, &text);
-}
-
-/// The pitch fields (upstream `setPitchTypeFields`): the season's, or one type all season.
-fn set_pitch(competition: &mut RunningCompetition, pitch: Pitch) {
-    match pitch {
-        Pitch::Seasonal => competition.set_pitch_type_or_season(1),
-        Pitch::Type(pitch_type) => {
-            competition.set_pitch_type_or_season(0);
-            competition.set_pitch_type(pitch_type);
-        }
-    }
-}
-
 /// A division's play-off places as upstream reads them: below 0, half their opposite.
 fn play_off_places(places: i8) -> i16 {
     let byte = if places < 0 {
@@ -395,15 +320,10 @@ fn play_off_places(places: i8) -> i16 {
     i16::from(byte)
 }
 
-/// `bytes` up to their first 0.
-fn until_nul(bytes: &[u8]) -> &[u8] {
-    bytes.split(|&byte| byte == 0).next().unwrap_or_default()
-}
-
 /// The fields derived from the league's teams and size (upstream
 /// `DIY_RecomputeCompetitionDerivedFields`): each team's identity in its row, the section's
 /// counts, the season's matches and its months, the teams' strength.
-fn derive(
+pub(super) fn derive(
     competition: &mut RunningCompetition,
     teams: &impl Fn(TeamBytes) -> Option<LoadedTeam>,
 ) -> Result<(), StartError> {
@@ -469,12 +389,6 @@ fn derive(
     Ok(())
 }
 
-/// The low word of `value`, as upstream keeps a quotient.
-fn low_word(value: u32) -> u16 {
-    let [low, high, _, _] = value.to_le_bytes();
-    u16::from_le_bytes([low, high])
-}
-
 /// Each match day's month, from the first month to the last (upstream
 /// `DIY_RecomputeCompetitionDerivedProgressionTable`). Faithful to the original: past 128 match
 /// days the months run on into the cup's teams.
@@ -483,21 +397,13 @@ fn season_months(competition: &mut RunningCompetition) -> Result<(), StartError>
     if days == 0 || usize::from(days) > MAX_MATCH_DAYS {
         return Err(StartError::TooManyMatchDays(days));
     }
-    let start = competition.start_month().cast_unsigned();
-    if days == 1 {
-        competition.set_phase_start_month(0, start);
-        return Ok(());
-    }
-    let mut end = competition.end_month().cast_unsigned();
-    if end < start {
-        end = end.wrapping_add(MONTHS_WRAP);
-    }
-    let range = u32::from(end.wrapping_sub(start));
-    let last = days.wrapping_sub(1);
-    for day in 0..=last {
-        let step = low_word(u32::from(day) * range / u32::from(last));
-        competition
-            .set_phase_start_month(usize::from(day), step.to_le_bytes()[0].wrapping_add(start));
+    let months = months(
+        competition.start_month().cast_unsigned(),
+        competition.end_month().cast_unsigned(),
+        days,
+    );
+    for (day, month) in months.into_iter().enumerate() {
+        competition.set_phase_start_month(day, month);
     }
     Ok(())
 }
@@ -527,6 +433,7 @@ mod tests {
 
     use openswos_common::Importer;
     use openswos_competitions_json_resource::{CompetitionsFile, CompetitionsJsonFormat};
+    use openswos_team_resource::TeamControls;
 
     use super::*;
     use crate::competition::schedule::{Pair, Schedule};
@@ -581,6 +488,7 @@ mod tests {
         let [_, ordinal] = team;
         Some(LoadedTeam {
             identity: i32::from(ordinal),
+            controls: TeamControls::Computer,
             prices: [ordinal; 16],
         })
     }

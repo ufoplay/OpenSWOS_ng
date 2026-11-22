@@ -3,10 +3,13 @@
 use thiserror::Error;
 
 use crate::calendar::Calendar;
+use crate::competition_classes::CompetitionClasses;
 use crate::country_details::CountryDetails;
+use crate::draws::Draws;
 use crate::file::{RulesFile, read, write};
 use crate::fixtures::Fixtures;
 use crate::season::Season;
+use crate::strings::Strings;
 use crate::team_files::TeamFiles;
 
 /// A file of `rules/` this crate reads.
@@ -22,16 +25,25 @@ pub enum RulesFileKind {
     Season,
     /// `fixtures.json`.
     Fixtures,
+    /// `strings.json`.
+    Strings,
+    /// `competition_classes.json`.
+    CompetitionClasses,
+    /// `draws.json`.
+    Draws,
 }
 
 impl RulesFileKind {
     /// Every kind, in the order the files are written.
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 8] = [
         Self::Calendar,
         Self::CountryDetails,
         Self::TeamFiles,
         Self::Season,
         Self::Fixtures,
+        Self::Strings,
+        Self::CompetitionClasses,
+        Self::Draws,
     ];
 
     /// Its file name in `rules/`.
@@ -43,6 +55,9 @@ impl RulesFileKind {
             Self::TeamFiles => TeamFiles::FILE_NAME,
             Self::Season => Season::FILE_NAME,
             Self::Fixtures => Fixtures::FILE_NAME,
+            Self::Strings => Strings::FILE_NAME,
+            Self::CompetitionClasses => CompetitionClasses::FILE_NAME,
+            Self::Draws => Draws::FILE_NAME,
         }
     }
 
@@ -76,6 +91,12 @@ pub struct Rules {
     pub season: Option<Season>,
     /// `fixtures.json`.
     pub fixtures: Option<Fixtures>,
+    /// `strings.json`.
+    pub strings: Option<Strings>,
+    /// `competition_classes.json`.
+    pub competition_classes: Option<CompetitionClasses>,
+    /// `draws.json`.
+    pub draws: Option<Draws>,
 }
 
 impl Rules {
@@ -97,6 +118,11 @@ impl Rules {
             RulesFileKind::TeamFiles => self.team_files = Some(read(bytes).map_err(error)?),
             RulesFileKind::Season => self.season = Some(read(bytes).map_err(error)?),
             RulesFileKind::Fixtures => self.fixtures = Some(read(bytes).map_err(error)?),
+            RulesFileKind::Strings => self.strings = Some(read(bytes).map_err(error)?),
+            RulesFileKind::CompetitionClasses => {
+                self.competition_classes = Some(read(bytes).map_err(error)?);
+            }
+            RulesFileKind::Draws => self.draws = Some(read(bytes).map_err(error)?),
         }
         Ok(())
     }
@@ -118,6 +144,9 @@ impl Rules {
             RulesFileKind::TeamFiles => self.team_files.as_ref().map(write),
             RulesFileKind::Season => self.season.as_ref().map(write),
             RulesFileKind::Fixtures => self.fixtures.as_ref().map(write),
+            RulesFileKind::Strings => self.strings.as_ref().map(write),
+            RulesFileKind::CompetitionClasses => self.competition_classes.as_ref().map(write),
+            RulesFileKind::Draws => self.draws.as_ref().map(write),
         }
     }
 }

@@ -27,6 +27,7 @@ openswos_core = { workspace = true }
 openswos_game_style = { workspace = true }
 openswos_math = { workspace = true }
 openswos_rng = { workspace = true }
+openswos_team_resource = { workspace = true }
 openswos_test_utils = { workspace = true }
 openswos_world_package_resource = { workspace = true }
 proptest = { workspace = true }
