@@ -32,8 +32,8 @@ the PC game's rosters, and World 2026-27's data is the SWOS 96/97 Mod's (D8).
       (`src/schedules.rs`);
     - `strings.json`: the texts of the compiled strings (`_stringSymbols`) the records'
       names name, the resets' names (`_aDiyLeague`, `_aDiyCup`, `_aDiyTournament`), the
-      default division names (`_divisionStringTable`), cup name (`_aCup_0`) and tournament
-      name (`_aLeague_1`), each by its symbol
+      default division names (`_divisionStringTable`), cup name (`_aCup_0`), tournament
+      name (`_aLeague_1`) and cup round names (`_cupRoundStringTable`), each by its symbol
       (`src/texts.rs`);
     - `competition_classes.json`: `_nationalTeamCompetitionsAndQualifications1` and
       `_europeanCupsandNationalTeamCompetitionsAndQualifications`, each record by its id (by

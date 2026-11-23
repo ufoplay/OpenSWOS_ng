@@ -188,10 +188,19 @@ pub fn complete_2627(out: Option<&Path>) -> Result<Completed, ExtractError> {
         .as_deref()
         .map(unpack_pool)
         .transpose()?;
+    let own_draws = openswos_oracle::tables::own_draw_tables()?;
     let baked = openswos_oracle::tables::world_2627()?;
     let base = crate::assemble::committed(&world_1996_97_path())?;
-    let package =
-        crate::complete::world_2627(&base, &fetched.opened.package, &baked, &cup_rows, pool)?;
+    let package = crate::complete::world_2627(
+        &base,
+        &fetched.opened.package,
+        &crate::complete::Upstream {
+            baked: &baked,
+            cup_rows: &cup_rows,
+            own_draws: &own_draws,
+        },
+        pool,
+    )?;
     let data = game_data(&package, builtin_tactics(&tactics_path())?)?;
     let world = data.world();
     let (dir, existing) = match out {

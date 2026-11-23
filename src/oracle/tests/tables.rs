@@ -154,6 +154,14 @@ fn a_league_a_cup_and_a_tournament_fall_back_on_the_resets_and_default_names() {
         named("_aDiyTournament", b"DIY TOURNAMENT")
     );
     assert_eq!(names.tournament, named("_aLeague_1", b"LEAGUE"));
+    // `_cupRoundStringTable`: the original's twelve, then the worlds' eleven.
+    assert_eq!(names.cup_rounds.len(), 23);
+    assert_eq!(names.cup_rounds[0], named("_aFirstRound", b"FIRST ROUND"));
+    assert_eq!(names.cup_rounds[8].text, b"FINAL");
+    assert_eq!(
+        names.cup_rounds[10],
+        named("_aThirdPlacePlay", b"THIRD PLACE PLAY-OFF")
+    );
     // `_divisionStringTable`.
     assert_eq!(
         names.divisions,

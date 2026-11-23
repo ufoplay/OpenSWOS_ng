@@ -16,7 +16,7 @@ pub mod team_files;
 pub use calendar::Calendar;
 pub use competition_classes::CompetitionClasses;
 pub use country_details::{CountryDetail, CountryDetails};
-pub use draws::{Draws, OwnDraw};
+pub use draws::{BestPlaced, Draws, OwnDraw, Pattern, Ranking, StageDraw};
 pub use file::{RulesFile, read, write};
 pub use fixtures::{CompetitionSchedule, Fixtures, Schedule};
 pub use rules::{Rules, RulesError, RulesFileKind};

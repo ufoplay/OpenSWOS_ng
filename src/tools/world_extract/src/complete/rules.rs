@@ -175,7 +175,7 @@ fn fit_national_files(
 #[cfg(test)]
 mod tests {
     use openswos_oracle::tables::{CountryEntry, FixtureSchedule};
-    use openswos_world_rules_resource::{CompetitionSchedule, OwnDraw, Schedule};
+    use openswos_world_rules_resource::{CompetitionSchedule, OwnDraw, Ranking, Schedule, StageDraw};
 
     use super::*;
 
@@ -279,6 +279,7 @@ mod tests {
                 division_names: Vec::new(),
                 cup_name: "_aCup".to_owned(),
                 tournament_name: "_aCup".to_owned(),
+                cup_round_names: Vec::new(),
             }),
             competition_classes: Some(CompetitionClasses {
                 national_teams: vec![id("_worldCup")],
@@ -293,7 +294,8 @@ mod tests {
         Draws {
             own_draws: vec![OwnDraw {
                 competitions: vec![id("_worldCup")],
-                first_stage: 24,
+                ranking: Ranking::ByGroup,
+                stages: vec![StageDraw::Keep(24)],
             }],
         }
     }

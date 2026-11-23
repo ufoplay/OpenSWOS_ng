@@ -135,7 +135,10 @@ fn rules(package: &WorldPackage, bases: Vec<u16>) -> Result<Rules, ExtractError>
             &package.competitions,
             &tables::competition_lists()?,
         )?),
-        draws: Some(crate::draws::draws(&package.competitions)?),
+        draws: Some(crate::draws::draws(
+            &package.competitions,
+            &tables::own_draw_tables()?,
+        )?),
     })
 }
 

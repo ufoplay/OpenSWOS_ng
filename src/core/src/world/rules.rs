@@ -471,6 +471,7 @@ mod tests {
                 division_names: Vec::new(),
                 cup_name: String::new(),
                 tournament_name: String::new(),
+                cup_round_names: Vec::new(),
             }),
             competition_classes: Some(CompetitionClasses {
                 national_teams: Vec::new(),

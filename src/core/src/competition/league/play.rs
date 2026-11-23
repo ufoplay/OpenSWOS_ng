@@ -281,7 +281,10 @@ fn both_sides(before: Line, home: Line, away: Line) -> Line {
 
 /// The match's progress kept in the tournament's state when the league is its stage
 /// (upstream `DIY_SyncProgressToDiyFileBufferCopy`).
-fn keep_progress(competition: &RunningCompetition, tournament: &mut TournamentState) {
+pub(in crate::competition) fn keep_progress(
+    competition: &RunningCompetition,
+    tournament: &mut TournamentState,
+) {
     if competition.has_groups() == 0 {
         return;
     }
@@ -299,7 +302,7 @@ fn entry_row(entry: u16) -> Result<usize, PlayError> {
 }
 
 /// The row of place `place` of the table.
-fn place_row(competition: &RunningCompetition, place: usize) -> Result<usize, PlayError> {
+pub(in crate::competition) fn place_row(competition: &RunningCompetition, place: usize) -> Result<usize, PlayError> {
     if place >= PLACES {
         return Err(PlayError::PlacePastOrder(place));
     }
@@ -365,8 +368,9 @@ pub fn update_qualifiers(
     name: impl Fn(i32) -> Option<Vec<u8>>,
 ) -> Result<(), PlayError> {
     sort_table(competition, name)?;
-    let last_stage = tournament.round_complete().cast_unsigned().wrapping_add(1)
-        == tournament.total_matches_in_round().cast_unsigned();
+    // Faithful to the original: the next stage's index is an int, past a word.
+    let last_stage = u32::from(tournament.round_complete().cast_unsigned()) + 1
+        == u32::from(tournament.total_matches_in_round().cast_unsigned());
     if competition.has_groups() == 0 || last_stage {
         let row = place_row(competition, 0)?;
         competition.set_result_code(i16::from_be_bytes(competition.league_team(row)));

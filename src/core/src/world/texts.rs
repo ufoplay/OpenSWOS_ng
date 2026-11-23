@@ -33,6 +33,8 @@ pub struct Texts {
     cup_name: Vec<u8>,
     /// A tournament's default name.
     tournament_name: Vec<u8>,
+    /// A cup's rounds' names, by index.
+    cup_round_names: Vec<Vec<u8>>,
 }
 
 impl Texts {
@@ -62,6 +64,11 @@ impl Texts {
             .collect();
         let cup_name = name(&strings.cup_name, &Field::key("cup_name"));
         let tournament_name = name(&strings.tournament_name, &Field::key("tournament_name"));
+        let round_field = Field::key("cup_round_names");
+        let cup_round_names = (0..)
+            .zip(&strings.cup_round_names)
+            .map(|(index, text)| name(text, &round_field.index(index)))
+            .collect();
         Self {
             symbols,
             league_reset_name,
@@ -70,6 +77,7 @@ impl Texts {
             division_names,
             cup_name,
             tournament_name,
+            cup_round_names,
         }
     }
 
@@ -136,6 +144,16 @@ impl Texts {
     pub fn tournament_name(&self) -> &[u8] {
         &self.tournament_name
     }
+
+    /// The cup round name of index `index` ([`round_name`](crate::competition::cup::round_name),
+    /// [`stage_name`](crate::competition::cup::stage_name); upstream `_cupRoundStringTable`), if
+    /// the world has one.
+    #[must_use]
+    pub fn cup_round_name(&self, index: u16) -> Option<&[u8]> {
+        self.cup_round_names
+            .get(usize::from(index))
+            .map(Vec::as_slice)
+    }
 }
 
 /// The bytes of `name` among `symbols`: its symbol's text, or its own.
@@ -197,6 +215,7 @@ mod tests {
             division_names: divisions.iter().map(|&name| name.to_owned()).collect(),
             cup_name: cup_name.to_owned(),
             tournament_name: tournament_name.to_owned(),
+            cup_round_names: vec!["_aDivision1".to_owned(), "FINAL".to_owned()],
         }
     }
 
@@ -230,6 +249,9 @@ mod tests {
         assert_eq!(texts.cup_name(), b"CUP");
         assert_eq!(texts.tournament_reset_name(), b"DIY TOURNAMENT");
         assert_eq!(texts.tournament_name(), b"LEAGUE");
+        assert_eq!(texts.cup_round_name(0), Some(&b"DIVISION 1"[..]));
+        assert_eq!(texts.cup_round_name(1), Some(&b"FINAL"[..]));
+        assert_eq!(texts.cup_round_name(2), None);
         assert_eq!(texts.division_name(0), Some(&b"DIVISION 1"[..]));
         assert_eq!(texts.division_name(1), Some(&b"SOUTH"[..]));
         assert_eq!(texts.division_name(2), None);

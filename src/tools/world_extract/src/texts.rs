@@ -137,6 +137,11 @@ pub(crate) fn strings(
     let cup_name = default(&defaults.cup)?;
     let tournament_reset_name = default(&defaults.tournament_reset)?;
     let tournament_name = default(&defaults.tournament)?;
+    let cup_round_names = defaults
+        .cup_rounds
+        .iter()
+        .map(&mut default)
+        .collect::<Result<_, ExtractError>>()?;
     Ok(Strings {
         symbols: used,
         league_reset_name,
@@ -145,6 +150,7 @@ pub(crate) fn strings(
         division_names,
         cup_name,
         tournament_name,
+        cup_round_names,
     })
 }
 
@@ -298,6 +304,7 @@ mod tests {
             cup: compiled(Some("_aCup_0"), b"CUP"),
             tournament_reset: compiled(None, b"DIY TOURNAMENT"),
             tournament: compiled(None, b"LEAGUE"),
+            cup_rounds: vec![compiled(None, b"FINAL")],
         };
         let strings = strings(&competitions(), &symbols, &defaults).expect("strings");
         let listed: Vec<(&str, &str)> = strings
@@ -321,6 +328,7 @@ mod tests {
         assert_eq!(strings.cup_name, "_aCup_0");
         assert_eq!(strings.tournament_reset_name, "DIY TOURNAMENT");
         assert_eq!(strings.tournament_name, "LEAGUE");
+        assert_eq!(strings.cup_round_names, ["FINAL"]);
     }
 
     #[test]
@@ -333,6 +341,7 @@ mod tests {
             cup: compiled(None, b""),
             tournament_reset: compiled(None, b""),
             tournament: compiled(None, b""),
+            cup_rounds: Vec::new(),
         };
         let error = strings(&competitions(), &symbols, &defaults).expect_err("not ASCII");
         assert!(matches!(error, ExtractError::NotAscii(bytes) if bytes == [0xC9]));

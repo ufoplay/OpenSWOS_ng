@@ -58,7 +58,7 @@ fn set_team(team: *mut TeamFileEx, name: &[u8], number: u16) {
 }
 
 /// The teams' names and numbers set.
-fn set_teams(teams: &Teams) {
+pub(super) fn set_teams(teams: &Teams) {
     for (ordinal, (name, number)) in teams.selected.iter().enumerate() {
         set_team(loaded(ordinal), name, *number);
     }

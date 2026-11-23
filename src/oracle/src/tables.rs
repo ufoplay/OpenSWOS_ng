@@ -194,6 +194,8 @@ pub struct DefaultNames {
     pub cup: CompiledString,
     /// A tournament's (`InitDIYLeagueFromRecord`: `_aLeague_1`).
     pub tournament: CompiledString,
+    /// A cup's rounds', by index (`_cupRoundStringTable`).
+    pub cup_rounds: Vec<CompiledString>,
 }
 
 /// A record one of upstream's lists names: its compId, and whether the list names a career's
@@ -301,6 +303,42 @@ pub fn euro_championship_fixtures() -> Result<Vec<u8>, Unavailable> {
     {
         let _held = crate::Oracle::lock();
         Ok(crate::ffi::tables::euro_championship_fixtures())
+    }
+    #[cfg(oracle_unavailable)]
+    {
+        Err(Unavailable)
+    }
+}
+
+/// The own draws' tables (src/swos_data_bulk_imports.c), as compiled: diy_competition.c's
+/// `buildCompSpecificTeamList` (the World Cup's) and `buildCompSpecificTeamShuffle` (the
+/// European Championships') draw a later stage by them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OwnDrawTables {
+    /// `_diyShuffleOrder8Teams`: the European Championships' eight.
+    pub order_8: Vec<u8>,
+    /// `_diyShuffleOrder4Teams`: the European Championships' four.
+    pub order_4: Vec<u8>,
+    /// `_diyTournamentShuffleOrder8`: the World Cup's eight.
+    pub tournament_order_8: Vec<u8>,
+    /// `_diyGroupPatternLookup`: each pattern's groups' bits and its four's order, five bytes
+    /// a pattern, ended by a byte below 0.
+    pub group_patterns: Vec<u8>,
+    /// `_diyLeagueTeamShuffleMap`: the World Cup's sixteen, each a place before or (below 0)
+    /// the next of a pattern's order.
+    pub best_placed_map: Vec<i8>,
+}
+
+/// The own draws' tables.
+///
+/// # Errors
+///
+/// [`Unavailable`] without the checkout.
+pub fn own_draw_tables() -> Result<OwnDrawTables, Unavailable> {
+    #[cfg(not(oracle_unavailable))]
+    {
+        let _held = crate::Oracle::lock();
+        Ok(crate::ffi::tables::own_draw_tables())
     }
     #[cfg(oracle_unavailable)]
     {

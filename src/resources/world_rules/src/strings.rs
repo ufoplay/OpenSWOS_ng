@@ -23,7 +23,8 @@ use crate::file::RulesFile;
 ///   "tournament_reset_name": "_aDiyTournament",
 ///   "division_names": ["_aPremierDivisio", "_aDivision1_0", "_aDivision2_0", "_aDivision3_0"],
 ///   "cup_name": "_aCup_0",
-///   "tournament_name": "_aLeague_1"
+///   "tournament_name": "_aLeague_1",
+///   "cup_round_names": ["_aFirstRound", "_aSecondRound", "…", "_aFinal_2"]
 /// }
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,6 +48,10 @@ pub struct Strings {
     /// A tournament's name when its record names none (upstream `InitDIYLeagueFromRecord`:
     /// `_aLeague_1`).
     pub tournament_name: String,
+    /// A cup's rounds' names, by index (upstream `_cupRoundStringTable`: the first round's on,
+    /// the quarter-final 6, the semi-final 7, the final 8, the final group 9, the third place
+    /// play-off 10, the final groups 11, then a world's own).
+    pub cup_round_names: Vec<String>,
 }
 
 impl RulesFile for Strings {
@@ -63,7 +68,8 @@ mod tests {
         \"_aDiyLeague\": \"DIY LEAGUE\"\n  },\n  \"league_reset_name\": \"_aDiyLeague\",\n  \
         \"cup_reset_name\": \"DIY CUP\",\n  \"tournament_reset_name\": \"DIY TOURNAMENT\",\n  \
         \"division_names\": [\n    \"_aDivision1\",\n    \"DIVISION 2\"\n  ],\n  \
-        \"cup_name\": \"CUP\",\n  \"tournament_name\": \"LEAGUE\"\n}\n";
+        \"cup_name\": \"CUP\",\n  \"tournament_name\": \"LEAGUE\",\n  \
+        \"cup_round_names\": [\n    \"FIRST ROUND\"\n  ]\n}\n";
 
     #[test]
     fn it_reads_and_writes_back() {
@@ -78,6 +84,7 @@ mod tests {
         assert_eq!(strings.cup_name, "CUP");
         assert_eq!(strings.tournament_reset_name, "DIY TOURNAMENT");
         assert_eq!(strings.tournament_name, "LEAGUE");
+        assert_eq!(strings.cup_round_names, ["FIRST ROUND"]);
         assert_eq!(write(&strings), TEXT.as_bytes());
     }
 
@@ -93,6 +100,7 @@ mod tests {
             division_names: Vec::new(),
             cup_name: String::new(),
             tournament_name: String::new(),
+            cup_round_names: Vec::new(),
         };
         let text = String::from_utf8(write(&strings)).expect("ASCII");
         assert!(text.find("\"_a\"") < text.find("\"_b\""), "{text}");
@@ -101,9 +109,9 @@ mod tests {
     #[test]
     fn a_missing_key_does_not_read() {
         let error = read::<Strings>(
-            br#"{"symbols": {}, "league_reset_name": "", "cup_reset_name": "", "tournament_reset_name": "", "division_names": [], "cup_name": ""}"#,
+            br#"{"symbols": {}, "league_reset_name": "", "cup_reset_name": "", "tournament_reset_name": "", "division_names": [], "cup_name": "", "tournament_name": ""}"#,
         )
-        .expect_err("no tournament name");
-        assert!(error.to_string().contains("tournament_name"), "{error}");
+        .expect_err("no round names");
+        assert!(error.to_string().contains("cup_round_names"), "{error}");
     }
 }

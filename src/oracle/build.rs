@@ -55,6 +55,10 @@ typedef int64_t Sint64;
 /// The shim's file name.
 const SDL_SHIM_FILE: &str = "SDL.h";
 
+/// The header that makes the replaced functions' definitions weak (`#pragma weak`), in
+/// `OUT_DIR`: force-included in every unit.
+const REPLACED_FILE: &str = "oracle_replaced.h";
+
 /// What bindgen's wrappers of a header's `static` functions are called after: `<binding>`
 /// then this, in `OUT_DIR` (bindgen adds `.c`).
 const WRAPPERS_SUFFIX: &str = "_static";
@@ -79,6 +83,10 @@ struct Build {
     defines: Vec<String>,
     include: String,
     include_dirs: Vec<String>,
+    /// Upstream's functions the oracle's stubs replace (`ffi::stubs`): their definitions made
+    /// weak, so the stubs are what links.
+    #[serde(default)]
+    replaced: Vec<String>,
 }
 
 /// A unit the tests call.
@@ -204,7 +212,8 @@ fn main() {
             .unwrap_or_else(|| panic!("no static function of {} wrapped", header.path));
         sources.push(wrappers);
     }
-    compile(&upstream, &units.build, &sources, &shim);
+    let replaced = replaced_header(&out, &units.build);
+    compile(&upstream, &units.build, &sources, &shim, &replaced);
 }
 
 /// Writes the SDL shim into `out`, and returns its folder.
@@ -243,8 +252,23 @@ fn define_args(build: &Build) -> impl Iterator<Item = String> + '_ {
     build.defines.iter().map(|define| format!("-D{define}"))
 }
 
-/// Compiles `sources` into the static library, the SDL shim in `shim`.
-fn compile(upstream: &Path, build: &Build, sources: &[PathBuf], shim: &Path) {
+/// Writes the header that makes `build`'s replaced functions weak into `out`, and returns its
+/// path.
+fn replaced_header(out: &Path, build: &Build) -> PathBuf {
+    let mut text = String::from(
+        "/* The functions the oracle's stubs replace (src/oracle/build.rs): made weak. */\n",
+    );
+    for function in &build.replaced {
+        text.push_str(&format!("#pragma weak {function}\n"));
+    }
+    let path = out.join(REPLACED_FILE);
+    fs::write(&path, text).expect("the replaced functions' header written");
+    path
+}
+
+/// Compiles `sources` into the static library, the SDL shim in `shim`, the replaced
+/// functions' header `replaced` force-included.
+fn compile(upstream: &Path, build: &Build, sources: &[PathBuf], shim: &Path, replaced: &Path) {
     let mut compiler = cc::Build::new();
     compiler
         .files(sources)
@@ -255,7 +279,9 @@ fn compile(upstream: &Path, build: &Build, sources: &[PathBuf], shim: &Path) {
         // Upstream's C warns a great deal by design (its Makefile turns most of it off).
         .flag("-w")
         .flag("-include")
-        .flag(upstream.join(&build.include).display().to_string());
+        .flag(upstream.join(&build.include).display().to_string())
+        .flag("-include")
+        .flag(replaced.display().to_string());
     for flag in &build.flags {
         compiler.flag(flag);
     }

@@ -2,8 +2,13 @@
 //! (`InitDIYCupFromRecord`): from any image, any cup's or play-off's record started alike, byte
 //! for byte (the C's name pointer, an address, aside), and odd teams refused as upstream halts;
 //! and every knockout of World 1996-97, resolved from its package (`WorldKnockout`), started as
-//! upstream starts its compiled records with its own tables. Without upstream's checkout the
-//! oracle is not built and these tests are not either (`tests/available.rs` says so).
+//! upstream starts its compiled records with its own tables. A cup played (`decide`,
+//! `play_cup_match`, `next_round`: upstream's `ProcessDIYKnockoutMatchResultAndCareerUpdates`,
+//! `DIY_PlayCupMatchAndAdvance`, `DIY_UpdateCompetitionProgress`, its results cached): any tie
+//! decided alike, the same parts of its results asked; any next round alike; any cup's record
+//! and every knockout of World 1996-97 played through to its winner alike, match by match; the
+//! round names alike. Without upstream's checkout the oracle is not built and these tests are
+//! not either (`tests/available.rs` says so).
 #![cfg(not(oracle_unavailable))]
 
 use std::sync::LazyLock;
@@ -13,12 +18,18 @@ use openswos_common::json::JsonByte;
 use openswos_competitions_json_resource::{
     CompetitionHeader, CompetitionType, Cup, CupKind, Playoff, RoundRules, SymbolId,
 };
-use openswos_core::competition::cup::{CupRecord, CupStart, StartError, WorldKnockout, start_cup};
+use openswos_core::competition::cup::{
+    CupFixture, CupPlayError, CupRecord, CupStart, MatchResults, StartError, Venue, WorldKnockout,
+    decide, next_round, play_cup_match, round_name, stage_name, start_cup,
+};
 use openswos_core::competition::running::{IMAGE_LEN, RunningCompetition};
 use openswos_core::competition::start::{LoadedTeam, Pitch};
+use openswos_core::competition::table::Score;
+use openswos_core::competition::tournament::{STATE_LEN, TournamentState};
 use openswos_core::world::{CompetitionRef, Source, TableContent, World};
 use openswos_oracle::Oracle;
 use openswos_oracle::cup::{CompiledCupSetup, CupSetup, KnockoutBytes, Layout, SelectedTeam};
+use openswos_oracle::cup_play::{CachedResults, CupMatchSetup, Taken};
 use openswos_oracle::draw::Prices;
 use openswos_oracle::league::CompiledRecord;
 use openswos_oracle::rng::RandState;
@@ -453,4 +464,429 @@ fn world_1996_97s_knockouts_start_as_upstreams_compiled_records() {
         started_alike >= MIN_COMPILED_KNOCKOUTS,
         "{started_alike} started"
     );
+}
+
+/// The simulation's mode flag for a neutral ground (upstream's 0xFF).
+const NEUTRAL: u16 = 0xFF;
+
+/// A match's results as the core's source: each part, and which were asked.
+struct Given {
+    /// The results.
+    results: CachedResults,
+    /// The parts asked.
+    taken: Taken,
+}
+
+impl MatchResults for Given {
+    fn normal_time(&mut self, _fixture: CupFixture, venue: Venue) -> Score {
+        self.taken.normal = true;
+        self.taken.venue = Some(match venue {
+            Venue::Home => 0,
+            Venue::Neutral => NEUTRAL,
+        });
+        let (home, away) = self.results.normal;
+        Score { home, away }
+    }
+
+    fn extra_time(&mut self, _fixture: CupFixture) -> Score {
+        self.taken.extra = true;
+        let (home, away) = self.results.extra;
+        Score { home, away }
+    }
+
+    fn penalties(&mut self, _fixture: CupFixture) -> Score {
+        self.taken.penalties = true;
+        let (home, away) = self.results.penalties;
+        Score { home, away }
+    }
+}
+
+/// Match `number`'s results, drawn from `seed`: goals 0 to 3 (decisive from the 200th match, so
+/// replays end), extra time 0 to 2, a shoot-out 0 to 9.
+fn results_of(seed: u64, number: usize) -> CachedResults {
+    let mut state =
+        seed ^ (u64::try_from(number).expect("a match") + 1).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    let mut next = |bound: u64| {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        u16::try_from(state % bound).expect("small")
+    };
+    let normal = if number >= 200 {
+        (1, 0)
+    } else {
+        (next(4), next(4))
+    };
+    CachedResults {
+        normal,
+        extra: (next(3), next(3)),
+        penalties: (next(10), next(10)),
+    }
+}
+
+/// The two images and what was taken, alike.
+fn assert_played_alike(
+    ours: &RunningCompetition,
+    our_state: &TournamentState,
+    theirs: &[u8; IMAGE_LEN],
+    their_state: &[u8; STATE_LEN],
+    what: &str,
+) -> Result<(), TestCaseError> {
+    let mut theirs = *theirs;
+    theirs[NAME_POINTER].copy_from_slice(&ours.image()[NAME_POINTER]);
+    for (offset, (&mine, &upstream)) in ours.image().iter().zip(theirs.iter()).enumerate() {
+        prop_assert_eq!(mine, upstream, "{}: byte {}", what, offset);
+    }
+    prop_assert_eq!(our_state.image(), their_state, "{}: the state", what);
+    Ok(())
+}
+
+/// The most matches a cup plays here before it is called endless.
+const MAX_MATCHES: usize = 1000;
+
+/// Whether the port refuses where upstream runs past the bracket: a round of no ties (a cup
+/// whose rounds are more than its bracket's), or a draw's order never drawn (a cup whose rounds
+/// are fewer, its replays searching the order: upstream past it, or its counts overwritten
+/// from it).
+fn past_bracket(error: CupPlayError) -> bool {
+    matches!(
+        error,
+        CupPlayError::NoTies | CupPlayError::NotInOrder(_) | CupPlayError::TiesPastGrid(_)
+    )
+}
+
+/// How a cup played through ended.
+#[derive(Debug)]
+enum Ended {
+    /// Finished, after this many matches.
+    Finished(usize),
+    /// Refused by the port where upstream runs past its bracket ([`past_bracket`]).
+    Refused(CupPlayError),
+}
+
+/// Plays the cup started in `ours` and `theirs` (with `state`) to its end, as the career does:
+/// its matches until a round is complete, then the next round unless it is finished; each step
+/// alike on both sides, the results of match `n` `results_of(seed, n)`.
+fn play_through(
+    oracle: &mut Oracle,
+    mut ours: RunningCompetition,
+    mut theirs: Box<[u8; IMAGE_LEN]>,
+    teams: &[SelectedTeam],
+    career_team: SelectedTeam,
+    rng: &mut Rng,
+    seed: u64,
+) -> Result<Ended, TestCaseError> {
+    let mut our_state = TournamentState::default();
+    let mut their_state = Box::new([0; STATE_LEN]);
+    for number in 0..MAX_MATCHES {
+        let results = results_of(seed, number);
+        let mut given = Given {
+            results,
+            taken: Taken::default(),
+        };
+        let played = play_cup_match(
+            &mut ours,
+            &mut our_state,
+            &mut given,
+            loader(teams, &career_team),
+            rng,
+        );
+        if let Err(error) = played
+            && past_bracket(error)
+        {
+            return Ok(Ended::Refused(error));
+        }
+        prop_assert!(played.is_ok(), "match {}: {:?}", number, played);
+        let (after, state_after, taken) = oracle.play_cup_match(&CupMatchSetup {
+            competition: theirs,
+            state: their_state,
+            teams: teams.to_vec(),
+            career_team,
+            results,
+        });
+        (theirs, their_state) = (after, state_after);
+        prop_assert_eq!(given.taken, taken, "match {}: the parts taken", number);
+        assert_played_alike(
+            &ours,
+            &our_state,
+            &theirs,
+            &their_state,
+            &format!("match {number}"),
+        )?;
+        if ours.round_complete() == 0 {
+            continue;
+        }
+        if ours.competition_finished() != 0 {
+            return Ok(Ended::Finished(number + 1));
+        }
+        let advanced = next_round(&mut ours);
+        if let Err(error) = advanced
+            && past_bracket(error)
+        {
+            return Ok(Ended::Refused(error));
+        }
+        prop_assert!(advanced.is_ok(), "after match {}: {:?}", number, advanced);
+        theirs = oracle.next_round(&theirs, &their_state);
+        assert_played_alike(
+            &ours,
+            &our_state,
+            &theirs,
+            &their_state,
+            &format!("after match {number}"),
+        )?;
+    }
+    Err(TestCaseError::fail("a cup that never ends"))
+}
+
+/// A cup's state for a tie: any image, its round's rules and its tie's formats any of upstream's
+/// codes.
+fn tie_state() -> impl Strategy<Value = [u8; IMAGE_LEN]> {
+    (
+        vec(any::<u8>(), IMAGE_LEN),
+        (
+            0..=5i16,
+            0..=3u16,
+            0..=3u16,
+            0..=3u16,
+            0..=2u16,
+            0..=2u16,
+            0..=3i16,
+        ),
+    )
+        .prop_map(
+            |(bytes, (round, extra, penalties, format, legs, replay, away))| {
+                let image: [u8; IMAGE_LEN] = bytes.try_into().expect("an image");
+                let mut competition = RunningCompetition::from_image(&image);
+                competition.set_current_round_index(round);
+                let round = usize::try_from(round).expect("0 to 5");
+                competition.set_cup_round_extra_time(round, extra);
+                competition.set_cup_round_penalties(round, penalties);
+                competition.set_round_format(format);
+                competition.set_competition_format(legs);
+                competition.set_group_section_flag(replay);
+                competition.set_play_each_team(away);
+                *competition.image()
+            },
+        )
+}
+
+/// A pair of goals or penalties: mostly small, sometimes past a byte (the tie is decided on
+/// their low bytes).
+fn pair() -> impl Strategy<Value = (u16, u16)> {
+    prop_oneof![3 => (0..5u16, 0..5u16), 1 => any::<(u16, u16)>()]
+}
+
+/// A match's results.
+fn cached() -> impl Strategy<Value = CachedResults> {
+    (pair(), pair(), pair()).prop_map(|(normal, extra, penalties)| CachedResults {
+        normal,
+        extra,
+        penalties,
+    })
+}
+
+proptest! {
+    #[test]
+    fn a_tie_is_decided_as_upstream_decides_it(
+        image in tie_state(),
+        first_leg in (0..5u16, 0..5u16),
+        results in cached(),
+    ) {
+        let competition = RunningCompetition::from_image(&image);
+        let fixture = CupFixture { home_slot: 0, away_slot: 1, home: 0, away: 1 };
+        let mut given = Given { results, taken: Taken::default() };
+        let ours = decide(&competition, fixture, first_leg, &mut given).expect("decided");
+        let teams: Vec<SelectedTeam> = (0..2).map(|_| SelectedTeam { prices: [0; 16], controls: 1 }).collect();
+        let theirs = Oracle::lock().decide_tie(
+            &CupMatchSetup {
+                competition: Box::new(image),
+                state: Box::new([0; STATE_LEN]),
+                teams,
+                career_team: SelectedTeam { prices: [0; 16], controls: 1 },
+                results,
+            },
+            first_leg,
+        );
+        prop_assert_eq!(
+            (ours.goals, ours.aggregate, ours.penalties, u16::from(ours.flags.0)),
+            (theirs.goals, theirs.aggregate, theirs.penalties, theirs.flags)
+        );
+        prop_assert_eq!(given.taken, theirs.taken, "the same parts asked");
+    }
+
+    #[test]
+    fn a_cup_plays_through_as_upstream_plays_it(
+        before in vec(any::<u8>(), IMAGE_LEN),
+        mut record in record(),
+        // Most cups their bracket's rounds (0), some another number.
+        overrides in prop_oneof![3 => Just(0i8), 1 => -2..=8i8],
+        teams in vec(team(), SELECTED_TEAMS),
+        career_team in team(),
+        rand in any::<(u8, u8, u8)>(),
+        seed in any::<u64>(),
+    ) {
+        let before: Box<[u8; IMAGE_LEN]> = before.into_boxed_slice().try_into().expect("an image");
+        record.num_rounds_override = overrides;
+        let core_record = core_record(&record);
+        let name = record.names[0].clone().unwrap_or_else(|| CUP.to_vec());
+        let start = CupStart {
+            record: &core_record,
+            name: &name,
+            prefix: None,
+            default_name: DIY_CUP,
+            continental: false,
+            pitch: Pitch::Seasonal,
+        };
+        let (seed2, xor_index, xor_key) = rand;
+        let mut rng = Rng::default();
+        rng.secondary = Generator { seed: seed2, xor_index, xor_key };
+        let mut ours = RunningCompetition::from_image(&before);
+        prop_assume!(start_cup(&mut ours, &start, loader(&teams, &career_team), &mut rng).is_ok());
+        let mut oracle = Oracle::lock();
+        oracle.set_rand2_state(RandState { seed: seed2, xor_index, xor_key });
+        let theirs = oracle
+            .start_cup(&CupSetup {
+                before: before.clone(),
+                record: record.clone(),
+                national: true,
+                continental: false,
+                pitch_type: SEASONAL,
+                teams: teams.clone(),
+                career_team,
+            })
+            .expect("started");
+        let ended = play_through(&mut oracle, ours, theirs, &teams, career_team, &mut rng, seed)?;
+        if let Ended::Refused(error) = ended {
+            prop_assert!(past_bracket(error), "{:?}", error);
+        }
+    }
+
+    #[test]
+    fn the_next_round_is_upstream_s(
+        image in vec(any::<u8>(), IMAGE_LEN),
+        pairs in 1..=32i16,
+        flags in vec(any::<u8>(), 32),
+        order_seed in any::<u64>(),
+        (finished, legs, format, replay, undecided, round) in (0..=1i16, 0..=2u16, 0..=3u16, 0..=1u16, 0..=4u16, 0..=4i16),
+        has_groups in 0..=1i16,
+    ) {
+        let image: [u8; IMAGE_LEN] = image.try_into().expect("an image");
+        let mut competition = RunningCompetition::from_image(&image);
+        competition.set_match_pairs_per_round(pairs);
+        competition.set_total_matches_in_round(pairs);
+        for (tie, &flag) in flags.iter().enumerate() {
+            competition.set_cup_round_result(tie, flag);
+        }
+        // The draw's order: a permutation of the ties, then the rest as they are.
+        let count = usize::try_from(pairs).expect("1 to 32");
+        let mut order: Vec<u8> = (0..u8::try_from(count).expect("32")).collect();
+        let mut state = order_seed | 1;
+        for place in (1..count).rev() {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            order.swap(place, usize::try_from(state % u64::try_from(place + 1).expect("33")).expect("a place"));
+        }
+        for (place, &index) in order.iter().enumerate() {
+            competition.set_shuffle_order(place, index);
+        }
+        competition.set_competition_finished(finished);
+        competition.set_competition_format(legs);
+        competition.set_round_format(format);
+        competition.set_group_section_flag(replay);
+        competition.set_second_leg_counter(undecided);
+        competition.set_current_round_index(round);
+        competition.set_has_groups(has_groups);
+        let image = *competition.image();
+        let next = next_round(&mut competition);
+        prop_assume!(next.is_ok(), "{:?}", next);
+        let theirs = Oracle::lock().next_round(&image, &[0; STATE_LEN]);
+        prop_assert_eq!(competition.image(), &*theirs);
+    }
+
+    #[test]
+    fn the_round_names_are_upstream_s(
+        (round, rounds, base) in any::<(u16, u16, u16)>(),
+        (stage, groups, stages, teams, third_place) in (0..8u16, 0..3u16, 0..8u16, prop_oneof![Just(4u16), Just(8u16), any::<u16>()], 0..=1u16),
+    ) {
+        let mut oracle = Oracle::lock();
+        prop_assert_eq!(round_name(round, rounds, base), oracle.round_name(round, rounds, base));
+        prop_assert_eq!(
+            stage_name(stage, groups, stages, teams, third_place != 0),
+            oracle.stage_name(stage, groups, stages, teams, third_place)
+        );
+    }
+}
+
+#[test]
+fn world_1996_97s_knockouts_play_through_as_upstream_s() {
+    let world = &*WORLD;
+    let records = compiled_knockouts(world);
+    let controls: Vec<u8> = CONTROLS.collect();
+    let teams: Vec<SelectedTeam> = (0..SELECTED_TEAMS)
+        .map(|ordinal| SelectedTeam {
+            prices: [u8::try_from(ordinal).expect("160"); 16],
+            controls: controls[ordinal % controls.len()],
+        })
+        .collect();
+    let career_team = SelectedTeam {
+        prices: [u8::MAX; 16],
+        controls: u8::from(TeamControls::PlayerCoach),
+    };
+    let mut image = RunningCompetition::default();
+    for ordinal in 0..=u8::MAX >> 2 {
+        image.set_cup_team(usize::from(ordinal), [0, ordinal]);
+    }
+    let before = Box::new(*image.image());
+    let mut oracle = Oracle::lock();
+    let mut played = 0;
+    for (number, compiled) in records.iter().enumerate() {
+        oracle.set_rand2_state(RandState {
+            seed: 0,
+            xor_index: 0,
+            xor_key: 0,
+        });
+        let theirs = oracle
+            .start_compiled_cup(&CompiledCupSetup {
+                before: before.clone(),
+                record: compiled.record,
+                pitch_type: SEASONAL,
+                teams: teams.clone(),
+                career_team,
+            })
+            .expect("upstream's record");
+        let Ok(theirs) = theirs else {
+            continue;
+        };
+        let resolved = WorldKnockout::resolve(world, compiled.competition, compiled.source)
+            .expect("a knockout of the world");
+        let mut rng = Rng::default();
+        rng.secondary = Generator::default();
+        let mut ours = RunningCompetition::from_image(&before);
+        start_cup(
+            &mut ours,
+            &resolved.start(Pitch::Seasonal),
+            loader(&teams, &career_team),
+            &mut rng,
+        )
+        .expect("started");
+        let id = world.competition_id(compiled.competition).as_str();
+        let seed = u64::try_from(number).expect("a few");
+        let ended = play_through(
+            &mut oracle,
+            ours,
+            theirs,
+            &teams,
+            career_team,
+            &mut rng,
+            seed,
+        )
+        .unwrap_or_else(|error| panic!("{id} ({:?}): {error}", compiled.source));
+        let Ended::Finished(matches) = ended else {
+            panic!("{id}: {ended:?}");
+        };
+        assert!(matches > 0, "{id}: no match");
+        played += 1;
+    }
+    assert!(played >= MIN_COMPILED_KNOCKOUTS, "{played} played");
 }

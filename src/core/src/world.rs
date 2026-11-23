@@ -47,6 +47,7 @@ pub(crate) use self::files::Slot;
 use self::ids::Ids;
 use self::rules::Details;
 use crate::competition::schedule::Schedules;
+use crate::competition::tournament::OwnDraw;
 use crate::validation::{Invalid, Problems};
 
 /// A world, valid.
@@ -95,7 +96,7 @@ pub struct World {
     /// Its classes of competition.
     classes: Classes,
     /// Its tournaments drawn by their own tables, with the places a first stage keeps.
-    own_draws: BTreeMap<TournamentRef, u8>,
+    own_draws: BTreeMap<TournamentRef, OwnDraw>,
     /// The competitions it plays: those its career index, its country tables or its
     /// qualifying groups name, and the play-offs and blocks their leagues lead to.
     played: BTreeSet<CompetitionRef>,
@@ -297,12 +298,12 @@ impl World {
         self.adjective(TeamFileNumber(country))
     }
 
-    /// The places `competition`'s first stage keeps in their order when its stages are drawn
-    /// by their own tables (`rules/draws.json`): none for the engine's draw.
+    /// `competition`'s own draw when its stages are drawn by their own tables
+    /// (`rules/draws.json`): none for the engine's draw.
     #[must_use]
-    pub fn own_draw(&self, competition: CompetitionRef) -> Option<u8> {
+    pub fn own_draw(&self, competition: CompetitionRef) -> Option<&OwnDraw> {
         match competition {
-            CompetitionRef::Tournament(tournament) => self.own_draws.get(&tournament).copied(),
+            CompetitionRef::Tournament(tournament) => self.own_draws.get(&tournament),
             CompetitionRef::League(_) | CompetitionRef::Cup(_) | CompetitionRef::Playoff(_) => None,
         }
     }
@@ -516,9 +517,11 @@ mod tests {
     use openswos_common::{TeamFileNumber, TeamId, TeamOrdinal};
     use openswos_competitions_json_resource::{Marker, SymbolId};
     use openswos_world_package_resource::WorldPackage;
-    use openswos_world_rules_resource::OwnDraw;
+    use openswos_world_rules_resource as rules_file;
+    use openswos_world_rules_resource::{Pattern, StageDraw};
 
     use super::*;
+    use crate::competition::tournament::Ranking;
     use crate::competition::schedule::{Pair, Schedule};
     use crate::fixture::{ALBANIA, ENGLAND, package, package_with};
 
@@ -728,42 +731,99 @@ mod tests {
         );
     }
 
+    /// An own draw of `stages`, ranked by group, for `competitions`.
+    fn own_draw(competitions: &[&str], stages: Vec<StageDraw>) -> rules_file::OwnDraw {
+        rules_file::OwnDraw {
+            competitions: competitions.iter().map(|name| id(name)).collect(),
+            ranking: rules_file::Ranking::ByGroup,
+            stages,
+        }
+    }
+
     #[test]
     fn an_own_draw_is_a_tournament_s_once() {
         let mut package = package();
         let draws = package.rules.draws.as_mut().expect("the draws");
-        draws.own_draws = vec![OwnDraw {
-            competitions: vec![id("_euroCup")],
-            first_stage: 16,
-        }];
+        draws.own_draws = vec![own_draw(
+            &["_euroCup"],
+            vec![StageDraw::Keep(16), StageDraw::Order(vec![1, 0])],
+        )];
         let world = World::from_package(&package).expect("a valid world");
         let euro_cup = world
             .competition(&id("_euroCup"))
             .expect("the European Cup");
-        assert_eq!(world.own_draw(euro_cup), Some(16));
+        let drawn = world.own_draw(euro_cup).expect("its own draw");
+        assert_eq!(drawn.ranking(), Ranking::ByGroup);
+        assert_eq!(
+            drawn.stage(3),
+            &crate::competition::tournament::StageDraw::Order(vec![1, 0])
+        );
         let cup = world.competition(&id("_albanianCup")).expect("a cup");
         assert_eq!(world.own_draw(cup), None);
         let draws = package.rules.draws.as_mut().expect("the draws");
         draws.own_draws = vec![
-            OwnDraw {
-                competitions: vec![id("_euroCup"), id("_albanianCup")],
-                first_stage: 0,
-            },
-            OwnDraw {
-                competitions: vec![id("_euroCup")],
-                first_stage: 65,
-            },
+            own_draw(&["_euroCup", "_albanianCup"], vec![StageDraw::Keep(0)]),
+            own_draw(&["_euroCup"], vec![StageDraw::Keep(65)]),
         ];
         assert_eq!(
             problems(&package),
             [
-                "rules/draws.json: own_draws[0].first_stage: an own draw keeping 0 places: 1 to 64",
+                "rules/draws.json: own_draws[0].stages[0].keep: an own draw keeping 0 places: 1 to \
+                 64",
                 "rules/draws.json: own_draws[0].competitions[1]: _albanianCup is a cup, not a \
                  tournament",
-                "rules/draws.json: own_draws[1].first_stage: an own draw keeping 65 places: 1 to \
-                 64",
+                "rules/draws.json: own_draws[1].stages[0].keep: an own draw keeping 65 places: 1 \
+                 to 64",
                 "rules/draws.json: own_draws[1].competitions[0]: the tournament has an own draw \
                  already (at rules/draws.json: own_draws[0].competitions[0])",
+            ]
+        );
+    }
+
+    #[test]
+    fn an_own_draw_s_tables_are_checked() {
+        let mut package = package();
+        let draws = package.rules.draws.as_mut().expect("the draws");
+        draws.own_draws = vec![
+            own_draw(&["_euroCup"], Vec::new()),
+            own_draw(
+                &[],
+                vec![
+                    StageDraw::Order(Vec::new()),
+                    StageDraw::Order(vec![3, 64]),
+                    StageDraw::BestPlaced(rules_file::BestPlaced {
+                        first: 63,
+                        patterns: vec![
+                            Pattern {
+                                groups: vec![0, 8],
+                                order: vec![1, 2],
+                            },
+                            Pattern {
+                                groups: vec![1],
+                                order: vec![0],
+                            },
+                        ],
+                        places: vec![None, Some(70), None],
+                    }),
+                ],
+            ),
+        ];
+        assert_eq!(
+            problems(&package),
+            [
+                "rules/draws.json: own_draws[0].stages: an own draw of no stage",
+                "rules/draws.json: own_draws[1].stages[0].order: a draw of 0 places: 1 to 64",
+                "rules/draws.json: own_draws[1].stages[1].order[1]: place 64 is past the order's 64",
+                "rules/draws.json: own_draws[1].stages[2].best_placed.places[1]: place 70 is past \
+                 the order's 64",
+                "rules/draws.json: own_draws[1].stages[2].best_placed.first: 2 best placed from \
+                 place 63: past the order's 64",
+                "rules/draws.json: own_draws[1].stages[2].best_placed.patterns[0].groups[1]: group \
+                 8 is past a pattern's 8",
+                "rules/draws.json: own_draws[1].stages[2].best_placed.patterns[0].order[1]: rank 2 \
+                 is past the 2 best placed",
+                "rules/draws.json: own_draws[1].stages[2].best_placed.patterns[1].order: a pattern \
+                 ordering 1 of 2 best placed",
             ]
         );
     }

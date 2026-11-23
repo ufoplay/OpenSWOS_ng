@@ -5,6 +5,7 @@
 //! names, the suspensions' track, the world's own draw for it and whether its groups may be
 //! odd.
 
+use super::own_draw::OwnDraw;
 use super::record::{RecordError, TournamentRecord};
 use super::start::{ResetNames, TournamentStart};
 use crate::competition::start::Pitch;
@@ -23,8 +24,8 @@ pub struct WorldTournament {
     reset_names: [Vec<u8>; 3],
     /// Whether its suspensions are the continental track's.
     continental: bool,
-    /// The places its first stage keeps when the world draws it by its own tables.
-    own_draw: Option<u8>,
+    /// Its own draw, when the world draws it by its own tables.
+    own_draw: Option<OwnDraw>,
     /// Whether its groups may hold an odd number of teams.
     odd_groups: bool,
 }
@@ -73,7 +74,7 @@ impl WorldTournament {
                 texts.cup_reset_name().to_vec(),
             ],
             continental: world.is_continental(competition, source),
-            own_draw: world.own_draw(competition),
+            own_draw: world.own_draw(competition).cloned(),
             odd_groups: world.odd_tournament_groups(),
         })
     }
@@ -93,7 +94,7 @@ impl WorldTournament {
                 cup,
             },
             continental: self.continental,
-            own_draw: self.own_draw,
+            own_draw: self.own_draw.as_ref(),
             odd_groups: self.odd_groups,
             pitch,
         }
@@ -103,7 +104,7 @@ impl WorldTournament {
 #[cfg(test)]
 mod tests {
     use openswos_competitions_json_resource::SymbolId;
-    use openswos_world_rules_resource::OwnDraw;
+    use openswos_world_rules_resource as rules_file;
 
     use super::*;
     use crate::fixture::{package, package_with};
@@ -146,14 +147,18 @@ mod tests {
             .as_mut()
             .expect("the draws")
             .own_draws
-            .push(OwnDraw {
+            .push(rules_file::OwnDraw {
                 competitions: vec![SymbolId("_euroCup".to_owned())],
-                first_stage: 16,
+                ranking: rules_file::Ranking::ByPlace,
+                stages: vec![rules_file::StageDraw::Keep(16)],
             });
         let world = World::from_package(&package).expect("a valid world");
         let tournament = resolved(&world, "_euroCup", Source::CareerCopy).expect("resolved");
         assert_eq!(tournament.name, b"LEAGUE");
-        assert_eq!(tournament.own_draw, Some(16));
+        let start = tournament.start(Pitch::Seasonal);
+        let own_draw = start.own_draw.expect("its own draw");
+        assert_eq!(own_draw.stage(0), &super::super::StageDraw::Keep(16));
+        assert_eq!(start.stage_rules().own_draw, Some(own_draw));
         assert!(tournament.continental, "its copy too");
     }
 

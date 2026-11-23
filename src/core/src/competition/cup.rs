@@ -9,8 +9,16 @@
 //! suspensions are the continental track's. [`WorldKnockout`] resolves them from a world's
 //! data.
 
+mod play;
+mod rounds;
 mod world_knockout;
 
+pub use play::{
+    CupFixture, CupPlayError, Decision, MatchResults, ResultFlags, Venue, cup_fixture, decide,
+    next_round, play_cup_match,
+};
+pub(super) use play::winners_first;
+pub use rounds::{round_name, stage_name};
 pub use world_knockout::WorldKnockout;
 
 use openswos_competitions_json_resource::{CompetitionType, Cup, Playoff, RoundRules, SymbolId};

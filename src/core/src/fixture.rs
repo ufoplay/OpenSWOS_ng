@@ -220,6 +220,15 @@ pub(crate) fn strings() -> Strings {
             .to_vec(),
         cup_name: "_aCup_0".to_owned(),
         tournament_name: "_aLeague_1".to_owned(),
+        cup_round_names: [
+            "FIRST ROUND",
+            "SECOND ROUND",
+            "QUARTER-FINAL",
+            "SEMI-FINAL",
+            "FINAL",
+        ]
+        .map(str::to_owned)
+        .to_vec(),
     }
 }
 

@@ -3,6 +3,8 @@
 #[cfg(not(oracle_unavailable))]
 pub mod cup;
 #[cfg(not(oracle_unavailable))]
+pub mod cup_play;
+#[cfg(not(oracle_unavailable))]
 pub mod draw;
 #[cfg(not(oracle_unavailable))]
 mod ffi;
@@ -16,6 +18,8 @@ pub mod play;
 pub mod rng;
 #[cfg(not(oracle_unavailable))]
 pub mod running;
+#[cfg(not(oracle_unavailable))]
+pub mod stage;
 #[cfg(not(oracle_unavailable))]
 pub mod style;
 #[cfg(not(oracle_unavailable))]

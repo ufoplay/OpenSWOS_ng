@@ -198,6 +198,38 @@ pub(crate) extern "C-unwind" fn States_StageStart() {}
 #[unsafe(no_mangle)]
 pub(crate) extern "C-unwind" fn States_KnockoutStart() {}
 
+/// A world's league phase at a stage of groups' end (src/league_phase.c
+/// `LeaguePhase_GroupsEnd`: its play-off ties): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeaguePhase_GroupsEnd(_diy: *mut u8, _after: i32) {}
+
+/// Another confederation's main round at a stage of groups' end (src/conti_season.c
+/// `Conti_GroupsEnd`): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn Conti_GroupsEnd(_diy: *mut u8, _after: i32) {}
+
+/// A world's state championship at a stage of groups' end (src/states.c `States_GroupsEnd`):
+/// none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn States_GroupsEnd(_diy: *mut u8, _after: i32) {}
+
+/// A world's state championship at its knockout's end (src/states.c `States_KnockoutEnd`):
+/// none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn States_KnockoutEnd() {}
+
+/// Whether a world's league phase shows its one table (src/league_phase.c
+/// `LeaguePhase_Showing`; the career's calendar walk asks, M7): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeaguePhase_Showing() -> i32 {
+    0
+}
+
+/// A world's split told the career's calendar walk is on (src/league_split.c
+/// `LeagueSplit_Walking`, M7): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeagueSplit_Walking(_on: i32) {}
+
 /// The match engine's and the career's globals a league match reads and writes
 /// (src/diy_competition.c `DIY_PlayOrSimulateLeagueFixture` and the career updates after it):
 /// none of the oracle's checks reads them.
@@ -308,21 +340,39 @@ pub(crate) extern "C-unwind" fn ModHooks_CareerEvent(
 #[unsafe(no_mangle)]
 pub(crate) extern "C-unwind" fn LongBench_LeagueMatch(_on: i32) {}
 
-/// A simulated result (src/match_sim.c `CalculateViewResult`): never reached, the oracle
-/// giving each league match's result cached.
+/// The results the simulation's stubs give a cup match (normal time's, extra time's, the
+/// shoot-out's), each the home side's and the away side's.
+pub(crate) static mut SIMULATED: [(u16, u16); 3] = [(0, 0); 3];
+
+/// What the simulation's stubs were asked: normal time (with its mode flag), extra time,
+/// penalties.
+pub(crate) static mut ASKED: (Option<u16>, bool, bool) = (None, false, false);
+
+/// A simulated result (src/match_sim.c `CalculateViewResult`): the oracle's
+/// ([`SIMULATED`]), its mode flag (0 the home side's ground, 0xFF neutral) recorded.
+///
+/// # Safety
+///
+/// `out1` and `out2` are words to write.
 #[unsafe(no_mangle)]
-pub(crate) extern "C-unwind" fn CalculateViewResult(
+pub(crate) unsafe extern "C-unwind" fn CalculateViewResult(
     _context: *mut u8,
-    _mode: u16,
+    mode: u16,
     _goals1: u16,
     _goals2: u16,
     _column: u16,
     _team1: *mut u8,
     _team2: *mut u8,
-    _out1: *mut u16,
-    _out2: *mut u16,
+    out1: *mut u16,
+    out2: *mut u16,
 ) {
-    unreachable!("the oracle gives each league match's result cached");
+    // SAFETY: the caller's; plain reads and writes of globals the lock's holder owns.
+    unsafe {
+        let [(home, away), _, _] = SIMULATED;
+        out1.write(home);
+        out2.write(away);
+        ASKED.0 = Some(mode);
+    }
 }
 
 /// A played match (src/game_init.c `InitializeInGameTeamsAndStartGame`): never reached, the
@@ -390,6 +440,121 @@ pub(crate) extern "C-unwind" fn LeaguePhase_Result(
     _goals2: u16,
 ) {
 }
+
+/// A simulated extra time (src/match_sim.c `ExtraTimeSecondPhaseScoring`): the oracle's
+/// ([`SIMULATED`]), recorded.
+///
+/// # Safety
+///
+/// `home` and `away` are words to write.
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "C-unwind" fn ExtraTimeSecondPhaseScoring(home: *mut u16, away: *mut u16) {
+    // SAFETY: the caller's; plain reads and writes of globals the lock's holder owns.
+    unsafe {
+        let [_, (extra_home, extra_away), _] = SIMULATED;
+        home.write(extra_home);
+        away.write(extra_away);
+        ASKED.1 = true;
+    }
+}
+
+/// A simulated shoot-out (src/match_sim.c `PenaltyShootoutScorerPair`): the oracle's
+/// ([`SIMULATED`]), recorded.
+///
+/// # Safety
+///
+/// `home` and `away` are words to write.
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "C-unwind" fn PenaltyShootoutScorerPair(home: *mut i16, away: *mut u16) {
+    // SAFETY: the caller's; plain reads and writes of globals the lock's holder owns.
+    unsafe {
+        let [_, _, (penalties_home, penalties_away)] = SIMULATED;
+        home.write(penalties_home.cast_signed());
+        away.write(penalties_away);
+        ASKED.2 = true;
+    }
+}
+
+/// A world's play-off decides a level tie by its rule's club (src/world_playoff.c): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldPlayoff_LevelWinner(_team1: u16, _team2: u16) -> i32 {
+    0
+}
+
+/// A world's components told a tie's decision (src/world_playoff.c, src/world_cups.c,
+/// src/world_cupd.c, src/world_supercup.c, src/uefa_access.c, src/conti_season.c): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldPlayoff_TieDecided(_team1: u16, _team2: u16, _won: i32) {}
+
+/// See [`WorldPlayoff_TieDecided`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldCups_TieDecided(_team1: u16, _team2: u16, _won: i32) {}
+
+/// See [`WorldPlayoff_TieDecided`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn CupD_TieDecided(_team1: u16, _team2: u16, _won: i32) {}
+
+/// See [`WorldPlayoff_TieDecided`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn SuperCup_TieDecided(_team1: u16, _team2: u16, _won: i32) {}
+
+/// See [`WorldPlayoff_TieDecided`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn UefaQual_TieDecided(_team1: u16, _team2: u16, _won: i32) {}
+
+/// See [`WorldPlayoff_TieDecided`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn Conti_TieDecided(_team1: u16, _team2: u16, _won: i32) {}
+
+/// A world's UEFA prize for a cup won (src/uefa_coef.c): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn UefaPrize_CupWon(_comp_id: u8, _winner: u16) {}
+
+/// A world's own next round of a cup (src/world_playoff.c, src/world_cups.c,
+/// src/world_cupd.c, src/world_europe.c): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldPlayoff_ArrangeNextRound() {}
+
+/// See [`WorldPlayoff_ArrangeNextRound`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldCups_ArrangeNextRound() {}
+
+/// See [`WorldPlayoff_ArrangeNextRound`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn CupD_ArrangeNextRound() {}
+
+/// See [`WorldPlayoff_ArrangeNextRound`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldEurope_RoundPlayed() {}
+
+/// See [`WorldPlayoff_ArrangeNextRound`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldPlayoff_RoundSize() {}
+
+/// A world's own round names (src/world_cups.c, src/world_playoff.c): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldCups_RoundStringIndex(
+    _comp_id: u8,
+    _round: u16,
+    _rounds: u16,
+) -> i32 {
+    -1
+}
+
+/// See [`WorldCups_RoundStringIndex`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldPlayoff_RoundName(_round: u16, _rounds: u16) -> *const u8 {
+    std::ptr::null()
+}
+
+/// The career calendar's cache (src/career_teams.c), which a cup's progress writes in a career
+/// game only (`DIY_RecordCupBracketProgress`, M7): never written here, the game no career.
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamSelectionKeyCache: [u8; 1] = [0];
+
+/// See [`_teamSelectionKeyCache`].
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamSelectionKeyCacheCount: u16 = 0;
 
 /// A world's national cup just made (src/world_cups.c `WorldCups_CupMade`: its byes, a later
 /// season's draw): no world here.

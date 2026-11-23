@@ -7,11 +7,12 @@
 use openswos_rng::Rng;
 use thiserror::Error;
 
+use super::own_draw::OwnDraw;
 use super::record::{SEEDS, TournamentRecord};
+use super::stage::{LoadError, StageRules, load};
 use super::{STAGES, StagesError, TEAMS, TournamentState, recalculate, reset};
 use crate::competition::running::{RunningCompetition, TeamBytes};
 use crate::competition::start::{LoadedTeam, NIBBLE_MASK, NIBBLE_SHIFT, Pitch, named};
-use crate::competition::{cup, league};
 
 /// How far a round rule byte's legs are shifted (its bits 7-6).
 const LEGS_SHIFT: u8 = 6;
@@ -25,15 +26,15 @@ const PENALTIES_SHIFT: u8 = 2;
 /// A rule's two bits.
 const RULE_MASK: u8 = 0b11;
 
-/// The names the resets write first: the tournament's, and its first stage's, a league's or
-/// a cup's (upstream `_aDiyTournament`, `_aDiyLeague`, `_aDiyCup`).
+/// The names the resets write first: the tournament's, and each stage's, a league's or a
+/// cup's (upstream `_aDiyTournament`, `_aDiyLeague`, `_aDiyCup`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ResetNames<'a> {
     /// The tournament's reset's.
     pub tournament: &'a [u8],
-    /// A league's reset's: a first stage of groups.
+    /// A league's reset's: a stage of groups.
     pub league: &'a [u8],
-    /// A cup's reset's: a knockout first stage.
+    /// A cup's reset's: a knockout stage.
     pub cup: &'a [u8],
 }
 
@@ -51,15 +52,26 @@ pub struct TournamentStart<'a> {
     pub reset_names: ResetNames<'a>,
     /// Whether its suspensions are the continental track's (upstream `continental_record`).
     pub continental: bool,
-    /// The places its first stage keeps in their order when the world draws its stages by its
-    /// own tables (`rules/draws.json`; upstream `buildCompSpecificTeamList`,
-    /// `buildCompSpecificTeamShuffle`, picked by competition id).
-    pub own_draw: Option<u8>,
+    /// Its own draw, when the world draws its stages by its own tables (`rules/draws.json`;
+    /// upstream `buildCompSpecificTeamList`, `buildCompSpecificTeamShuffle`, picked by
+    /// competition id).
+    pub own_draw: Option<&'a OwnDraw>,
     /// Whether its groups may hold an odd number of teams (`rules/fixtures.json`; upstream
     /// halts in the original's world).
     pub odd_groups: bool,
     /// The session's pitch.
     pub pitch: Pitch,
+}
+
+impl<'a> TournamentStart<'a> {
+    /// What each of its stages' loads takes ([`super::next_stage`]'s too).
+    #[must_use]
+    pub fn stage_rules(&self) -> StageRules<'a> {
+        StageRules {
+            reset_names: self.reset_names,
+            own_draw: self.own_draw,
+        }
+    }
 }
 
 /// Why a tournament does not start.
@@ -82,49 +94,12 @@ pub enum StartError {
     /// past the record).
     #[error("a first stage of {0} teams ordered by 32 seeds")]
     SeedsPastList(i8),
-    /// A first stage of no teams to play or more than the competition under way holds
-    /// (upstream's months run on past its memory, or it reads past the tournament's state).
-    #[error("a first stage of {0} teams")]
-    FirstStageTeams(u16),
-    /// A first stage whose groups hold more teams than the state, or, its draw seeded, other
-    /// than its teams (upstream reads past the state, or its draw's scratch).
-    #[error("{groups} groups of {per_group} for a first stage of {teams} teams")]
-    GroupsNotTeams {
-        /// Its groups.
-        groups: u16,
-        /// Its teams a group.
-        per_group: u16,
-        /// Its teams.
-        teams: u16,
-    },
-    /// A first stage of more teams than the world's own draw keeps in order (upstream reads its
-    /// draw's scratch).
-    #[error("a first stage of {teams} teams, its own draw keeping {places}")]
-    OwnDrawPastPlaces {
-        /// The places the own draw keeps.
-        places: u8,
-        /// The stage's teams.
-        teams: u16,
-    },
-    /// An odd knockout first stage seeded by value (its home and away swap leaves a place to
-    /// upstream's scratch).
-    #[error("a seeded knockout of {0} teams")]
-    OddSeededKnockout(u16),
-    /// A first stage's months past the tournament's state or the competition under way.
-    #[error("the first stage's {0} months run past the state")]
-    MonthsPastState(u16),
     /// The stages cannot be counted.
     #[error(transparent)]
     Counted(#[from] StagesError),
-    /// A first stage of groups that does not start as a league.
+    /// The first stage does not load.
     #[error(transparent)]
-    League(#[from] league::StartError),
-    /// A knockout first stage that does not start as a cup.
-    #[error(transparent)]
-    Cup(#[from] cup::StartError),
-    /// A team of the tournament that is not loaded.
-    #[error("team {0:?} is not loaded")]
-    UnknownTeam(TeamBytes),
+    Load(#[from] LoadError),
 }
 
 /// Starts `start`'s tournament (upstream `InitDIYLeagueFromRecord`): the reset of `state`,
@@ -199,7 +174,8 @@ pub fn start_tournament(
         state.set_slot_num_teams(stages, state.slot_division_factor(stages - 1));
     }
     recalculate(state, competition, &teams)?;
-    super::stage::load_first(state, competition, start, &teams, rng)
+    load(state, competition, &start.stage_rules(), &teams, rng)?;
+    Ok(())
 }
 
 /// The first stage's teams ordered by the record's seeds: each seed found among them is moved
@@ -255,6 +231,7 @@ mod tests {
     use openswos_team_resource::TeamControls;
 
     use super::*;
+    use crate::competition::tournament::own_draw::{Ranking, StageDraw};
     use crate::competition::tournament::record::STAGES_BYTES;
 
     /// One leg settled on penalties.
@@ -403,7 +380,11 @@ mod tests {
 
     #[test]
     fn what_cannot_start_is_refused() {
-        let refused = |change: &dyn Fn(&mut TournamentRecord), own_draw: Option<u8>| {
+        let keep_four = OwnDraw {
+            ranking: Ranking::ByPlace,
+            stages: vec![StageDraw::Keep(4)],
+        };
+        let refused = |change: &dyn Fn(&mut TournamentRecord), own_draw: Option<&OwnDraw>| {
             let mut record = record();
             change(&mut record);
             let mut start = start(&record);
@@ -427,11 +408,11 @@ mod tests {
             StartError::SeedsPastList(40)
         );
         assert_eq!(
-            refused(&|_| {}, Some(4)),
-            StartError::OwnDrawPastPlaces {
+            refused(&|_| {}, Some(&keep_four)),
+            StartError::Load(LoadError::OwnDrawPastPlaces {
                 places: 4,
                 teams: 8
-            }
+            })
         );
         assert_eq!(
             refused(
@@ -441,11 +422,11 @@ mod tests {
                 },
                 None
             ),
-            StartError::GroupsNotTeams {
+            StartError::Load(LoadError::GroupsNotTeams {
                 groups: 2,
                 per_group: 4,
                 teams: 7
-            }
+            })
         );
         assert_eq!(
             refused(
@@ -455,14 +436,14 @@ mod tests {
                 },
                 None
             ),
-            StartError::OddSeededKnockout(5)
+            StartError::Load(LoadError::OddSeededKnockout(5))
         );
         assert_eq!(
             refused(
                 &|record| record.stages[..3].copy_from_slice(&[1, 0, 1]),
                 None
             ),
-            StartError::FirstStageTeams(1)
+            StartError::Load(LoadError::StageTeams { stage: 0, teams: 1 })
         );
     }
 

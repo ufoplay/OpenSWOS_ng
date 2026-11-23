@@ -4,15 +4,24 @@
 //! teams' strength (`DIYTournament_RecalculateMatchesPerTeam`,
 //! `DIYTournament_BuildMatchesPerTeamProgressionTable`); a tournament started from its record,
 //! its first stage loaded into the competition under way ([`start_tournament`], M5 #4d2), and
-//! [`WorldTournament`], which resolves its texts, classes and draws from a world's data.
+//! [`WorldTournament`], which resolves its texts, classes and draws from a world's data; a
+//! stage ended, its teams ranked or its winners first into the next stage's order, and the
+//! next stage loaded ([`next_stage`], M5 #7), drawn by the world's own draw
+//! ([`OwnDraw`]) or the engine's.
 
+mod advance;
+mod own_draw;
 mod record;
 mod stage;
 mod start;
 mod state;
 mod world_tournament;
 
+pub use advance::{Advance, NextStageError, next_stage};
+pub use own_draw::{BestPlaced, OwnDraw, Ranking, StageDraw};
+pub(crate) use own_draw::{ORDER_PLACES, PATTERN_GROUPS};
 pub use record::{RecordError, TournamentRecord};
+pub use stage::{LoadError, StageRules};
 pub use start::{ResetNames, StartError, TournamentStart, start_tournament};
 pub use state::{STAGES, STATE_LEN, TEAMS, TournamentState};
 pub use world_tournament::WorldTournament;

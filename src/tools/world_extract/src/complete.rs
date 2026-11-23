@@ -26,7 +26,7 @@ mod rules;
 pub use national_cups::{CupRow, cup_rows};
 
 use openswos_competitions_json_resource::CompetitionsFile;
-use openswos_oracle::tables::BakedWorld;
+use openswos_oracle::tables::{BakedWorld, OwnDrawTables};
 use openswos_poolplyr_resource::PoolFile;
 use openswos_world_package_resource::WorldPackage;
 
@@ -39,10 +39,22 @@ pub const GLOBAL_TEAM_NUMBERS: u16 = 2560;
 /// The world's leagues' file.
 const LEAGUES: &str = "leagues.json";
 
+/// What the completion takes from upstream.
+#[derive(Debug, Clone, Copy)]
+pub struct Upstream<'a> {
+    /// What World 2026-27's baked install leaves.
+    pub baked: &'a BakedWorld,
+    /// Upstream's table of the world's cups ([`cup_rows`]).
+    pub cup_rows: &'a [CupRow],
+    /// The own draws' tables, read before the install (after which the oracle serves nothing
+    /// else).
+    pub own_draws: &'a OwnDrawTables,
+}
+
 /// World 2026-27 completed: its `download` over World 1996-97's committed package `base`,
-/// with the rules, the European cups and the national cups its baked install (`baked`) leaves
-/// (its cups named by `cup_rows`, upstream's table of them: [`cup_rows`]), and its foreign
-/// players' `pool`, unpacked.
+/// with the rules, the European cups and the national cups its baked install (`upstream`'s)
+/// leaves (its cups named by upstream's table of them), its own draws by upstream's tables,
+/// and its foreign players' `pool`, unpacked.
 ///
 /// # Errors
 ///
@@ -52,10 +64,14 @@ const LEAGUES: &str = "leagues.json";
 pub fn world_2627(
     base: &WorldPackage,
     download: &WorldPackage,
-    baked: &BakedWorld,
-    cup_rows: &[CupRow],
+    upstream: &Upstream<'_>,
     pool: Option<PoolFile>,
 ) -> Result<WorldPackage, ExtractError> {
+    let Upstream {
+        baked,
+        cup_rows,
+        own_draws,
+    } = *upstream;
     let Some(CompetitionsFile::Leagues(world_leagues)) = download
         .competitions
         .get(LEAGUES)
@@ -83,7 +99,7 @@ pub fn world_2627(
         })
         .ok_or(ExtractError::NoCountries)?;
     let continental = crate::texts::continental_records(&competitions);
-    let draws = crate::draws::draws(&competitions)?;
+    let draws = crate::draws::draws(&competitions, own_draws)?;
     let rules = rules::world_2627(
         countries,
         &download.teams,

@@ -12,6 +12,7 @@
 mod play;
 mod world_division;
 
+pub(super) use play::{keep_progress, place_row};
 pub use play::{
     Fixture, Moves, PlayError, advance, fixture, play_result, season_moves, sort_table,
     update_qualifiers,

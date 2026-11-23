@@ -23,6 +23,9 @@ pub const TEAMS: usize = 64;
 /// The offset of the team ids (`teamIds`).
 pub(super) const TEAM_IDS: usize = 154;
 
+/// The offset of the team order (`teamIndexOrder`).
+const TEAM_ORDER: usize = 1054;
+
 /// The offset of the first stage's slot (`slots`).
 const SLOTS: usize = 346;
 
@@ -120,7 +123,7 @@ impl TournamentState {
         /// Each team's group, by its index (`groupMap[64]`).
         group, set_group: u8 = 282;
         /// The teams' order, by index (`teamIndexOrder[64]`): the seeds' and the draws'.
-        team_index, set_team_index: u8 = 1054;
+        team_index, set_team_index: u8 = TEAM_ORDER;
     }
 
     slot_fields! {
@@ -153,6 +156,19 @@ impl TournamentState {
         slot_penalties, set_slot_penalties: u16 = 24;
         /// The stage's matches a team (`matchesPerSlot`).
         slot_matches, set_slot_matches: u16 = 26;
+    }
+
+    /// Whether `stage`'s slot's fields (all but its months) lie within the image (the seventh's
+    /// are the team order's bytes, as upstream's are).
+    #[must_use]
+    pub fn has_slot(stage: usize) -> bool {
+        SLOTS + stage * SLOT_LEN + SLOT_MONTHS <= STATE_LEN
+    }
+
+    /// Whether place `place` of the team order lies within the image.
+    #[must_use]
+    pub fn has_team_index(place: usize) -> bool {
+        TEAM_ORDER + place < STATE_LEN
     }
 
     /// The offset of `stage`'s month `index`.
@@ -241,5 +257,9 @@ mod tests {
         assert_eq!((state.team_index(0), state.team_index(1)), (2, 3));
         assert!(TournamentState::has_month(5, 0));
         assert!(!TournamentState::has_month(5, STATE_LEN));
+        assert!(TournamentState::has_slot(STAGES));
+        assert!(!TournamentState::has_slot(STAGES + 1));
+        assert!(TournamentState::has_team_index(TEAMS + 1));
+        assert!(!TournamentState::has_team_index(TEAMS + 2));
     }
 }

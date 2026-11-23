@@ -374,9 +374,45 @@ pub enum Problem {
         /// Where it is named first.
         first: Location,
     },
-    /// An own draw keeping no place of its first stage, or more than its draw holds.
+    /// A stage's own draw keeping no place, or more than the order holds.
     #[error("an own draw keeping {0} places: 1 to 64")]
     DrawPlaces(u8),
+    /// An own draw of no stage.
+    #[error("an own draw of no stage")]
+    NoStageDraws,
+    /// A stage's own draw of no place, or more than the order holds.
+    #[error("a draw of {0} places: 1 to 64")]
+    DrawLength(usize),
+    /// A place past the order's.
+    #[error("place {0} is past the order's 64")]
+    DrawIndex(u8),
+    /// Best placed teams past the order.
+    #[error("{best} best placed from place {first}: past the order's 64")]
+    BestPlacedPast {
+        /// The first's place.
+        first: u8,
+        /// The best placed.
+        best: usize,
+    },
+    /// A pattern's group past the bits it holds.
+    #[error("group {0} is past a pattern's 8")]
+    PatternGroup(u8),
+    /// A pattern ordering other than the draw's best placed.
+    #[error("a pattern ordering {order} of {best} best placed")]
+    PatternOrder {
+        /// The places it orders.
+        order: usize,
+        /// The draw's best placed.
+        best: usize,
+    },
+    /// A pattern's rank past the best placed.
+    #[error("rank {rank} is past the {best} best placed")]
+    BestPlacedRank {
+        /// The rank.
+        rank: u8,
+        /// The draw's best placed.
+        best: usize,
+    },
 }
 
 /// One problem and where it is.

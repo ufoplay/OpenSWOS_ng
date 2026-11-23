@@ -13,7 +13,7 @@ use super::bindings::{
 use super::stubs::{self, LIST_END};
 use crate::tables::{
     BakedWorld, CompetitionBase, CompetitionLists, CompiledString, CountryEntry, CupRecord,
-    DefaultNames, FixtureSchedule, ListedRecord, TournamentRecord, WorldCupEntry,
+    DefaultNames, FixtureSchedule, ListedRecord, OwnDrawTables, TournamentRecord, WorldCupEntry,
 };
 
 /// The entries of `_countriesTable` (src/strings_data.c).
@@ -173,6 +173,20 @@ pub(crate) fn euro_championship_fixtures() -> Vec<u8> {
     table.iter().map(|&byte| byte.cast_unsigned()).collect()
 }
 
+/// The own draws' tables, as compiled.
+pub(crate) fn own_draw_tables() -> OwnDrawTables {
+    // SAFETY: plain reads of upstream's arrays, of their declared lengths.
+    unsafe {
+        OwnDrawTables {
+            order_8: (&raw const swos_data_bulk_imports_c::_diyShuffleOrder8Teams).read().to_vec(),
+            order_4: (&raw const swos_data_bulk_imports_c::_diyShuffleOrder4Teams).read().to_vec(),
+            tournament_order_8: (&raw const swos_data_bulk_imports_c::_diyTournamentShuffleOrder8).read().to_vec(),
+            group_patterns: (&raw const swos_data_bulk_imports_c::_diyGroupPatternLookup).read().to_vec(),
+            best_placed_map: (&raw const swos_data_bulk_imports_c::_diyLeagueTeamShuffleMap).read().to_vec(),
+        }
+    }
+}
+
 /// Every compiled string `_stringSymbols` lists, in its order: its symbol's name and its text.
 fn string_table() -> Vec<(String, *const c_void)> {
     // SAFETY: upstream defines `_stringSymbols` with `_stringSymbolsCount` entries (the
@@ -234,13 +248,14 @@ unsafe fn compiled_string(
 
 /// The names a league, a cup and a tournament fall back on: the resets' (`_aDiyLeague`,
 /// `_aDiyCup`, `_aDiyTournament`), each division's (`_divisionStringTable`), a cup's
-/// (`_aCup_0`) and a tournament's (`_aLeague_1`).
+/// (`_aCup_0`) and a tournament's (`_aLeague_1`), a cup's rounds' (`_cupRoundStringTable`).
 pub(crate) fn default_names() -> DefaultNames {
     let table = string_table();
     // SAFETY: plain reads of globals the lock's holder owns; each is a compiled string, ended by
     // a NUL (the division table's entries point at upstream's static strings).
     unsafe {
         let divisions = swos_amiga_ptr_imports_c::_divisionStringTable;
+        let cup_rounds = swos_amiga_ptr_imports_c::_cupRoundStringTable;
         DefaultNames {
             league_reset: compiled_string(
                 &table,
@@ -260,6 +275,10 @@ pub(crate) fn default_names() -> DefaultNames {
                 &table,
                 (&raw const swos_amiga_strings_c::_aLeague_1).cast(),
             ),
+            cup_rounds: cup_rounds
+                .iter()
+                .map(|&name| compiled_string(&table, name.cast_const()))
+                .collect(),
         }
     }
 }

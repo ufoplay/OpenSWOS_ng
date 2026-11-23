@@ -29,6 +29,10 @@ defines = [
 # Force-included before every unit (`-include`): it defines `SWOS_SDL_BUILD`.
 include = "include/swos_platform.h"
 include_dirs = ["src", "include"]
+# Upstream's functions the oracle's stubs replace (`ffi::stubs`): their definitions are made weak
+# (`#pragma weak`, a header force-included), so the stubs link. `VerifyTeamLoaded`
+# (src/career_teams.c) gives the tests' teams.
+replaced = ["VerifyTeamLoaded"]
 
 # The units the tests call: their functions, the globals they read and write (by name), the
 # constants they see (by pattern) and the types read that nothing bound reaches (by name), bound
@@ -149,6 +153,11 @@ functions = [
     "DIY_AdvanceLeagueProgressAfterMatch",
     "DIY_UpdateLeagueQualifiers",
     "DIY_UpdatePromotionRelegationScratchCounts",
+    "ProcessDIYKnockoutMatchResultAndCareerUpdates",
+    "DIY_PlayCupMatchAndAdvance",
+    "DIY_UpdateCompetitionProgress",
+    "GetCupRoundStringIndex",
+    "GetNextCupRoundStringIndex",
 ]
 variables = [
     "_diyCompetitionStart",
@@ -161,6 +170,13 @@ variables = [
 # The tournament's state the shuffles take behind a byte pointer; the league and cup records a
 # league is started from; the play-off records a cup is started from; the tournament records.
 types = ["DIYTournamentState", "CompetitionLeague", "CompetitionCup", "Playoffs", "CompetitionTournament"]
+
+# The career's side of a tournament (`DIY_AdvanceToNextCompetitionSlot`: a stage's end and the
+# next loaded); its other functions are the career's (M7).
+[[unit]]
+path = "src/career_teams.c"
+functions = ["DIY_AdvanceToNextCompetitionSlot"]
+variables = []
 
 # Upstream's RNC unpacker (the game's own, SWOS2.s): World 2026-27's foreign pool is packed, and
 # `world_extract` unpacks it with this (`unpack`), so no importer reads RNC (D9).
@@ -184,8 +200,19 @@ functions = ["M68kShiftLeft32", "M68kShiftLeft16"]
 [[data]]
 path = "src/swos_data_bulk_imports.c"
 # The European Championships' round robin (diy_competition.c `getCurrentFixtureTeamPtrs`); the
-# season's scratch of the teams' divisions (`DIY_UpdatePromotionRelegationScratchCounts`).
-variables = ["_euroChampFixtureData", "_diyLeagueScratchBuffer"]
+# season's scratch of the teams' divisions (`DIY_UpdatePromotionRelegationScratchCounts`); the
+# own draws' tables (`buildCompSpecificTeamList`, `buildCompSpecificTeamShuffle`) and the draws'
+# scratch.
+variables = [
+    "_euroChampFixtureData",
+    "_diyLeagueScratchBuffer",
+    "_diyShuffleOrder8Teams",
+    "_diyShuffleOrder4Teams",
+    "_diyTournamentShuffleOrder8",
+    "_diyGroupPatternLookup",
+    "_diyLeagueTeamShuffleMap",
+    "_diyTeamShuffleScratch",
+]
 
 [[data]]
 path = "src/selected_teams.c"
@@ -241,9 +268,18 @@ variables = ["_aDiyLeague", "_aDiyCup", "_aDiyTournament", "_aCup_0", "_aLeague_
 
 [[data]]
 path = "src/swos_amiga_data_imports.c"
-# Each team file's first global team number; the cached result a league match takes
-# (`getCachedOrCalcViewResult`), which the oracle gives instead of a simulated one.
-variables = ["_teamsCountryNumbers", "_cachedViewResultTeam1Goals", "_cachedViewResultTeam2Goals"]
+# Each team file's first global team number; the cached results a match takes
+# (`getCachedOrCalcViewResult`, `getCachedOrCalcExtraTimeResult`, `getCachedOrCalcPenaltyResult`),
+# which the oracle gives instead of simulated ones.
+variables = [
+    "_teamsCountryNumbers",
+    "_cachedViewResultTeam1Goals",
+    "_cachedViewResultTeam2Goals",
+    "_cachedExtraTimeTeam1Goals",
+    "_cachedExtraTimeTeam2Goals",
+    "_cachedPenaltyShootoutTeam1Score",
+    "_cachedPenaltyShootoutTeam2Score",
+]
 
 [[data]]
 path = "src/competition_data.c"
@@ -270,11 +306,12 @@ path = "src/career_comp_copies.c"
 
 [[data]]
 path = "src/swos_amiga_ptr_imports.c"
-# The round robins by size; the divisions' default names; the national teams' competitions and
-# the continental suspensions' track (lists of records).
+# The round robins by size; the divisions' default names; the cups' round names; the national
+# teams' competitions and the continental suspensions' track (lists of records).
 variables = [
     "_fixtureSchedulePtrTable",
     "_divisionStringTable",
+    "_cupRoundStringTable",
     "_nationalTeamCompetitionsAndQualifications1",
     "_europeanCupsandNationalTeamCompetitionsAndQualifications",
 ]

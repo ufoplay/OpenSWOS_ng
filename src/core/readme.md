@@ -176,7 +176,11 @@ The generic engine of docs/PLAN.md M5, unit by unit. Today:
   control, the pairs and rounds, the first round's format, the matches' months with a
   replay's date, the strength), the record's rounds, the pairings shuffled unless the record
   keeps its order. `WorldKnockout::resolve` resolves its texts and classes from a world
-  (`CupStart`).
+  (`CupStart`). A cup is played: `decide` (a tie decided from its match's `MatchResults`,
+  each part asked as it is needed), `play_cup_match` (a match's result kept in the bracket,
+  the round's and the cup's end, the next round's draw), `next_round` (the second legs, the
+  replays, or the winners into the next round), `round_name` and `stage_name` (a round's name
+  among the world's `cup_round_name`s).
 - `tournament`: a tournament's state and its stages. `TournamentState` is upstream's
   `DIYTournamentState` image (1,120 bytes), each field a typed accessor as `running`'s (the
   same header accessors; the team ids, group map and team order; the six stage slots by

@@ -35,6 +35,10 @@ pub(super) const NAME: usize = 4;
 /// The bytes of the name buffer.
 pub const NAME_LEN: usize = 36;
 
+/// The offset of a cup's penalties, round by round (cup view `roundPenalties[6]`): the last of
+/// its rounds' rules.
+pub const CUP_ROUND_PENALTIES: usize = 134;
+
 /// A team as two bytes in the image: its country, then its ordinal (upstream writes team ids
 /// big-endian: `{country, ordinal}`).
 pub type TeamBytes = [u8; 2];
@@ -92,7 +96,7 @@ impl Field for TeamBytes {
 
 /// Generates a getter and a setter for each field at its offset in the image.
 macro_rules! fields {
-    ($($(#[$doc:meta])* $get:ident, $set:ident: $ty:ty = $offset:literal;)*) => {
+    ($($(#[$doc:meta])* $get:ident, $set:ident: $ty:ty = $offset:expr;)*) => {
         $(
             $(#[$doc])*
             #[must_use]
@@ -111,7 +115,7 @@ macro_rules! fields {
 /// Generates an indexed getter and setter for each array at its offset: an index past the
 /// array's end reaches the bytes after it, as upstream's code does.
 macro_rules! arrays {
-    ($($(#[$doc:meta])* $get:ident, $set:ident: $ty:ty = $offset:literal;)*) => {
+    ($($(#[$doc:meta])* $get:ident, $set:ident: $ty:ty = $offset:expr;)*) => {
         $(
             $(#[$doc])*
             ///
@@ -396,9 +400,12 @@ impl RunningCompetition {
         /// A cup's extra time, round by round (`roundExtraTime[6]`).
         cup_round_extra_time, set_cup_round_extra_time: u16 = 122;
         /// A cup's penalties, round by round (`roundPenalties[6]`).
-        cup_round_penalties, set_cup_round_penalties: u16 = 134;
-        /// A cup's round results (`cupRoundResults[100]`).
+        cup_round_penalties, set_cup_round_penalties: u16 = CUP_ROUND_PENALTIES;
+        /// A cup's round results (`cupRoundResults[100]`): each match's flags, by match.
         cup_round_result, set_cup_round_result: u8 = 146;
+        /// A cup's scores, by match: the home side's goals in the high byte (the round
+        /// results' words from their 64th byte, `cupRoundResults + 0x40`).
+        cup_round_score, set_cup_round_score: u16 = 210;
         /// A cup's second-leg aggregates, packed goals by match (`cupAggregateScores[48]`).
         cup_aggregate_score, set_cup_aggregate_score: u16 = 342;
         /// A league's qualified teams, by division (`qualifiedTeamsByDivision[8]`).
@@ -406,6 +413,9 @@ impl RunningCompetition {
         /// Each phase's first month (section `phaseStartMonths[128]`; a split league's days'
         /// weeks, `splitWeeks[48]`, the same bytes).
         phase_start_month, set_phase_start_month: u8 = 470;
+        /// A cup's shoot-outs, by match: the home side's penalties in the high byte (the
+        /// season's months, as words).
+        cup_penalty_score, set_cup_penalty_score: u16 = 470;
         /// A cup's teams (`cupTeamIds[64]`).
         cup_team, set_cup_team: TeamBytes = 598;
         /// The teams' grid pairings (`teamGridPairings[64]`).
