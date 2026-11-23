@@ -25,15 +25,21 @@ fn set(setup: &CupMatchSetup) {
     }
 }
 
-/// The results given the simulation's stubs, the caches empty so upstream asks them.
-fn cache(results: &CachedResults) {
+/// The results given the simulation's stubs, the caches empty so upstream asks them; or, with
+/// none, upstream's simulation armed.
+fn cache(results: Option<&CachedResults>) {
     // SAFETY: plain writes to globals the lock's holder owns.
     unsafe {
         data::_cachedViewResultTeam1Goals = [NONE];
         data::_cachedExtraTimeTeam1Goals = [NONE];
         data::_cachedPenaltyShootoutTeam1Score = [NONE];
-        stubs::SIMULATED = [results.normal, results.extra, results.penalties];
+        if let Some(results) = results {
+            stubs::SIMULATED = [results.normal, results.extra, results.penalties];
+        }
         stubs::ASKED = (None, false, false);
+    }
+    if results.is_none() {
+        super::sim_play::arm();
     }
 }
 
@@ -52,7 +58,7 @@ fn taken() -> Taken {
 /// `ProcessDIYKnockoutMatchResultAndCareerUpdates` between the selected teams 0 and 1.
 pub(crate) fn decide(setup: &CupMatchSetup, first_leg: (u16, u16)) -> Decided {
     set(setup);
-    cache(&setup.results);
+    cache(Some(setup.results.as_ref().expect("a tie's results given")));
     let (mut goals, mut aggregate, mut penalties, mut flags) = (0, 0, 0, 0);
     // SAFETY: the function reads the globals just set and the two selected teams' records; it
     // writes its four outputs.
@@ -80,13 +86,14 @@ pub(crate) fn decide(setup: &CupMatchSetup, first_leg: (u16, u16)) -> Decided {
 /// `DIY_PlayCupMatchAndAdvance` of `setup`, simulated (mode 0).
 pub(crate) fn play(setup: &CupMatchSetup) -> (Box<[u8; IMAGE_LEN]>, Box<[u8; STATE_LEN]>, Taken) {
     set(setup);
-    cache(&setup.results);
+    cache(setup.results.as_ref());
     // SAFETY: the function reads and writes the globals just set; its externs are the compiled
     // data's and the stubs.
-    super::halting(|| unsafe {
+    let played = super::halting(|| unsafe {
         diy::DIY_PlayCupMatchAndAdvance(0, 0);
-    })
-    .expect("a cup match does not halt");
+    });
+    super::sim_play::disarm();
+    played.expect("a cup match does not halt");
     let taken = taken();
     (image(), read(), taken)
 }

@@ -22,10 +22,12 @@ use thiserror::Error;
 
 use crate::competition::draw::shuffled_order;
 use crate::competition::league::keep_progress;
+use crate::competition::results::{MatchResults, MatchSetup, Sides, Venue};
 use crate::competition::running::{CUP_ROUND_PENALTIES, IMAGE_LEN, RunningCompetition, TeamBytes};
 use crate::competition::start::LoadedTeam;
 use crate::competition::table::Score;
 use crate::competition::tournament::{STAGES, TournamentState};
+use crate::sim::SimError;
 
 /// The legs code of a round played home and away (`roundLegs`, `roundFormat`).
 const TWO_LEGS: u16 = 2;
@@ -54,28 +56,6 @@ const CAREER_CLUB: i32 = -1;
 
 /// The teams' identities the bracket holds (`teamOffsetTable[64]`).
 const BRACKET_TEAMS: usize = 64;
-
-/// What a match's result is made of, each asked for only when the tie needs it, in upstream's
-/// order: normal time, then extra time, then penalties (upstream `getCachedOrCalcViewResult`,
-/// `getCachedOrCalcExtraTimeResult`, `getCachedOrCalcPenaltyResult`). A simulated match draws
-/// each from the generators (M5 #8), a played one is the match engine's (M6).
-pub trait MatchResults {
-    /// The goals of normal time.
-    fn normal_time(&mut self, fixture: CupFixture, venue: Venue) -> Score;
-    /// The goals of extra time alone.
-    fn extra_time(&mut self, fixture: CupFixture) -> Score;
-    /// The shoot-out's penalties.
-    fn penalties(&mut self, fixture: CupFixture) -> Score;
-}
-
-/// Where a match is played (upstream's mode flag: 0 the home side's ground, 0xFF neutral).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Venue {
-    /// The home side's ground: its advantage counts.
-    Home,
-    /// Neutral: a single-leg final's.
-    Neutral,
-}
 
 /// A match of the cup: its places in the grid and its sides' identities, the home side first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -159,6 +139,9 @@ pub enum CupPlayError {
     /// A team of the bracket that is not loaded.
     #[error("team {0:?} is not loaded")]
     UnknownTeam(TeamBytes),
+    /// A match's result that its source cannot give.
+    #[error(transparent)]
+    Match(#[from] SimError),
 }
 
 /// The round's index, whose rules the tie reads (`currentRoundIndex`).
@@ -258,20 +241,56 @@ impl Rules {
     }
 }
 
+/// A tie's match as its source is asked for it: in the competition, between its sides, by the
+/// generator.
+struct Tie<'a, R> {
+    /// The competition under way.
+    competition: &'a RunningCompetition,
+    /// The sides.
+    sides: Sides,
+    /// The results' source.
+    results: &'a mut R,
+    /// The generator the source draws by.
+    rng: &'a mut Rng,
+}
+
+impl<R: MatchResults> Tie<'_, R> {
+    /// Normal time's goals at `venue`, the benches the cup's (`minSubstitutes`,
+    /// `pointsForAWin`).
+    fn normal_time(&mut self, venue: Venue) -> Result<Score, SimError> {
+        let substitutes = (
+            self.competition.min_substitutes(),
+            self.competition.points_for_win(),
+        );
+        let setup = MatchSetup::of(self.competition, venue, substitutes);
+        self.results
+            .normal_time(self.competition, self.sides, &setup, self.rng)
+    }
+
+    /// Extra time's goals.
+    fn extra_time(&mut self) -> Result<Score, SimError> {
+        self.results.extra_time(self.sides, self.rng)
+    }
+
+    /// The shoot-out's penalties.
+    fn penalties(&mut self) -> Result<Score, SimError> {
+        self.results.penalties(self.sides, self.rng)
+    }
+}
+
 /// The shoot-out when the round's rules play one (into the penalties), else a draw.
-fn shoot_out(
+fn shoot_out<R: MatchResults>(
     state: &mut Deciding,
     rules: Rules,
-    fixture: CupFixture,
-    results: &mut impl MatchResults,
-) -> Next {
+    tie: &mut Tie<'_, R>,
+) -> Result<Next, SimError> {
     if !rules.on(rules.penalties) {
-        return Next::Draw;
+        return Ok(Next::Draw);
     }
     state.flags |= ResultFlags::PENALTIES;
-    let penalties = results.penalties(fixture);
+    let penalties = tie.penalties()?;
     state.other = (penalties.home, penalties.away);
-    by_goals(state.other)
+    Ok(by_goals(state.other))
 }
 
 /// The tie of `fixture` decided from its match's `results` (upstream
@@ -279,16 +298,19 @@ fn shoot_out(
 /// side's, away side's: a return leg's): a first leg played; a return leg on aggregate, then
 /// away goals, extra time, away goals again, penalties; a single leg or a replay on its goals,
 /// then extra time and penalties where the round's rules say so (a code of 2 on in a replay
-/// only); else a draw. Faithful to the original: a side wins on the low bytes of its goals.
+/// only); else a draw. Each part is asked of `results` (drawn by `rng`) as the tie needs it.
+/// Faithful to the original: a side wins on the low bytes of its goals.
 ///
 /// # Errors
 ///
-/// [`CupPlayError::RoundPastRules`] when the round's rules are past the competition.
+/// [`CupPlayError::RoundPastRules`] when the round's rules are past the competition,
+/// [`CupPlayError::Match`] when a part cannot be given.
 pub fn decide(
     competition: &RunningCompetition,
     fixture: CupFixture,
     first_leg: (u16, u16),
     results: &mut impl MatchResults,
+    rng: &mut Rng,
 ) -> Result<Decision, CupPlayError> {
     let round = round_index(competition)?;
     let rules = Rules {
@@ -302,19 +324,22 @@ pub fn decide(
         ..Deciding::default()
     };
     let two_legs = !rules.replay && competition.round_format() == TWO_LEGS;
-    let next = if two_legs && competition.competition_format() == 0 {
-        first_of_two(&mut state, fixture, results)
-    } else if two_legs {
-        return_leg(&mut state, rules, fixture, results)
-    } else {
-        single_leg(
-            &mut state,
-            rules,
-            competition.round_format(),
-            fixture,
-            results,
-        )
+    let mut tie = Tie {
+        competition,
+        sides: Sides {
+            home: fixture.home,
+            away: fixture.away,
+        },
+        results,
+        rng,
     };
+    let next = if two_legs && competition.competition_format() == 0 {
+        first_of_two(&mut state, &mut tie)
+    } else if two_legs {
+        return_leg(&mut state, rules, &mut tie)
+    } else {
+        single_leg(&mut state, rules, competition.round_format(), &mut tie)
+    }?;
     match next {
         Next::Draw => {
             state.flags |= ResultFlags::PLAYED;
@@ -338,31 +363,29 @@ pub fn decide(
 }
 
 /// The first of two legs: decided only by its goals.
-fn first_of_two(
+fn first_of_two<R: MatchResults>(
     state: &mut Deciding,
-    fixture: CupFixture,
-    results: &mut impl MatchResults,
-) -> Next {
-    let score = results.normal_time(fixture, Venue::Home);
+    tie: &mut Tie<'_, R>,
+) -> Result<Next, SimError> {
+    let score = tie.normal_time(Venue::Home)?;
     state.goals = (score.home, score.away);
-    if score.home == score.away {
+    Ok(if score.home == score.away {
         Next::Draw
     } else {
         by_goals(state.goals)
-    }
+    })
 }
 
 /// A return leg: the aggregate, then away goals after normal time, extra time (the
 /// aggregate, away goals), penalties.
-fn return_leg(
+fn return_leg<R: MatchResults>(
     state: &mut Deciding,
     rules: Rules,
-    fixture: CupFixture,
-    results: &mut impl MatchResults,
-) -> Next {
+    tie: &mut Tie<'_, R>,
+) -> Result<Next, SimError> {
     state.flags |= ResultFlags::RETURN_LEG;
     let first_leg = state.other;
-    let score = results.normal_time(fixture, Venue::Home);
+    let score = tie.normal_time(Venue::Home)?;
     state.goals = (score.home, score.away);
     let aggregate = |goals: (u16, u16)| {
         (
@@ -377,7 +400,7 @@ fn return_leg(
     };
     state.aggregate = aggregate(state.goals);
     if state.aggregate.0 != state.aggregate.1 {
-        return decided(state, by_goals(state.aggregate));
+        return Ok(decided(state, by_goals(state.aggregate)));
     }
     // Away goals: the away side's goals here against the home side's in the first leg.
     let away = |state: &mut Deciding| {
@@ -390,38 +413,37 @@ fn return_leg(
     };
     if rules.away_goals == AWAY_GOALS_AFTER_NORMAL_TIME && state.goals.1 != first_leg.0 {
         let next = away(state);
-        return decided(state, next);
+        return Ok(decided(state, next));
     }
     if rules.extra_time != ON {
-        return shoot_out(state, rules, fixture, results);
+        return shoot_out(state, rules, tie);
     }
     state.flags |= ResultFlags::EXTRA_TIME;
-    let extra = results.extra_time(fixture);
+    let extra = tie.extra_time()?;
     state.goals = (
         state.goals.0.wrapping_add(extra.home),
         state.goals.1.wrapping_add(extra.away),
     );
     state.aggregate = aggregate(state.goals);
     if state.aggregate.0 != state.aggregate.1 {
-        return decided(state, by_goals(state.aggregate));
+        return Ok(decided(state, by_goals(state.aggregate)));
     }
     if rules.away_goals != 0 && state.goals.1 != first_leg.0 {
         let next = away(state);
-        return decided(state, next);
+        return Ok(decided(state, next));
     }
     state.aggregate = first_leg;
-    shoot_out(state, rules, fixture, results)
+    shoot_out(state, rules, tie)
 }
 
 /// A single leg or a replay: its goals, then extra time and penalties where the rules play
 /// them. A final of one leg (format 0) is played on neutral ground.
-fn single_leg(
+fn single_leg<R: MatchResults>(
     state: &mut Deciding,
     rules: Rules,
     format: u16,
-    fixture: CupFixture,
-    results: &mut impl MatchResults,
-) -> Next {
+    tie: &mut Tie<'_, R>,
+) -> Result<Next, SimError> {
     if rules.replay {
         state.flags |= ResultFlags::REPLAY;
     }
@@ -431,24 +453,24 @@ fn single_leg(
     } else {
         Venue::Home
     };
-    let score = results.normal_time(fixture, venue);
+    let score = tie.normal_time(venue)?;
     state.goals = (score.home, score.away);
     if score.home != score.away {
-        return by_goals(state.goals);
+        return Ok(by_goals(state.goals));
     }
     state.aggregate = state.goals;
     if rules.on(rules.extra_time) {
         state.flags |= ResultFlags::EXTRA_TIME;
-        let extra = results.extra_time(fixture);
+        let extra = tie.extra_time()?;
         state.goals = (
             state.goals.0.wrapping_add(extra.home),
             state.goals.1.wrapping_add(extra.away),
         );
         if state.goals.0 != state.goals.1 {
-            return by_goals(state.goals);
+            return Ok(by_goals(state.goals));
         }
     }
-    shoot_out(state, rules, fixture, results)
+    shoot_out(state, rules, tie)
 }
 
 /// The side whose goals' low byte is the greater: the home side on a level one.
@@ -493,7 +515,7 @@ pub fn play_cup_match(
         let [low, high] = competition.cup_aggregate_score(tie).to_le_bytes();
         (u16::from(high), u16::from(low))
     };
-    let decision = decide(competition, fixture, first_leg, results)?;
+    let decision = decide(competition, fixture, first_leg, results, rng)?;
     competition.set_cup_round_result(tie, decision.flags.0);
     competition.set_cup_round_score(tie, decision.goals);
     if competition.competition_format() == 0 {
@@ -888,24 +910,30 @@ mod tests {
     }
 
     impl MatchResults for Script {
-        fn normal_time(&mut self, _fixture: CupFixture, venue: Venue) -> Score {
+        fn normal_time(
+            &mut self,
+            _competition: &RunningCompetition,
+            _sides: Sides,
+            setup: &MatchSetup,
+            _rng: &mut Rng,
+        ) -> Result<Score, SimError> {
             self.asked
-                .push(if venue == Venue::Home { 'n' } else { 'N' });
+                .push(if setup.venue == Venue::Home { 'n' } else { 'N' });
             let (normal, _, _) = self.matches[self.next];
             self.next = (self.next + 1) % self.matches.len();
-            normal
+            Ok(normal)
         }
 
-        fn extra_time(&mut self, _fixture: CupFixture) -> Score {
+        fn extra_time(&mut self, _sides: Sides, _rng: &mut Rng) -> Result<Score, SimError> {
             self.asked.push('e');
             let previous = (self.next + self.matches.len() - 1) % self.matches.len();
-            self.matches[previous].1
+            Ok(self.matches[previous].1)
         }
 
-        fn penalties(&mut self, _fixture: CupFixture) -> Score {
+        fn penalties(&mut self, _sides: Sides, _rng: &mut Rng) -> Result<Score, SimError> {
             self.asked.push('p');
             let previous = (self.next + self.matches.len() - 1) % self.matches.len();
-            self.matches[previous].2
+            Ok(self.matches[previous].2)
         }
     }
 
@@ -984,7 +1012,14 @@ mod tests {
     fn a_single_leg_goes_to_extra_time_then_penalties() {
         let competition = started(2, [ONE_LEG, 0, 0, 0, 0, 0]);
         let mut script = Script::of(&[((1, 1), (0, 0), (4, 5))]);
-        let decision = decide(&competition, fixture(), (0, 0), &mut script).expect("decided");
+        let decision = decide(
+            &competition,
+            fixture(),
+            (0, 0),
+            &mut script,
+            &mut Rng::default(),
+        )
+        .expect("decided");
         assert_eq!(script.asked, "Nep", "a final of one leg, on neutral ground");
         assert_eq!(decision.goals, 0x0101);
         assert_eq!(decision.aggregate, 0x0101, "the level score kept");
@@ -1001,7 +1036,14 @@ mod tests {
     fn a_single_leg_without_extra_time_or_penalties_is_a_draw_to_replay() {
         let competition = started(4, [REPLAYED, REPLAYED, 0, 0, 0, 0]);
         let mut script = Script::of(&[((2, 2), (0, 0), (0, 0))]);
-        let decision = decide(&competition, fixture(), (0, 0), &mut script).expect("decided");
+        let decision = decide(
+            &competition,
+            fixture(),
+            (0, 0),
+            &mut script,
+            &mut Rng::default(),
+        )
+        .expect("decided");
         assert_eq!(script.asked, "n");
         assert_eq!(
             decision.flags,
@@ -1017,7 +1059,14 @@ mod tests {
         // 2-1 here after 0-1 there: level at 2-2, the away side's one goal here against the
         // home side's none there.
         let mut script = Script::of(&[((2, 1), (0, 0), (0, 0))]);
-        let decision = decide(&competition, fixture(), (0, 1), &mut script).expect("decided");
+        let decision = decide(
+            &competition,
+            fixture(),
+            (0, 1),
+            &mut script,
+            &mut Rng::default(),
+        )
+        .expect("decided");
         assert_eq!(script.asked, "n");
         assert_eq!(
             decision.flags,
@@ -1036,7 +1085,14 @@ mod tests {
         let mut script = Script::of(&[((1, 0), (1, 1), (3, 2))]);
         let mut no_away_goals = competition.clone();
         no_away_goals.set_play_each_team(0);
-        let decision = decide(&no_away_goals, fixture(), (0, 1), &mut script).expect("decided");
+        let decision = decide(
+            &no_away_goals,
+            fixture(),
+            (0, 1),
+            &mut script,
+            &mut Rng::default(),
+        )
+        .expect("decided");
         assert_eq!(script.asked, "nep");
         assert_eq!(decision.goals, 0x0201, "extra time's goals counted");
         assert_eq!(decision.penalties, 0x0302);
@@ -1139,7 +1195,13 @@ mod tests {
         competition.set_current_round_index(-1);
         let mut script = Script::of(&[((1, 0), (0, 0), (0, 0))]);
         assert_eq!(
-            decide(&competition, fixture(), (0, 0), &mut script),
+            decide(
+                &competition,
+                fixture(),
+                (0, 0),
+                &mut script,
+                &mut Rng::default()
+            ),
             Err(CupPlayError::RoundPastRules(-1))
         );
         let mut competition = started(4, [ONE_LEG, ONE_LEG, 0, 0, 0, 0]);

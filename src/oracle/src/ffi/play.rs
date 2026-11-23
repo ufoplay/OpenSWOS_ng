@@ -88,26 +88,32 @@ pub(crate) fn advance(before: &[u8; IMAGE_LEN], home: usize, away: usize) -> Box
     image()
 }
 
-/// `DIY_PlayOrSimulateLeagueFixture` of `setup`, simulated (selector 0), its result cached.
+/// `DIY_PlayOrSimulateLeagueFixture` of `setup`, simulated (selector 0): its result cached, or
+/// upstream's simulation armed.
 pub(crate) fn play_result(setup: &ResultSetup) -> (Box<[u8; IMAGE_LEN]>, Box<[u8; STATE_LEN]>) {
     set_teams(&setup.teams);
     write_competition(&setup.competition);
     write(&setup.state);
-    let (home, away) = setup.goals;
-    // SAFETY: plain writes to globals the lock's holder owns: the cached result the match
-    // takes (a signed word: 0 and up), the career's flags the stubs own.
+    // SAFETY: plain writes to globals the lock's holder owns: the career's flags the stubs
+    // own, the cached result the match takes (a signed word: 0 and up).
     unsafe {
-        data::_cachedViewResultTeam1Goals = [home];
-        data::_cachedViewResultTeam2Goals = [away];
         stubs::_gameType = 0;
         stubs::_careerLoadedFlag = 0;
+        if let Some((home, away)) = setup.goals {
+            data::_cachedViewResultTeam1Goals = [home];
+            data::_cachedViewResultTeam2Goals = [away];
+        }
+    }
+    if setup.goals.is_none() {
+        super::sim_play::arm();
     }
     // SAFETY: the function reads and writes the globals just set; its externs are the compiled
     // data's and the stubs.
-    super::halting(|| unsafe {
+    let played = super::halting(|| unsafe {
         diy::DIY_PlayOrSimulateLeagueFixture(0, 0);
-    })
-    .expect("a league match does not halt");
+    });
+    super::sim_play::disarm();
+    played.expect("a league match does not halt");
     (image(), read())
 }
 

@@ -767,6 +767,7 @@ dependencies = [
  "openswos_game_style",
  "openswos_math",
  "openswos_rng",
+ "openswos_tac_resource",
  "openswos_team_resource",
  "openswos_test_utils",
  "openswos_world_package_resource",

@@ -18,10 +18,11 @@ test_saves saves_dir="/home/ufo/Temp/Games/OpenSWOS/config/.swos/save/" test_nam
 
 
 # Runs the oracle's tests (upstream's C against the port, docs/PLAN.md §7.3) with `cases` per
-# property; fails when the oracle cannot be built (just upstream_fetch first; needs libclang)
+# property, the rejected cases allowed four times as many (proptest's 1024 at 256 cases);
+# fails when the oracle cannot be built (just upstream_fetch first; needs libclang)
 [group('test')]
 test_oracle cases="256" test_name="":
-  PROPTEST_CASES="{{cases}}" OPENSWOS_STRICT_TEST_DATA=1 cargo test -p openswos_oracle {{test_name}}
+  PROPTEST_CASES="{{cases}}" PROPTEST_MAX_GLOBAL_REJECTS="$(( {{cases}} * 4 ))" OPENSWOS_STRICT_TEST_DATA=1 cargo test -p openswos_oracle {{test_name}}
 
 
 # Runs the oracle's tests with 20000 cases per property

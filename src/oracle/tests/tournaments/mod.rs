@@ -447,33 +447,44 @@ pub(crate) struct BothStarted {
     pub(crate) rng: Rng,
 }
 
-/// `tournament` of `world` started on both sides, as upstream starts it (a compiled record, or
-/// its JSON's), with `teams` and `career_team`: the state's teams the record's seeds backwards
-/// (so the seeds order them), then the selected teams; the competition under way cleared; the
-/// second generators from 0.
-pub(crate) fn start_9697(
-    oracle: &mut Oracle,
-    world: &World,
-    tournament: &Started9697,
-    teams: &[SelectedTeam],
-    career_team: SelectedTeam,
-) -> BothStarted {
+/// The state's teams `tournament` of `world` starts from: the record's seeds backwards (so the
+/// seeds order them), then the selected teams.
+pub(crate) fn state_teams(world: &World, tournament: &Started9697) -> Vec<[u8; 2]> {
     let resolved = WorldTournament::resolve(world, tournament.competition, tournament.source)
         .expect("a tournament of the world");
-    let start = resolved.start(Pitch::Seasonal);
-    let mut state = TournamentState::default();
-    let seeds: Vec<[u8; 2]> = start
+    let seeds: Vec<[u8; 2]> = resolved
+        .start(Pitch::Seasonal)
         .record
         .seeds
         .iter()
         .copied()
         .filter(|&seed| seed != [0, 0])
         .collect();
-    for index in 0..TEAMS {
-        let team = seeds
-            .len()
-            .checked_sub(index + 1)
-            .map_or([0, u8::try_from(index).expect("64")], |seed| seeds[seed]);
+    (0..TEAMS)
+        .map(|index| {
+            seeds
+                .len()
+                .checked_sub(index + 1)
+                .map_or([0, u8::try_from(index).expect("64")], |seed| seeds[seed])
+        })
+        .collect()
+}
+
+/// `tournament` of `world` started on both sides, as upstream starts it (a compiled record, or
+/// its JSON's), with `teams` and `career_team` (the port's loaded by `loader`): the state's
+/// teams [`state_teams`]; the competition under way cleared; the second generators from 0.
+pub(crate) fn start_9697(
+    oracle: &mut Oracle,
+    world: &World,
+    tournament: &Started9697,
+    (teams, career_team): (&[SelectedTeam], SelectedTeam),
+    loader: impl Fn([u8; 2]) -> Option<LoadedTeam>,
+) -> BothStarted {
+    let resolved = WorldTournament::resolve(world, tournament.competition, tournament.source)
+        .expect("a tournament of the world");
+    let start = resolved.start(Pitch::Seasonal);
+    let mut state = TournamentState::default();
+    for (index, team) in state_teams(world, tournament).into_iter().enumerate() {
         state.set_team(index, team);
     }
     let before = *state.image();
@@ -510,13 +521,7 @@ pub(crate) fn start_9697(
     rng.secondary = Generator::default();
     let mut ours = TournamentState::from_image(&before);
     let mut ours_competition = RunningCompetition::from_image(&competition);
-    let result = start_tournament(
-        &mut ours,
-        &mut ours_competition,
-        &start,
-        selected_loader(teams, &career_team),
-        &mut rng,
-    );
+    let result = start_tournament(&mut ours, &mut ours_competition, &start, loader, &mut rng);
     BothStarted {
         resolved,
         state: ours,

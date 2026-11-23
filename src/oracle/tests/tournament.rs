@@ -277,7 +277,13 @@ fn world_1996_97s_tournaments_start_as_upstreams_compiled_records() {
     let mut oracle = Oracle::lock();
     let mut started_alike = 0;
     for tournament in &started {
-        let both = start_9697(&mut oracle, world, tournament, &teams, career_team);
+        let both = start_9697(
+            &mut oracle,
+            world,
+            tournament,
+            (&teams, career_team),
+            selected_loader(&teams, &career_team),
+        );
         let id = world.competition_id(tournament.competition).as_str();
         match both.upstream {
             Err(halt) => {

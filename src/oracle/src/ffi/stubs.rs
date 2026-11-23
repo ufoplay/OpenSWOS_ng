@@ -2,7 +2,7 @@
 //! with their upstream values (docs/PLAN.md §7.3). Each global is reset by [`reset`]. A
 //! function stub records what the tests need to see, or panics as upstream halts.
 
-use std::ffi::c_int;
+use std::ffi::{c_int, c_void};
 use std::panic::panic_any;
 
 /// `_replayFixedRandom`'s value when no recording pins the generators (upstream
@@ -122,21 +122,29 @@ pub(crate) const SELECTED_TEAMS: usize = 160;
 /// The country of the team numbers `VerifyTeamLoaded` gives as the career club.
 pub(crate) const CAREER_COUNTRY: u8 = 0xFF;
 
+/// The team numbers a test assigned to the selected teams, by identity
+/// ([`Oracle::assign_teams`](crate::Oracle::assign_teams)): none unless it did.
+pub(crate) static mut ASSIGNED: [Option<u16>; SELECTED_TEAMS] = [None; SELECTED_TEAMS];
+
 /// Upstream's team loader (src/career_teams.c `VerifyTeamLoaded`): the career club for a team
-/// of [`CAREER_COUNTRY`], otherwise the selected team of the number's ordinal, so the identity
-/// upstream derives from the record (`diy_team_to_identity`) is the ordinal.
+/// of [`CAREER_COUNTRY`], otherwise the selected team the number is assigned to
+/// ([`ASSIGNED`]), else the one of the number's ordinal, so the identity upstream derives
+/// from the record (`diy_team_to_identity`) is that team's.
 #[unsafe(no_mangle)]
 pub(crate) extern "C-unwind" fn VerifyTeamLoaded(
     team: u16,
 ) -> *mut super::bindings::diy_competition_c::TeamFileEx {
     let [country, ordinal] = team.to_be_bytes();
     if country == CAREER_COUNTRY {
-        (&raw mut super::bindings::diy_competition_c::_careerTeam).cast()
-    } else {
-        (&raw mut super::bindings::diy_competition_c::_selectedTeams)
-            .cast::<super::bindings::diy_competition_c::TeamFileEx>()
-            .wrapping_add(usize::from(ordinal) % SELECTED_TEAMS)
+        return (&raw mut super::bindings::diy_competition_c::_careerTeam).cast();
     }
+    // SAFETY: a plain read of a global the lock's holder owns.
+    let assigned = unsafe { ASSIGNED }
+        .iter()
+        .position(|&number| number == Some(team));
+    (&raw mut super::bindings::diy_competition_c::_selectedTeams)
+        .cast::<super::bindings::diy_competition_c::TeamFileEx>()
+        .wrapping_add(assigned.unwrap_or(usize::from(ordinal) % SELECTED_TEAMS))
 }
 
 /// The session's pitch type (upstream `_pitchType`, the settings': -2 the season's).
@@ -218,6 +226,167 @@ pub(crate) extern "C-unwind" fn States_GroupsEnd(_diy: *mut u8, _after: i32) {}
 #[unsafe(no_mangle)]
 pub(crate) extern "C-unwind" fn States_KnockoutEnd() {}
 
+/// The bytes of a tactics record (`sizeof(TeamTactics)`).
+const TACTICS_LEN: usize = 370;
+
+/// The user's tactics A to F, which the tactics table points at (src/career_settings.c): the
+/// oracle's, empty (the tests point the table at their own records).
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamTacticsUSERA: [u8; TACTICS_LEN] = [0; TACTICS_LEN];
+
+/// See [`_teamTacticsUSERA`].
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamTacticsUSERB: [u8; TACTICS_LEN] = [0; TACTICS_LEN];
+
+/// See [`_teamTacticsUSERA`].
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamTacticsUSERC: [u8; TACTICS_LEN] = [0; TACTICS_LEN];
+
+/// See [`_teamTacticsUSERA`].
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamTacticsUSERD: [u8; TACTICS_LEN] = [0; TACTICS_LEN];
+
+/// See [`_teamTacticsUSERA`].
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamTacticsUSERE: [u8; TACTICS_LEN] = [0; TACTICS_LEN];
+
+/// See [`_teamTacticsUSERA`].
+#[unsafe(no_mangle)]
+pub(crate) static mut _teamTacticsUSERF: [u8; TACTICS_LEN] = [0; TACTICS_LEN];
+
+/// The season shown (upstream `_currentSeasonShowing`, src/career_status_flags.c).
+#[unsafe(no_mangle)]
+pub(crate) static mut _currentSeasonShowing: u16 = 0;
+
+/// The session's seed (upstream `_newRandomSeedCopy`, src/career_settings.c).
+#[unsafe(no_mangle)]
+pub(crate) static mut _newRandomSeedCopy: u8 = 0;
+
+/// Whether the career's manager selects a national team (upstream `_isNationalSelector`).
+#[unsafe(no_mangle)]
+pub(crate) static mut _isNationalSelector: u16 = 0;
+
+/// The edited team's players and line-up (upstream `_numPlayers`, `_playerPositions`): the
+/// menus' current team, which no test plays.
+#[unsafe(no_mangle)]
+pub(crate) static mut _numPlayers: u16 = 0;
+
+/// See [`_numPlayers`].
+#[unsafe(no_mangle)]
+pub(crate) static mut _playerPositions: [u8; 32] = [0; 32];
+
+/// The career's primary competition (upstream `_primaryCompetitionBuf`): only its address is
+/// compared (a world's league in zones), and no test's competition is it.
+#[unsafe(no_mangle)]
+pub(crate) static mut _primaryCompetitionBuf: [u8; 8192] = [0; 8192];
+
+/// A world's league in zones: the place in its zone (src/league_split.c
+/// `LeagueSplit_ZoneFind`): none here, the place itself.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeagueSplit_ZoneFind(_league: *const c_void, place: u16) -> u16 {
+    place
+}
+
+/// A world's league in zones: a team's zone (`LeagueSplit_ZoneOfTeam`): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeagueSplit_ZoneOfTeam(
+    _league: *const c_void,
+    _team: u16,
+    _zones: *mut *const u8,
+    _rows: *mut i32,
+) -> i32 {
+    -1
+}
+
+/// A world's league in zones: a count scaled to the league (`LeagueSplit_ZoneScale`): none
+/// here, the count itself.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LeagueSplit_ZoneScale(
+    _zones: *const u8,
+    _rows: i32,
+    _row: i32,
+    count: u16,
+) -> u16 {
+    count
+}
+
+/// A friendly club's long bench (src/long_bench.c `LongBench_FrOrder`): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn LongBench_FrOrder(_team: u16, _count: *mut u16) -> *const u8 {
+    std::ptr::null()
+}
+
+/// A long bench's record past the team's (src/squad_extras.c `SquadExtras_BenchRecord`): none
+/// here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn SquadExtras_BenchRecord(_team: u16, _index: u16) -> *mut c_void {
+    std::ptr::null_mut()
+}
+
+/// The kinds of statuses a computer club's records keep (`WorldRules_CpuOpen`: its cards,
+/// its injuries), as the test sets them.
+pub(crate) static mut COMPUTER_STATUSES: (bool, bool) = (false, false);
+
+/// A world's computer clubs' cards (src/world_rules.c `WRULE_CPU_CARDS`).
+const CPU_CARDS: c_int = 1;
+
+/// A world's computer clubs' injuries (`WRULE_CPU_INJURIES`).
+const CPU_INJURIES: c_int = 2;
+
+/// Whether a computer club's records keep kind `rule` (src/world_rules.c
+/// `WorldRules_CpuOpen`): as [`COMPUTER_STATUSES`] says.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldRules_CpuOpen(rule: c_int) -> c_int {
+    // SAFETY: a plain read of a global the lock's holder owns.
+    let (cards, injuries) = unsafe { COMPUTER_STATUSES };
+    c_int::from(match rule {
+        CPU_CARDS => cards,
+        CPU_INJURIES => injuries,
+        _ => false,
+    })
+}
+
+/// Whether a computer club's records keep either kind (`WorldRules_CpuAny`).
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldRules_CpuAny() -> c_int {
+    c_int::from(WorldRules_CpuOpen(CPU_CARDS) != 0 || WorldRules_CpuOpen(CPU_INJURIES) != 0)
+}
+
+/// A DIY competition's game type (`GAME_TYPE_DIY_COMPETITION`).
+const DIY_GAME: u16 = 1;
+
+/// A preset competition's (`GAME_TYPE_PRESET_COMPETITION`).
+const PRESET_GAME: u16 = 2;
+
+/// Whether a computer club's statuses of kind `rule` count down before a simulated match
+/// (src/world_rules.c `WorldRules_CpuCountdown`, no calendar's day running): the kind kept
+/// ([`WorldRules_CpuOpen`]), in a DIY or a preset competition.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldRules_CpuCountdown(rule: c_int) -> c_int {
+    // SAFETY: a plain read of a global the lock's holder owns.
+    let game = unsafe { _gameType };
+    c_int::from(WorldRules_CpuOpen(rule) != 0 && (game == DIY_GAME || game == PRESET_GAME))
+}
+
+/// Whether the replay corpus is armed (src/replay_test.c `ReplayTest_Armed`): no recording
+/// plays here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn ReplayTest_Armed() -> c_int {
+    0
+}
+
+/// Whether a recording is replayed (src/replay_test.c `ReplayTest_Running`): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn ReplayTest_Running() -> c_int {
+    0
+}
+
+/// Whether the rollback rig runs (src/rollback_rig.c `Rollback_Enabled`): not here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn Rollback_Enabled() -> c_int {
+    0
+}
+
 /// Whether a world's league phase shows its one table (src/league_phase.c
 /// `LeaguePhase_Showing`; the career's calendar walk asks, M7): none here.
 #[unsafe(no_mangle)]
@@ -261,11 +430,31 @@ pub(crate) static mut _playPromotedAnimation: u16 = 0;
 #[unsafe(no_mangle)]
 pub(crate) static mut _playRelegatedAnimation: u16 = 0;
 
-/// The match engine's and the career's functions a league match calls: none of them writes
+/// The countdown of a simulated match's teams' statuses (src/career_status.c
+/// `InitInGameTeams_WithMatchParam`): upstream's (renamed `upstream_*`, `units.toml`) when
+/// [`UPSTREAM_SIMULATION`] says so, else none, the competitions' tests giving their results.
+/// With it, the match engine's and the career's functions a match calls: none of them writes
 /// what the oracle checks, so none runs (the career's own records of a match are M7's, the
 /// players' match state M6's).
+///
+/// # Safety
+///
+/// `team1` and `team2` are team records upstream's countdown reads and writes.
 #[unsafe(no_mangle)]
-pub(crate) extern "C-unwind" fn InitInGameTeams_WithMatchParam(_team1: *mut u8, _team2: *mut u8) {}
+pub(crate) unsafe extern "C-unwind" fn InitInGameTeams_WithMatchParam(
+    team1: *mut u8,
+    team2: *mut u8,
+) {
+    // SAFETY: the caller's; a plain read of a global the lock's holder owns.
+    unsafe {
+        if UPSTREAM_SIMULATION {
+            super::bindings::career_status_c::upstream_InitInGameTeams_WithMatchParam(
+                team1.cast(),
+                team2.cast(),
+            );
+        }
+    }
+}
 
 /// See [`InitInGameTeams_WithMatchParam`].
 #[unsafe(no_mangle)]
@@ -348,31 +537,90 @@ pub(crate) static mut SIMULATED: [(u16, u16); 3] = [(0, 0); 3];
 /// penalties.
 pub(crate) static mut ASKED: (Option<u16>, bool, bool) = (None, false, false);
 
+/// Whether the simulation's stubs hand over to upstream's simulation (renamed `upstream_*`,
+/// `units.toml`), as a test of competitions simulated to their end asks.
+pub(crate) static mut UPSTREAM_SIMULATION: bool = false;
+
 /// A simulated result (src/match_sim.c `CalculateViewResult`): the oracle's
-/// ([`SIMULATED`]), its mode flag (0 the home side's ground, 0xFF neutral) recorded.
+/// ([`SIMULATED`]), its mode flag (0 the home side's ground, 0xFF neutral) recorded; or
+/// upstream's, when [`UPSTREAM_SIMULATION`] says so.
 ///
 /// # Safety
 ///
-/// `out1` and `out2` are words to write.
+/// `out1` and `out2` are words to write; upstream's simulation reads the competition and the
+/// teams.
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "C-unwind" fn CalculateViewResult(
-    _context: *mut u8,
+    context: *mut u8,
     mode: u16,
-    _goals1: u16,
-    _goals2: u16,
-    _column: u16,
-    _team1: *mut u8,
-    _team2: *mut u8,
+    goals1: u16,
+    goals2: u16,
+    column: u16,
+    team1: *mut u8,
+    team2: *mut u8,
     out1: *mut u16,
     out2: *mut u16,
 ) {
     // SAFETY: the caller's; plain reads and writes of globals the lock's holder owns.
     unsafe {
+        ASKED.0 = Some(mode);
+        if UPSTREAM_SIMULATION {
+            super::bindings::match_sim_c::upstream_CalculateViewResult(
+                context.cast(),
+                mode,
+                goals1,
+                goals2,
+                column,
+                team1.cast(),
+                team2.cast(),
+                out1,
+                out2,
+            );
+            return;
+        }
         let [(home, away), _, _] = SIMULATED;
         out1.write(home);
         out2.write(away);
-        ASKED.0 = Some(mode);
     }
+}
+
+/// A world's computer clubs field available players for a result (src/world_rules.c
+/// `WorldRules_CpuLineupsBegin`, the SWOS 96/97 Mod's rules in another world, M5 #9): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldRules_CpuLineupsBegin(
+    _which: i32,
+    _team1: *mut u8,
+    _team2: *mut u8,
+    _mode: i16,
+) {
+}
+
+/// The line-ups put back after a result (`WorldRules_CpuLineupsEnd`): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldRules_CpuLineupsEnd(_which: i32) {}
+
+/// A world's keeper injuries after a result (`WorldRules_GkAfterSim`, M5 #9): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn WorldRules_GkAfterSim(_team: *mut u8, _stand_ins: *const u8) {}
+
+/// Whether a simulated match's statuses apply (src/career_status.c
+/// `ShouldApplyRandomPlayerStatusAfterSim`: the career's competitions, M7), as the test sets it.
+pub(crate) static mut STATUSES_APPLY: bool = true;
+
+/// See [`STATUSES_APPLY`].
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn ShouldApplyRandomPlayerStatusAfterSim() -> u16 {
+    // SAFETY: a plain read of a global the lock's holder owns.
+    u16::from(unsafe { STATUSES_APPLY })
+}
+
+/// The career club's post-match form changes (src/career_status.c
+/// `Career_ApplyPostMatchPlayerStatModsIfCareerTeam`, M7): none here.
+#[unsafe(no_mangle)]
+pub(crate) extern "C-unwind" fn Career_ApplyPostMatchPlayerStatModsIfCareerTeam(
+    _team: *mut u8,
+    _mods: *mut u8,
+) {
 }
 
 /// A played match (src/game_init.c `InitializeInGameTeamsAndStartGame`): never reached, the
@@ -451,6 +699,11 @@ pub(crate) extern "C-unwind" fn LeaguePhase_Result(
 pub(crate) unsafe extern "C-unwind" fn ExtraTimeSecondPhaseScoring(home: *mut u16, away: *mut u16) {
     // SAFETY: the caller's; plain reads and writes of globals the lock's holder owns.
     unsafe {
+        if UPSTREAM_SIMULATION {
+            ASKED.1 = true;
+            super::bindings::match_sim_c::upstream_ExtraTimeSecondPhaseScoring(home, away);
+            return;
+        }
         let [_, (extra_home, extra_away), _] = SIMULATED;
         home.write(extra_home);
         away.write(extra_away);
@@ -468,6 +721,11 @@ pub(crate) unsafe extern "C-unwind" fn ExtraTimeSecondPhaseScoring(home: *mut u1
 pub(crate) unsafe extern "C-unwind" fn PenaltyShootoutScorerPair(home: *mut i16, away: *mut u16) {
     // SAFETY: the caller's; plain reads and writes of globals the lock's holder owns.
     unsafe {
+        if UPSTREAM_SIMULATION {
+            ASKED.2 = true;
+            super::bindings::match_sim_c::upstream_PenaltyShootoutScorerPair(home, away);
+            return;
+        }
         let [_, _, (penalties_home, penalties_away)] = SIMULATED;
         home.write(penalties_home.cast_signed());
         away.write(penalties_away);
@@ -619,5 +877,7 @@ pub(crate) fn reset() {
         _panicReasonCode = 0;
         WORLD = WORLD_9697;
         LEAGUE_PHASES = false;
+        ASSIGNED = [None; SELECTED_TEAMS];
+        UPSTREAM_SIMULATION = false;
     }
 }

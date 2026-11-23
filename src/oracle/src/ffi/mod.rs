@@ -11,7 +11,11 @@ pub(crate) mod league;
 pub(crate) mod math;
 pub(crate) mod play;
 pub(crate) mod rng;
+pub(crate) mod rules_library;
 pub(crate) mod running;
+pub(crate) mod sim;
+pub(crate) mod sim_play;
+pub(crate) mod sim_result;
 pub(crate) mod stage;
 mod stubs;
 pub(crate) mod style;
@@ -92,6 +96,71 @@ mod bindings {
         include!(concat!(env!("OUT_DIR"), "/diy_competition_c.rs"));
     }
 
+    /// src/match_sim.c: the simulation of a match nobody plays.
+    pub(crate) mod match_sim_c {
+        include!(concat!(env!("OUT_DIR"), "/match_sim_c.rs"));
+    }
+
+    /// src/menus.c: the formations' players by how defensive they are.
+    pub(crate) mod menus_c {
+        include!(concat!(env!("OUT_DIR"), "/menus_c.rs"));
+    }
+
+    /// src/swos_rules_post.c (src/rules/sr_post.c): the season's moves.
+    pub(crate) mod swos_rules_post_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_rules_post_c.rs"));
+    }
+
+    /// src/swos_rules_cups.c (src/rules/sr_cups.c): a cup's clubs.
+    pub(crate) mod swos_rules_cups_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_rules_cups_c.rs"));
+    }
+
+    /// src/swos_rules_groups.c (src/rules/sr_groups.c): parallel groups.
+    pub(crate) mod swos_rules_groups_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_rules_groups_c.rs"));
+    }
+
+    /// src/swos_rules_cupd.c (src/rules/sr_cupd.c): the grouped cup's later rounds.
+    pub(crate) mod swos_rules_cupd_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_rules_cupd_c.rs"));
+    }
+
+    /// src/swos_rules_dplay.c (src/rules/sr_dplay.c): the fixed tiers' brackets.
+    pub(crate) mod swos_rules_dplay_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_rules_dplay_c.rs"));
+    }
+
+    /// src/swos_rules_check.c (src/rules/sr_check.c): the checks of a league's rules.
+    pub(crate) mod swos_rules_check_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_rules_check_c.rs"));
+    }
+
+    /// src/swos_rules_gplay.c (src/rules/sr_gplay.c): the pack's knockouts.
+    pub(crate) mod swos_rules_gplay_c {
+        include!(concat!(env!("OUT_DIR"), "/swos_rules_gplay_c.rs"));
+    }
+
+    /// src/career_status.c: whether a player is available.
+    pub(crate) mod career_status_c {
+        include!(concat!(env!("OUT_DIR"), "/career_status_c.rs"));
+    }
+
+    /// src/test_rules.c: the testers' rule.
+    pub(crate) mod test_rules_c {
+        include!(concat!(env!("OUT_DIR"), "/test_rules_c.rs"));
+    }
+
+    /// src/tactics_data.c (data): the tactics table and the price tables.
+    pub(crate) mod tactics_data_c {
+        include!(concat!(env!("OUT_DIR"), "/tactics_data_c.rs"));
+    }
+
+    /// src/career_team_scalars.c (data): the career club's players.
+    pub(crate) mod career_team_scalars_c {
+        include!(concat!(env!("OUT_DIR"), "/career_team_scalars_c.rs"));
+    }
+
     /// src/career_teams.c: a tournament's next stage.
     pub(crate) mod career_teams_c {
         include!(concat!(env!("OUT_DIR"), "/career_teams_c.rs"));
@@ -142,6 +211,7 @@ fn halting(call: impl FnOnce()) -> Result<(), u16> {
 /// Resets the globals the units touch to upstream's values, and keeps every stub linked.
 pub(crate) fn reset() {
     stubs::reset();
+    sim_play::reset();
     rng::reset();
     style::reset();
     black_box(stubs::PanicHaltLoop as extern "C-unwind" fn() -> !);
@@ -167,7 +237,8 @@ pub(crate) fn reset() {
     black_box(stubs::LeaguePhase_KnockoutDraw as extern "C-unwind" fn(_, _) -> _);
     black_box(stubs::States_StageStart as extern "C-unwind" fn());
     black_box(stubs::States_KnockoutStart as extern "C-unwind" fn());
-    black_box(stubs::InitInGameTeams_WithMatchParam as extern "C-unwind" fn(_, _));
+    black_box(stubs::InitInGameTeams_WithMatchParam as unsafe extern "C-unwind" fn(_, _));
+    black_box(stubs::WorldRules_CpuCountdown as extern "C-unwind" fn(_) -> _);
     black_box(stubs::SetupPlayers as extern "C-unwind" fn(_, _, _, _, _, _));
     black_box(stubs::CupRecord_Match as extern "C-unwind" fn(_, _, _, _, _, _, _, _));
     black_box(stubs::UpdateCareerPlayersFormAfterMatch as extern "C-unwind" fn(_, _, _, _, _));
@@ -209,4 +280,36 @@ pub(crate) fn reset() {
     black_box(stubs::States_KnockoutEnd as extern "C-unwind" fn());
     black_box(stubs::LeaguePhase_Showing as extern "C-unwind" fn() -> _);
     black_box(stubs::LeagueSplit_Walking as extern "C-unwind" fn(_));
+    black_box(bindings::match_sim_c::CalcTeamViewOffset as unsafe extern "C-unwind" fn(_) -> _);
+    black_box(
+        bindings::match_sim_c::CalcTeamPriceRankPercentOffset
+            as unsafe extern "C-unwind" fn(_, _) -> _,
+    );
+    black_box(
+        bindings::match_sim_c::InitPlayerRemapTableForTeam as unsafe extern "C-unwind" fn(_, _),
+    );
+    black_box(
+        bindings::career_status_c::GetNumberOfAvailablePlayers
+            as unsafe extern "C-unwind" fn(_, _, _) -> _,
+    );
+    black_box(
+        bindings::career_status_c::GetNumberOfAvailableSubstitutes
+            as unsafe extern "C-unwind" fn(_, _) -> _,
+    );
+    black_box(stubs::ReplayTest_Armed as extern "C-unwind" fn() -> _);
+    black_box(stubs::ShouldApplyRandomPlayerStatusAfterSim as extern "C-unwind" fn() -> _);
+    black_box(stubs::WorldRules_CpuLineupsBegin as extern "C-unwind" fn(_, _, _, _));
+    black_box(stubs::WorldRules_CpuLineupsEnd as extern "C-unwind" fn(_));
+    black_box(stubs::WorldRules_GkAfterSim as extern "C-unwind" fn(_, _));
+    black_box(stubs::Career_ApplyPostMatchPlayerStatModsIfCareerTeam as extern "C-unwind" fn(_, _));
+    black_box(bindings::menus_c::InitializeTacticsPositions as unsafe extern "C-unwind" fn());
+    black_box(stubs::LeagueSplit_ZoneFind as extern "C-unwind" fn(_, _) -> _);
+    black_box(stubs::LeagueSplit_ZoneOfTeam as extern "C-unwind" fn(_, _, _, _) -> _);
+    black_box(stubs::LeagueSplit_ZoneScale as extern "C-unwind" fn(_, _, _, _) -> _);
+    black_box(stubs::LongBench_FrOrder as extern "C-unwind" fn(_, _) -> _);
+    black_box(stubs::SquadExtras_BenchRecord as extern "C-unwind" fn(_, _) -> _);
+    black_box(stubs::WorldRules_CpuOpen as extern "C-unwind" fn(_) -> _);
+    black_box(stubs::WorldRules_CpuAny as extern "C-unwind" fn() -> _);
+    black_box(stubs::ReplayTest_Running as extern "C-unwind" fn() -> _);
+    black_box(stubs::Rollback_Enabled as extern "C-unwind" fn() -> _);
 }

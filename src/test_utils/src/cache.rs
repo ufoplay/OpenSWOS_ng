@@ -133,6 +133,214 @@ pub const RGD_CORPUS: [Download<'static>; 15] = [
     },
 ];
 
+/// The URL of a file of the rules library's `tests/rules/specs` (swos-competition-engine, MIT:
+/// Davide Lorigliola's), at its tag v1 (`87b6527`, 2026-11-02), the commit docs/PLAN.md pins.
+macro_rules! rules_specs {
+    ($file:literal) => {
+        concat!(
+            "https://raw.githubusercontent.com/aminta/swos-competition-engine/",
+            "87b65278a15007223ec4f387f1027eb4d5cd7625/tests/rules/specs/",
+            $file
+        )
+    };
+}
+
+/// The folder of the rules library's packs, under [`downloads_path`].
+const RULES_SPECS_DIR: &str = "rules_specs";
+
+/// The rules library's packs (its `tests/rules/specs`): each World 2026-27 league's divisions'
+/// clubs (`shapes.txt`: a code and its counts a line) and its knockouts' spec (`<code>.spec`:
+/// the Mod's `compile_spec` bytes), the oracle's knockouts checked over them. World 2026-27's
+/// data: downloaded, never committed (D8). The checksums are the files' at the pinned commit.
+pub const RULES_SPECS: [Download<'static>; 36] = [
+    Download {
+        url: rules_specs!("shapes.txt"),
+        file_name: "shapes.txt",
+        sha256: Some("de38fff4533d4ef514c786080bb3e84cc59e81485a0c0ec41656bf96701af28d"),
+    },
+    Download {
+        url: rules_specs!("arg.spec"),
+        file_name: "arg.spec",
+        sha256: Some("6b4e53216614dd410d6b2c970cdcafbcdddc44438561fc632b24d98f42494986"),
+    },
+    Download {
+        url: rules_specs!("aus.spec"),
+        file_name: "aus.spec",
+        sha256: Some("8b8abe9a11f1f0ee158c2c8bca841d4435372fc0e8c00d62daf37d626de152c1"),
+    },
+    Download {
+        url: rules_specs!("aut.spec"),
+        file_name: "aut.spec",
+        sha256: Some("55502369123ec883b1e786cf01ebff1b40767b58e0f7e7aff1e265fa5651eafa"),
+    },
+    Download {
+        url: rules_specs!("bra.spec"),
+        file_name: "bra.spec",
+        sha256: Some("6f49c9e076ec68df568cba83c1843b1883a21f6515220d55878d50f9d00a0b49"),
+    },
+    Download {
+        url: rules_specs!("bul.spec"),
+        file_name: "bul.spec",
+        sha256: Some("0ed6d0088c5eff7f0bcbd1ef50363c3b1d645471b23bf278b0325a06361d9adb"),
+    },
+    Download {
+        url: rules_specs!("can.spec"),
+        file_name: "can.spec",
+        sha256: Some("99bf8c885822ff2088f9bb2790db7c1b077f50ccd176989ec61784747c87d836"),
+    },
+    Download {
+        url: rules_specs!("col.spec"),
+        file_name: "col.spec",
+        sha256: Some("02d69206fa8f903269f8181d5b1d9095b6b91155258e56772565ae084d64588c"),
+    },
+    Download {
+        url: rules_specs!("crc.spec"),
+        file_name: "crc.spec",
+        sha256: Some("9439c5ba4f3f7ae397ea127c5110c73a1020cb47dad7bed7d6277c3c44127a83"),
+    },
+    Download {
+        url: rules_specs!("cze.spec"),
+        file_name: "cze.spec",
+        sha256: Some("c49913ca11d3d50eb3c93fe1849c3240d3daf6ade2673f0129f56feed06cc79b"),
+    },
+    Download {
+        url: rules_specs!("den.spec"),
+        file_name: "den.spec",
+        sha256: Some("96d258680448badc462115e698cdce37fe18d2538cda62e81c5282fc210eaa37"),
+    },
+    Download {
+        url: rules_specs!("eng.spec"),
+        file_name: "eng.spec",
+        sha256: Some("e39f1c8069b781edc78839ce386ee2d2c32a6009604c8e7de2cfb316e843495d"),
+    },
+    Download {
+        url: rules_specs!("esp.spec"),
+        file_name: "esp.spec",
+        sha256: Some("bdb4d412bdede56dc1f886528c2b82d2fa6e59ab34dc1a09b7de6e48ea5cf50d"),
+    },
+    Download {
+        url: rules_specs!("fra.spec"),
+        file_name: "fra.spec",
+        sha256: Some("65d1645b33aaedae8e6e1512c0c4ba268b01d3f750447a3d3c0cb73a3e3716d3"),
+    },
+    Download {
+        url: rules_specs!("ger.spec"),
+        file_name: "ger.spec",
+        sha256: Some("7959e808bbac105af18fa411ff3e53f94d474c9da6480a9f55135045db924727"),
+    },
+    Download {
+        url: rules_specs!("gua.spec"),
+        file_name: "gua.spec",
+        sha256: Some("408c9682d20080b7edd822b1c6230f6e41ef81d9aed0c61c8adf7e3f7d88c255"),
+    },
+    Download {
+        url: rules_specs!("hon.spec"),
+        file_name: "hon.spec",
+        sha256: Some("408c9682d20080b7edd822b1c6230f6e41ef81d9aed0c61c8adf7e3f7d88c255"),
+    },
+    Download {
+        url: rules_specs!("ita.spec"),
+        file_name: "ita.spec",
+        sha256: Some("8d82deac8d519e11310ea72043027c70d6f018112a95b53744b97b8acf99626b"),
+    },
+    Download {
+        url: rules_specs!("jpn.spec"),
+        file_name: "jpn.spec",
+        sha256: Some("98c4d152a1be9db5f9cabedc98939d7d7438999e06f37d3bc29d941b1e8f5c8b"),
+    },
+    Download {
+        url: rules_specs!("mex.spec"),
+        file_name: "mex.spec",
+        sha256: Some("80395d18f3224eea470ba96ba114d76d1d94d6dcc7d98110e1e688299fb4dfb4"),
+    },
+    Download {
+        url: rules_specs!("mlt.spec"),
+        file_name: "mlt.spec",
+        sha256: Some("0ebb361be2d9963497893d3290d5ecee729f5c2c20a5080b145057d14501cc0f"),
+    },
+    Download {
+        url: rules_specs!("ned.spec"),
+        file_name: "ned.spec",
+        sha256: Some("331f6bd9a660cecabd10e51f4ce688a57770de540761d08b5f6b6fdf54fffecb"),
+    },
+    Download {
+        url: rules_specs!("nir.spec"),
+        file_name: "nir.spec",
+        sha256: Some("c0cc19ab22817308f668b06178ea26fe6814ec59edc66ab1f46485080c976307"),
+    },
+    Download {
+        url: rules_specs!("nzl.spec"),
+        file_name: "nzl.spec",
+        sha256: Some("30c6860738786831490428c438da52389f6adb9e80c883e3443210b68d3668e2"),
+    },
+    Download {
+        url: rules_specs!("pan.spec"),
+        file_name: "pan.spec",
+        sha256: Some("ed00058393d499c919c7532f5402e49a940294be41c1cca9656e039112ff061c"),
+    },
+    Download {
+        url: rules_specs!("par.spec"),
+        file_name: "par.spec",
+        sha256: Some("f68ed20f4c002e03330dc62015f0cfc7eb1f9a6b6bfd128d53be4df424173379"),
+    },
+    Download {
+        url: rules_specs!("per.spec"),
+        file_name: "per.spec",
+        sha256: Some("ad870df16686ee0fb4d7f40eea02c6b58d6ba7a874a8a734e28aea6fe32e970f"),
+    },
+    Download {
+        url: rules_specs!("por.spec"),
+        file_name: "por.spec",
+        sha256: Some("c220d551a3294dd96b7c061cbcc3ced98e4075b672624d0fa1c313710342fce9"),
+    },
+    Download {
+        url: rules_specs!("rou.spec"),
+        file_name: "rou.spec",
+        sha256: Some("3a229379fa631ff3fecf92bb9e699aec36169d6b1e2dba83de871a0a219c18d8"),
+    },
+    Download {
+        url: rules_specs!("sco.spec"),
+        file_name: "sco.spec",
+        sha256: Some("39e0661bc7267dcc847e2bd64af8e60c2725e701939fee3b5c19b027b55d1049"),
+    },
+    Download {
+        url: rules_specs!("slv.spec"),
+        file_name: "slv.spec",
+        sha256: Some("b258dabfe3c3f827c4be0cd0a30ee9498f432337ebc2ef3bcaa5d978fce6f8ab"),
+    },
+    Download {
+        url: rules_specs!("smr.spec"),
+        file_name: "smr.spec",
+        sha256: Some("276d2cc999dede76ffd6832fb902a8bac6135c9bc26b09781fb1e7c2f277c138"),
+    },
+    Download {
+        url: rules_specs!("tur.spec"),
+        file_name: "tur.spec",
+        sha256: Some("4e7376126165642b3170ea59d96b1ca4dc1c4745045c2607eb4e3cd5821fa971"),
+    },
+    Download {
+        url: rules_specs!("uru.spec"),
+        file_name: "uru.spec",
+        sha256: Some("49ad13063bee8c185b17d3931c96be2f76e8d0052f47751479df3fc06d001d05"),
+    },
+    Download {
+        url: rules_specs!("usa.spec"),
+        file_name: "usa.spec",
+        sha256: Some("35e18e2fde96e3df53abaf2c7720a07719bf2cbc4c46ddd6a881d3810c6f7df7"),
+    },
+    Download {
+        url: rules_specs!("wal.spec"),
+        file_name: "wal.spec",
+        sha256: Some("8e87c9eba9efdbb35450b540afbafa0a2ccd7ac664b5a1a8053e45d6a7f8f21a"),
+    },
+];
+
+/// Where the rules library's packs are kept: `target/cache/downloads/rules_specs`.
+#[must_use]
+pub fn rules_specs_path() -> PathBuf {
+    downloads_path().join(RULES_SPECS_DIR)
+}
+
 /// The recording of `RGD_CORPUS` named `file_name`, if any.
 #[must_use]
 pub fn rgd_recording(file_name: &str) -> Option<&'static Download<'static>> {
@@ -254,6 +462,27 @@ mod tests {
     const UNREACHABLE: &str = "http://127.0.0.1:9/missing";
 
     const ABC_SHA256: &str = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+
+    #[test]
+    fn the_rules_specs_are_pinned_and_kept_apart() {
+        let [shapes, packs @ ..] = &RULES_SPECS;
+        assert_eq!(shapes.file_name, "shapes.txt");
+        for download in RULES_SPECS {
+            assert!(download.url.ends_with(download.file_name), "{download:?}");
+            assert!(
+                download
+                    .url
+                    .contains("87b65278a15007223ec4f387f1027eb4d5cd7625")
+            );
+            assert!(
+                download
+                    .sha256
+                    .is_some_and(|sha| sha.len() == ABC_SHA256.len())
+            );
+        }
+        assert!(packs.iter().all(|pack| pack.file_name.ends_with(".spec")));
+        assert_eq!(rules_specs_path(), downloads_path().join("rules_specs"));
+    }
 
     #[test]
     fn hashes_are_lower_case_hex() {

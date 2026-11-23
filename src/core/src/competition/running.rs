@@ -23,6 +23,12 @@ pub const STANDINGS_ROWS: usize = 64;
 /// The offset of the first standings row.
 const STANDINGS: usize = 1488;
 
+/// The offset of the league's places by standing (`teamEntryOffsets`).
+const TEAM_ENTRY_OFFSETS: usize = 118;
+
+/// The offset of the league's teams (`leagueTeamIds`).
+const LEAGUE_TEAMS: usize = 310;
+
 /// The offset of the season's months (the league section's `phaseStartMonths`).
 pub const PHASE_MONTHS: usize = 470;
 
@@ -233,7 +239,7 @@ macro_rules! header_fields {
     };
 }
 
-pub(super) use {arrays, fields, header_fields};
+pub(crate) use {arrays, fields, header_fields};
 
 /// A competition under way: upstream's image of it, read and written field by field.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -284,6 +290,18 @@ impl RunningCompetition {
     /// The offset of word `field` of standings row `index`'s line.
     fn line_word(index: usize, field: usize) -> usize {
         STANDINGS + index * ROW_LEN + <i32 as Field>::LEN + field * <u16 as Field>::LEN
+    }
+
+    /// Whether place `place` of the league's order by standing lies within the image.
+    #[must_use]
+    pub fn has_team_entry(place: usize) -> bool {
+        TEAM_ENTRY_OFFSETS + (place + 1) * <u16 as Field>::LEN <= IMAGE_LEN
+    }
+
+    /// Whether the league's team `index` lies within the image.
+    #[must_use]
+    pub fn has_league_team(index: usize) -> bool {
+        LEAGUE_TEAMS + (index + 1) * <TeamBytes as Field>::LEN <= IMAGE_LEN
     }
 
     /// Standings row `index`.
@@ -389,12 +407,12 @@ impl RunningCompetition {
     arrays! {
         /// The league's places by standing (league view `teamEntryOffsets[64]`): each a
         /// standings row's offset, 18 a row.
-        team_entry_offset, set_team_entry_offset: u16 = 118;
+        team_entry_offset, set_team_entry_offset: u16 = TEAM_ENTRY_OFFSETS;
         /// The league's shuffle indices and their pad (`shuffleAndPad[64]`).
         shuffle_and_pad, set_shuffle_and_pad: u8 = 246;
         /// The league's teams (`leagueTeamIds[14]`, both views; a league of more than 14 runs
         /// on into `competitionFormat` and past the match data, as upstream's does).
-        league_team, set_league_team: TeamBytes = 310;
+        league_team, set_league_team: TeamBytes = LEAGUE_TEAMS;
         /// A cup's legs, round by round (cup view `roundLegs[6]`).
         cup_round_legs, set_cup_round_legs: u16 = 110;
         /// A cup's extra time, round by round (`roundExtraTime[6]`).

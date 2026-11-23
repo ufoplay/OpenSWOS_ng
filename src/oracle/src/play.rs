@@ -1,7 +1,8 @@
 //! A league played (upstream src/diy_competition.c): its next fixture
 //! (`DIY_GetCurrentFixtureTeamPtrs`), its progress after a match
 //! (`DIY_AdvanceLeagueProgressAfterMatch`), a match's result recorded
-//! (`DIY_PlayOrSimulateLeagueFixture`, its result given cached, so no simulation runs), its
+//! (`DIY_PlayOrSimulateLeagueFixture`, its result given cached, so no simulation runs; or
+//! upstream's simulated, [`crate::sim_play`]), its
 //! qualifiers (`DIY_UpdateLeagueQualifiers`), its season's moves
 //! (`DIY_UpdatePromotionRelegationScratchCounts`), each from an image of the competition.
 
@@ -30,8 +31,10 @@ pub struct ResultSetup {
     pub state: Box<[u8; STATE_LEN]>,
     /// The teams.
     pub teams: Teams,
-    /// The home side's goals and the away side's (below 0x8000: the cache holds a signed word).
-    pub goals: (u16, u16),
+    /// The home side's goals and the away side's (below 0x8000: the cache holds a signed word),
+    /// or none: upstream's simulation in the session set
+    /// ([`Oracle::set_simulation`](crate::Oracle::set_simulation)).
+    pub goals: Option<(u16, u16)>,
 }
 
 /// The season's moves as upstream counts them: each team's change in the scratch of the

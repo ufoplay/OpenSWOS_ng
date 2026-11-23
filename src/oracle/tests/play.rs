@@ -8,8 +8,13 @@
 //! either (`tests/available.rs` says so).
 #![cfg(not(oracle_unavailable))]
 
+mod given;
+mod sim_setup;
+mod simulated;
+
 use std::sync::LazyLock;
 
+use given::Given;
 use openswos_competitions_json_resource::SymbolId;
 use openswos_core::competition::league::{
     Moves, PlayError, WorldDivision, play_result, season_moves, start_division, update_qualifiers,
@@ -17,8 +22,9 @@ use openswos_core::competition::league::{
 use openswos_core::competition::running::{IMAGE_LEN, RunningCompetition, STANDINGS_ROWS};
 use openswos_core::competition::schedule::Schedule;
 use openswos_core::competition::start::{LoadedTeam, Pitch};
-use openswos_core::competition::table::{Line, Score};
+use openswos_core::competition::table::Line;
 use openswos_core::competition::tournament::{STATE_LEN, TournamentState};
+use openswos_core::sim::{PLAYERS as PLAYERS_HELD, Simulation, formation_orders};
 use openswos_core::world::{CompetitionRef, Source, TableContent, World};
 use openswos_oracle::Oracle;
 use openswos_oracle::draw::Prices;
@@ -31,6 +37,10 @@ use openswos_test_utils::world_1996_97_path;
 use openswos_world_package_resource::{PackageFiles, WorldPackage};
 use proptest::collection::vec;
 use proptest::prelude::*;
+use sim_setup::core_tactics;
+use simulated::{
+    CAREER_PLACE, CAREER_TEAM, Recorded, england, generators_alike, squads_alike, variant,
+};
 
 /// The selected teams the stubbed loader gives, by ordinal.
 const SELECTED_TEAMS: usize = 160;
@@ -246,8 +256,9 @@ proptest! {
             &mut ours,
             &mut our_state,
             &schedule,
-            Score { home: goals.0, away: goals.1 },
+            &mut Given::goals(goals),
             name_of(&teams),
+            &mut Rng::default(),
         );
         prop_assume!(!matches!(&played, Err(error) if refused_as_garbage(error)), "{:?}", played);
         prop_assert!(played.is_ok(), "{:?}", played);
@@ -255,7 +266,7 @@ proptest! {
             competition: Box::new(image),
             state: Box::new(state),
             teams: teams.clone(),
-            goals,
+            goals: Some(goals),
         });
         for (offset, (&mine, &upstream)) in ours.image().iter().zip(theirs.iter()).enumerate() {
             prop_assert_eq!(mine, upstream, "competition byte {}", offset);
@@ -449,11 +460,9 @@ fn world_1996_97s_leagues_play_their_seasons_as_upstream_s() {
                 &mut ours,
                 &mut our_state,
                 &schedule,
-                Score {
-                    home: goals.0,
-                    away: goals.1,
-                },
+                &mut Given::goals(goals),
                 name_of(&teams),
+                &mut rng,
             )
             .unwrap_or_else(|error| panic!("{id} {division}, match {number}: {error}"));
             let competition_before: [u8; IMAGE_LEN] = *theirs;
@@ -461,7 +470,7 @@ fn world_1996_97s_leagues_play_their_seasons_as_upstream_s() {
                 competition: Box::new(competition_before),
                 state: Box::new(state),
                 teams: teams.clone(),
-                goals,
+                goals: Some(goals),
             });
             theirs = after;
             assert_alike(
@@ -481,4 +490,117 @@ fn world_1996_97s_leagues_play_their_seasons_as_upstream_s() {
         seasons += 1;
     }
     assert!(seasons >= MIN_SEASONS, "{seasons} seasons");
+}
+
+#[test]
+fn world_1996_97s_leagues_simulate_their_seasons_as_upstream_s() {
+    let world = &*WORLD;
+    let mut oracle = Oracle::lock();
+    let records = oracle.compiled_tactics();
+    let tactics = core_tactics(&records);
+    let orders = formation_orders(&tactics);
+    // The image's teams the selected teams in order, the career club second.
+    let mut before = RunningCompetition::default();
+    for ordinal in 0..=u8::MAX >> 2 {
+        before.set_league_team(usize::from(ordinal), [0, ordinal]);
+    }
+    before.set_league_team(CAREER_PLACE, CAREER_TEAM);
+    let before = *before.image();
+    let state = [0; STATE_LEN];
+    let (mut seasons, mut goals, mut hurt) = (0, 0, 0);
+    for (index, (record, competition, division)) in divisions(world).into_iter().enumerate() {
+        let england = england();
+        let names = england.names();
+        oracle.set_rand2_state(RandState {
+            seed: 0,
+            xor_index: 0,
+            xor_key: 0,
+        });
+        let started = oracle
+            .start_compiled_division(&CompiledSetup {
+                before: Box::new(before),
+                record,
+                division: u16::try_from(division).expect("a few"),
+                pitch_type: SEASONAL,
+                teams: england.prices(),
+                career_team: england.career_prices(),
+            })
+            .expect("upstream's record");
+        let Ok(mut theirs) = started else {
+            continue;
+        };
+        let resolved = WorldDivision::resolve(world, competition, Source::Record, division)
+            .expect("a division");
+        let mut rng = Rng::default();
+        rng.secondary = Generator::default();
+        let mut ours = RunningCompetition::from_image(&before);
+        start_division(
+            &mut ours,
+            &resolved.start(Pitch::Seasonal),
+            world.schedules(),
+            england.loader(),
+            &mut rng,
+        )
+        .expect("started");
+        let id = world.competition_id(competition).as_str();
+        assert_alike(ours.image(), &theirs, &format!("{id} {division}: started"));
+        let groups = u8::try_from(ours.total_matches_in_round()).expect("a size");
+        let schedule = world
+            .schedules()
+            .of(competition, groups)
+            .expect("its round robin")
+            .clone();
+        let variant = variant(index);
+        oracle.set_simulation(&variant.oracle_session(&england, &records));
+        let mut simulation = Simulation::new(
+            england.squads.clone(),
+            variant.session(&tactics, &orders),
+            england.loader(),
+        );
+        let mut our_state = TournamentState::from_image(&state);
+        let mut number = 0;
+        while ours.min_substitutes() != 0 {
+            let what = format!("{id} {division}, match {number}");
+            let mut recorded = Recorded::new(&mut simulation);
+            play_result(
+                &mut ours,
+                &mut our_state,
+                &schedule,
+                &mut recorded,
+                name_of(&names),
+                &mut rng,
+            )
+            .unwrap_or_else(|error| panic!("{what}: {error}"));
+            let competition_before: [u8; IMAGE_LEN] = *theirs;
+            let (after, _) = oracle.play_result(&ResultSetup {
+                competition: Box::new(competition_before),
+                state: Box::new(state),
+                teams: names.clone(),
+                goals: None,
+            });
+            theirs = after;
+            assert_alike(ours.image(), &theirs, &what);
+            squads_alike(&mut oracle, &simulation.squads)
+                .unwrap_or_else(|error| panic!("{what}: {error}"));
+            generators_alike(&mut oracle, &rng).unwrap_or_else(|error| panic!("{what}: {error}"));
+            number += 1;
+        }
+        assert!(number > 0, "{id} {division}: no match");
+        goals += (0..STANDINGS_ROWS)
+            .map(|row| u32::from(ours.row(row).line.goals_for))
+            .sum::<u32>();
+        hurt += simulation
+            .squads
+            .selected
+            .iter()
+            .flat_map(|team| (0..PLAYERS_HELD).map(move |slot| team.cards_injuries(slot)))
+            .filter(|&status| status != 0)
+            .count();
+        seasons += 1;
+    }
+    assert!(seasons >= MIN_SEASONS, "{seasons} seasons");
+    assert!(
+        goals > 0 && hurt > 0,
+        "the matches score ({goals}) and hurt ({hurt})"
+    );
 }

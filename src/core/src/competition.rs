@@ -6,6 +6,8 @@
 pub mod cup;
 pub mod draw;
 pub mod league;
+pub mod results;
+pub mod rules_library;
 pub mod running;
 pub mod schedule;
 pub mod start;

@@ -10,12 +10,15 @@
 //! their own way (`LeagueSplit_*`, `LeaguePhase_*`, `States_Pair`): they join with World
 //! 2026-27's components (M5 #9).
 
+use openswos_rng::Rng;
 use thiserror::Error;
 
+use crate::competition::results::{MatchResults, MatchSetup, Sides, Venue};
 use crate::competition::running::{IMAGE_LEN, PHASE_MONTHS, RunningCompetition, STANDINGS_ROWS};
 use crate::competition::schedule::Schedule;
-use crate::competition::table::{Line, Score, record, sort_groups};
+use crate::competition::table::{Line, record, sort_groups};
 use crate::competition::tournament::TournamentState;
+use crate::sim::SimError;
 
 /// The bytes of a standings row: the places' entries count in them.
 const ROW_BYTES: u16 = 18;
@@ -25,6 +28,10 @@ const PLACES: usize = 64;
 
 /// The identity of the career club in a standings row.
 const CAREER_CLUB: i32 = -1;
+
+/// The league's rounds (`playEachTeam`) whose matches are played on neutral ground: once each
+/// way round.
+const NEUTRAL_ROUNDS: i16 = 1;
 
 /// The phases whose months the image holds: from the months' table to its end.
 const MAX_PHASES: usize = IMAGE_LEN - PHASE_MONTHS;
@@ -97,6 +104,9 @@ pub enum PlayError {
     /// A team of the table with no name.
     #[error("team {0} has no name")]
     UnknownTeam(i32),
+    /// A match's result that its source cannot give.
+    #[error(transparent)]
+    Match(#[from] SimError),
 }
 
 /// The fixture the league plays next (upstream `getCurrentFixtureTeamPtrs`): the current pair
@@ -214,27 +224,46 @@ pub fn advance(competition: &mut RunningCompetition, fixture: Fixture) -> Result
     Ok(())
 }
 
-/// The league's next fixture played to `score` (the bookkeeping of upstream
-/// `DIY_PlayOrSimulateLeagueFixture` around the match): the match begun, the progress advanced,
-/// the career club's part noted, both kept in the tournament's state when the league is its
-/// stage, the match counted, the result in the table, and once the season is played the
-/// table sorted and its winner and qualifiers found ([`update_qualifiers`], the teams named by
-/// `name`). The career's own records of the match are M7's.
+/// The league's next fixture played (upstream `DIY_PlayOrSimulateLeagueFixture`, its
+/// bookkeeping and `ProcessDIYLeagueMatchResultAndCareerUpdates`'s result): the match begun
+/// and kept in the tournament's state when the league is its stage; its normal time asked of
+/// `results` (drawn by `rng`), on neutral ground in a league played once each way round, the
+/// benches the league's (`leagueMinSubstitutes`, `leagueMaxSubstitutes`); the progress
+/// advanced, the career club's part noted and kept, the match counted, the result in the
+/// table, and once the season is played the table sorted and its winner and qualifiers found
+/// ([`update_qualifiers`], the teams named by `name`). The career's own records of the match
+/// are M7's.
 ///
 /// # Errors
 ///
-/// [`PlayError`] when the fixture cannot be found (nothing written then), the progress cannot
-/// advance, or the table cannot be sorted.
+/// [`PlayError`] when the fixture cannot be found (nothing written then), the result cannot be
+/// given, the progress cannot advance, or the table cannot be sorted.
 pub fn play_result(
     competition: &mut RunningCompetition,
     tournament: &mut TournamentState,
     schedule: &Schedule,
-    score: Score,
+    results: &mut impl MatchResults,
     name: impl Fn(i32) -> Option<Vec<u8>>,
+    rng: &mut Rng,
 ) -> Result<Fixture, PlayError> {
     let fixture = fixture(competition, schedule)?;
     competition.set_match_started(1);
     keep_progress(competition, tournament);
+    let venue = if competition.play_each_team() == NEUTRAL_ROUNDS {
+        Venue::Neutral
+    } else {
+        Venue::Home
+    };
+    let substitutes = (
+        competition.league_min_substitutes(),
+        competition.league_max_substitutes(),
+    );
+    let setup = MatchSetup::of(competition, venue, substitutes);
+    let sides = Sides {
+        home: competition.row(fixture.home).team,
+        away: competition.row(fixture.away).team,
+    };
+    let score = results.normal_time(competition, sides, &setup, rng)?;
     advance(competition, fixture)?;
     let career = [fixture.home, fixture.away]
         .into_iter()
@@ -444,6 +473,7 @@ mod tests {
     use crate::competition::league::{DivisionStart, LeagueRecord, start_division};
     use crate::competition::schedule::{Pair, Schedules};
     use crate::competition::start::{LoadedTeam, Pitch};
+    use crate::competition::table::Score;
 
     /// The round robin of 4 clubs, in real rounds: three days of two pairs.
     fn schedules() -> Schedules {
@@ -578,25 +608,97 @@ mod tests {
         );
     }
 
+    /// A source whose normal time is its function's of the sides, the setups and the progress
+    /// it was asked at kept.
+    struct Given<F> {
+        /// The goals of a match's sides.
+        goals: F,
+        /// Each match's setup, and the games its home side had played when asked.
+        asked: Vec<(MatchSetup, u16)>,
+    }
+
+    impl<F: FnMut(Sides) -> Score> MatchResults for Given<F> {
+        fn normal_time(
+            &mut self,
+            competition: &RunningCompetition,
+            sides: Sides,
+            setup: &MatchSetup,
+            _rng: &mut Rng,
+        ) -> Result<Score, SimError> {
+            let row = (0..STANDINGS_ROWS)
+                .find(|&row| competition.row(row).team == sides.home)
+                .expect("the home side's row");
+            self.asked.push((*setup, competition.row(row).line.played));
+            Ok((self.goals)(sides))
+        }
+
+        fn extra_time(&mut self, _sides: Sides, _rng: &mut Rng) -> Result<Score, SimError> {
+            unreachable!("a league plays no extra time")
+        }
+
+        fn penalties(&mut self, _sides: Sides, _rng: &mut Rng) -> Result<Score, SimError> {
+            unreachable!("a league plays no shoot-out")
+        }
+    }
+
     #[test]
     fn a_result_is_recorded_and_the_season_s_end_finds_its_qualifiers() {
         let mut competition = started();
+        competition.set_league_min_substitutes(2);
+        competition.set_league_max_substitutes(5);
         let mut tournament = TournamentState::default();
         let schedule = schedule();
-        // The home side wins every match by its row's number of goals plus one.
-        let mut fixtures = Vec::new();
-        while competition.min_substitutes() != 0 {
-            let next = fixture(&competition, &schedule).expect("a fixture");
-            let score = Score {
-                home: u16::try_from(next.home()).expect("4") + 1,
+        // The home side wins every match by its row's number of goals plus one (the career
+        // club's row the last).
+        let mut given = Given {
+            goals: |sides: Sides| Score {
+                home: u16::try_from(if sides.home == CAREER_CLUB {
+                    3
+                } else {
+                    sides.home
+                })
+                .expect("4")
+                    + 1,
                 away: 0,
-            };
+            },
+            asked: Vec::new(),
+        };
+        let mut fixtures = Vec::new();
+        let mut rng = Rng::default();
+        while competition.min_substitutes() != 0 {
             fixtures.push(
-                play_result(&mut competition, &mut tournament, &schedule, score, name)
-                    .expect("played"),
+                play_result(
+                    &mut competition,
+                    &mut tournament,
+                    &schedule,
+                    &mut given,
+                    name,
+                    &mut rng,
+                )
+                .expect("played"),
             );
         }
         assert_eq!(fixtures.len(), 12);
+        // Twice round: at home, the league's benches, each asked before its games counted.
+        let (setup, played) = given.asked[0];
+        assert_eq!(
+            (setup.venue, setup.substitutes, played),
+            (Venue::Home, (2, 5), 0)
+        );
+        assert_eq!(given.asked[11].1, 5);
+        // Once each way round: on neutral ground.
+        let mut once = started();
+        once.set_play_each_team(1);
+        play_result(
+            &mut once,
+            &mut TournamentState::default(),
+            &schedule,
+            &mut given,
+            name,
+            &mut rng,
+        )
+        .expect("played");
+        assert_eq!(given.asked[12].0.venue, Venue::Neutral);
         assert_eq!(competition.matches_played_count(), 12);
         assert_eq!(
             competition.career_team_involved(),

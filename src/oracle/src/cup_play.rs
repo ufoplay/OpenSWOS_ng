@@ -65,8 +65,9 @@ pub struct CupMatchSetup {
     pub teams: Vec<SelectedTeam>,
     /// The career club.
     pub career_team: SelectedTeam,
-    /// The match's results.
-    pub results: CachedResults,
+    /// The match's results, or none: upstream's simulation in the session set
+    /// ([`Oracle::set_simulation`]).
+    pub results: Option<CachedResults>,
 }
 
 impl Oracle {

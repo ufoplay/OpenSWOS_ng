@@ -166,7 +166,8 @@ The generic engine of docs/PLAN.md M5, unit by unit. Today:
   them from a world, for a league or a cup played as one, a division, and the record it is
   played from (`Source`). A league is played: `fixture` (the next pair, from the round robin
   its groups play), `advance` (the progress after a match), `play_result` (a match's result
-  recorded: the progress, the table, and at the season's end the qualifiers),
+  asked of a `MatchResults` source at upstream's point and recorded: the progress, the
+  table, and at the season's end the qualifiers),
   `sort_table`, `update_qualifiers` (the winner and the play-offs' qualifiers),
   `season_moves` (the promoted and relegated, by identity).
 - `cup`: a cup started. `start_cup` makes a `CupRecord` (a `cups.json` knockout, or a
@@ -177,8 +178,9 @@ The generic engine of docs/PLAN.md M5, unit by unit. Today:
   control, the pairs and rounds, the first round's format, the matches' months with a
   replay's date, the strength), the record's rounds, the pairings shuffled unless the record
   keeps its order. `WorldKnockout::resolve` resolves its texts and classes from a world
-  (`CupStart`). A cup is played: `decide` (a tie decided from its match's `MatchResults`,
-  each part asked as it is needed), `play_cup_match` (a match's result kept in the bracket,
+  (`CupStart`). A cup is played: `decide` (a tie decided from its match's results, each
+  part asked of a `MatchResults` source as it is needed), `play_cup_match` (a match's result
+  kept in the bracket,
   the round's and the cup's end, the next round's draw), `next_round` (the second legs, the
   replays, or the winners into the next round), `round_name` and `stage_name` (a round's name
   among the world's `cup_round_name`s).
@@ -202,6 +204,70 @@ The generic engine of docs/PLAN.md M5, unit by unit. Today:
   loaded (any stage: a later stage of groups deals the ranked order on, a later knockout
   keeps it; a world's `OwnDraw` from its tables), or the tournament ended after its last
   (`Advance`).
+- `results`: a match's result as a competition asks for it (docs/PLAN.md M5 #8d): a
+  `MatchResults` source (normal time, extra time, penalties, each drawn by the competition's
+  generator: the simulation's, `sim::Simulation`, or the match engine's, M6), the match's
+  `Sides` (the identities) and its `MatchSetup` (the `Venue`, the benches, the goals'
+  column).
+- `rules_library`: the rules library (docs/PLAN.md M5 #9a; upstream src/rules/, MIT,
+  Copyright Davide Lorigliola and Ben Baker: its licence kept beside the port in
+  `rules_library/LICENSE-MIT`). A league's final `Tables` and `Levels`; the season's moves
+  (`final_moves` by place and the play-offs' `Move`s, `second_team_moves` for the second
+  teams); a cup's clubs from the second season by its `Quota`s (`cup_entrants`); parallel
+  groups at the season end, by the clubs' areas (`parallel_groups`); a grouped cup's later
+  first two rounds (`GroupedCupEnd`, `grouped_cup_rounds`); a league's rules (`League`) and
+  their checks (`league_check`, `spec_check`: the first fault a `CheckError`); the fixed tiers'
+  brackets (`fixed_tier_brackets`: an upper tier's play-off and play-out, a lower tier of
+  groups' play-off, `play_off_held`, `play_out_held`); the pack's knockouts at the season end
+  (`Knockouts::season`: every play-off kind, entrant and round, the moves and results, the
+  stage titles, the promedio, the SEASON WINNERS page; what the season keeps, `StageBank`,
+  `Promedio`, `Winners`, checked by `season_check`; the career club's own through a
+  `KnockoutHost`). Refusals are `RulesError`s.
 - `start`: what both starts share: the session's `Pitch`, a `LoadedTeam` as upstream's
   loader finds it (its identity, who controls it, its prices), the name written into its
   buffer, the months a competition's matches are played in.
+
+## Simulated results (`sim`)
+
+Results of matches nobody plays (upstream src/match_sim.c), in steps (docs/PLAN.md M5 #8):
+
+- `MatchTeam`: a team in a match, upstream's record as the simulation reads and writes it
+  (`TeamFileEx`: a selected team's 684 bytes, the career club's 1,292 with its reserves and
+  its own line-up, `CareerLineUp`), each field a typed accessor; an index past an array
+  reaches the bytes after it, as the C does. `MatchTeam::from_team` takes a team file's
+  record, its global number in the host's order as upstream loads it.
+- `match_value` (`UpdatePlayerPositionAndReturnRole`): a player's match value, kept in his
+  record: the value kept while the team's are, a goalkeeper's or a substitute's price, an
+  outfield player's price for his place in the tactics (`player_price`, `GetPlayerPrice`: his
+  skills weighed over the 35 ball areas by their ponders, how much each counts for his
+  position and how near it is, shared among teammates and scaled by `nearness`,
+  `CountNearnessFactor`, for a team the computer does not play), 0 out of his place, 1 on
+  loan, 0 unavailable (`unavailable`, `IsPlayerInjured`, by `StatusRules`: the mode, a
+  training game, the testers' rule). `strength` (`ComputeOldPlayerSkillForViewResult`): the
+  team's strength for a simulated result, its substitutes counted. The session's tactics come
+  in as a table (`TeamTactics`, by the team's tactics byte). Refused (`SimError`) where
+  upstream reads past its records, tables or memory or divides by zero.
+- `price_rank` (`CalcTeamPriceRankPercentOffset`): how much a league's team's rank by price
+  moves its strength (the league's paths of `FindTeamInDIY`, `GetMoreExpensiveTeamsCount`);
+  `form` (`CalcTeamViewOffset`): a team's form on a `Day`, each half's.
+- `available_players`, `available_keepers` (`GetNumberOfAvailablePlayers`,
+  `GetNumberOfAvailableSubstitutes`): a squad's players and goalkeepers out and available;
+  `status_buckets` (`InitPlayerRemapTableForTeam`): the status buckets a simulated match gives
+  its players, drawn by the second generator, by `SimRules` (the status rules, the kind of
+  game, `GameType`, the kinds a computer club's records keep: `ComputerStatuses`).
+- `simulate` (`CalculateViewResult`): a simulated match between two `MatchTeam`s in a
+  competition, by a `MatchSetup` (venue, substitutes, goals' column) and a `Session` (the
+  tactics and their formations' orders, `formation_orders`; the rules; the career's answers;
+  the day): each side's `stand_ins`, status buckets and cards and injuries (`after_match`),
+  strengths, ranks and forms, then the goals and their scorers; `extra_time`
+  (`ExtraTimeSecondPhaseScoring`) continues from its `Simulated` state; `penalties`
+  (`PenaltyShootoutScorerPair`).
+- `countdown` (`InitInGameTeams_WithMatchParam`): before a simulated match, its sides'
+  status buckets fall by draws, then their cards or injuries a step (a computer club's only
+  where its world opens the kind, in a DIY or a preset competition).
+- `Simulation`: a competition's matches simulated, a `MatchResults` source over the `Squads`
+  kept by identity (the selected teams, the career club): before each match the countdown
+  and the match flags cleared, then the result on the competition's month, its statuses in
+  the competition's track; extra time from the last normal time.
+- `tables`: the engine's tables a value is reckoned by and a form, a status and a result are
+  drawn by (upstream's, the same in every world).

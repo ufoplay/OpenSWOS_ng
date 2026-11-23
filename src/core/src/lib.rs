@@ -5,6 +5,7 @@
 
 pub mod competition;
 pub mod data;
+pub mod sim;
 pub mod validation;
 pub mod world;
 

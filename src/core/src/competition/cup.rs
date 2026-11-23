@@ -15,8 +15,8 @@ mod world_knockout;
 
 pub(super) use play::winners_first;
 pub use play::{
-    CupFixture, CupPlayError, Decision, MatchResults, ResultFlags, Venue, cup_fixture, decide,
-    next_round, play_cup_match,
+    CupFixture, CupPlayError, Decision, ResultFlags, cup_fixture, decide, next_round,
+    play_cup_match,
 };
 pub use rounds::{round_name, stage_name};
 pub use world_knockout::WorldKnockout;

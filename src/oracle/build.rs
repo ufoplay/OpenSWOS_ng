@@ -104,6 +104,23 @@ struct Unit {
     /// `void *`), by name.
     #[serde(default)]
     types: Vec<String>,
+    /// Its functions compiled and bound under [`RENAMED_PREFIX`]'s name (a define for the unit
+    /// alone), so a stub of the name may call upstream's.
+    #[serde(default)]
+    renamed: Vec<String>,
+}
+
+/// What a renamed function's name begins with.
+const RENAMED_PREFIX: &str = "upstream_";
+
+impl Unit {
+    /// The defines that rename its functions.
+    fn renames(&self) -> Vec<String> {
+        self.renamed
+            .iter()
+            .map(|function| format!("-D{function}={RENAMED_PREFIX}{function}"))
+            .collect()
+    }
 }
 
 /// A header whose `static inline` functions the tests call: bound, not compiled (its
@@ -153,6 +170,13 @@ fn main() {
         .chain(units.data.iter().map(|data| &data.path))
         .map(|path| upstream.join(path))
         .collect();
+    // The units that rename functions, compiled apart with their defines.
+    let renaming: Vec<(PathBuf, Vec<String>)> = units
+        .unit
+        .iter()
+        .filter(|unit| !unit.renamed.is_empty())
+        .map(|unit| (upstream.join(&unit.path), unit.renames()))
+        .collect();
     let headers: Vec<PathBuf> = units
         .header
         .iter()
@@ -185,6 +209,8 @@ fn main() {
             constants: &unit.constants,
             types: &unit.types,
             wrapped: false,
+            defines: unit.renames(),
+            renamed: &unit.renamed,
         };
         bind(&upstream, &units.build, &binding, &out, &shim);
     }
@@ -196,6 +222,8 @@ fn main() {
             constants: &[],
             types: &[],
             wrapped: false,
+            defines: Vec::new(),
+            renamed: &[],
         };
         bind(&upstream, &units.build, &binding, &out, &shim);
     }
@@ -207,13 +235,33 @@ fn main() {
             constants: &[],
             types: &[],
             wrapped: true,
+            defines: Vec::new(),
+            renamed: &[],
         };
         let wrappers = bind(&upstream, &units.build, &binding, &out, &shim)
             .unwrap_or_else(|| panic!("no static function of {} wrapped", header.path));
         sources.push(wrappers);
     }
     let replaced = replaced_header(&out, &units.build);
-    compile(&upstream, &units.build, &sources, &shim, &replaced);
+    let compiler = Compiler {
+        upstream: &upstream,
+        build: &units.build,
+        shim: &shim,
+        replaced: &replaced,
+    };
+    let mut objects = Vec::new();
+    for (source, defines) in &renaming {
+        sources.retain(|other| other != source);
+        let mut unit = compiler.base();
+        unit.file(source);
+        for define in defines {
+            unit.flag(define);
+        }
+        objects.extend(unit.compile_intermediates());
+    }
+    let mut library = compiler.base();
+    library.files(&sources).objects(&objects);
+    library.compile(LIBRARY);
 }
 
 /// Writes the SDL shim into `out`, and returns its folder.
@@ -234,6 +282,10 @@ struct Binding<'a> {
     /// Whether its `static` functions are wrapped: a header's are (the wrappers include the
     /// file, so a unit's cannot be).
     wrapped: bool,
+    /// The unit's own defines (its renames).
+    defines: Vec<String>,
+    /// Its functions bound under the renamed name.
+    renamed: &'a [String],
 }
 
 impl Binding<'_> {
@@ -266,29 +318,49 @@ fn replaced_header(out: &Path, build: &Build) -> PathBuf {
     path
 }
 
-/// Compiles `sources` into the static library, the SDL shim in `shim`, the replaced
-/// functions' header `replaced` force-included.
-fn compile(upstream: &Path, build: &Build, sources: &[PathBuf], shim: &Path, replaced: &Path) {
-    let mut compiler = cc::Build::new();
-    compiler
-        .files(sources)
-        .includes(build.include_dirs.iter().map(|dir| upstream.join(dir)))
-        .include(shim)
-        .opt_level(build.optimization)
-        .warnings(false)
-        // Upstream's C warns a great deal by design (its Makefile turns most of it off).
-        .flag("-w")
-        .flag("-include")
-        .flag(upstream.join(&build.include).display().to_string())
-        .flag("-include")
-        .flag(replaced.display().to_string());
-    for flag in &build.flags {
-        compiler.flag(flag);
+/// How upstream's C is compiled: the checkout, its build's settings, the SDL shim, the replaced
+/// functions' header.
+struct Compiler<'a> {
+    upstream: &'a Path,
+    build: &'a Build,
+    shim: &'a Path,
+    replaced: &'a Path,
+}
+
+impl Compiler<'_> {
+    /// A `cc` build of upstream's flags, defines and includes, the replaced functions' header
+    /// force-included.
+    fn base(&self) -> cc::Build {
+        let mut compiler = cc::Build::new();
+        compiler
+            .includes(
+                self.build
+                    .include_dirs
+                    .iter()
+                    .map(|dir| self.upstream.join(dir)),
+            )
+            .include(self.shim)
+            .opt_level(self.build.optimization)
+            .warnings(false)
+            // Upstream's C warns a great deal by design (its Makefile turns most of it off).
+            .flag("-w")
+            .flag("-include")
+            .flag(
+                self.upstream
+                    .join(&self.build.include)
+                    .display()
+                    .to_string(),
+            )
+            .flag("-include")
+            .flag(self.replaced.display().to_string());
+        for flag in &self.build.flags {
+            compiler.flag(flag);
+        }
+        for define in define_args(self.build) {
+            compiler.flag(define);
+        }
+        compiler
     }
-    for define in define_args(build) {
-        compiler.flag(define);
-    }
-    compiler.compile(LIBRARY);
 }
 
 /// Binds `binding`'s functions, globals and types into `<out>/<name>.rs`, every function with the
@@ -323,8 +395,14 @@ fn bind(
         .wrap_static_fns(binding.wrapped)
         .wrap_static_fns_path(&wrappers)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
+    builder = builder.clang_args(&binding.defines);
     for function in binding.functions {
-        builder = builder.allowlist_function(format!("^{function}$"));
+        let name = if binding.renamed.contains(function) {
+            format!("{RENAMED_PREFIX}{function}")
+        } else {
+            function.clone()
+        };
+        builder = builder.allowlist_function(format!("^{name}$"));
     }
     for variable in binding.variables.iter().chain(binding.constants) {
         builder = builder.allowlist_var(format!("^{variable}$"));

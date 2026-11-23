@@ -31,8 +31,18 @@ include = "include/swos_platform.h"
 include_dirs = ["src", "include"]
 # Upstream's functions the oracle's stubs replace (`ffi::stubs`): their definitions are made weak
 # (`#pragma weak`, a header force-included), so the stubs link. `VerifyTeamLoaded`
-# (src/career_teams.c) gives the tests' teams.
-replaced = ["VerifyTeamLoaded"]
+# (src/career_teams.c) gives the tests' teams; the career's post-match form changes and its
+# updates after a match do nothing, and whether a simulated match's statuses apply is the
+# test's (src/career_status.c, M7); the tactics' release (src/tactics_data.c
+# `TacticsData_SelectRelease`) is recorded, the table left as compiled.
+replaced = [
+    "VerifyTeamLoaded",
+    "Career_ApplyPostMatchPlayerStatModsIfCareerTeam",
+    "ShouldApplyRandomPlayerStatusAfterSim",
+    "Career_UpdateStatsAfterMatch",
+    "UpdateCareerPlayersFormAfterMatch",
+    "TacticsData_SelectRelease",
+]
 
 # The units the tests call: their functions, the globals they read and write (by name), the
 # constants they see (by pattern) and the types read that nothing bound reaches (by name), bound
@@ -158,6 +168,7 @@ functions = [
     "DIY_UpdateCompetitionProgress",
     "GetCupRoundStringIndex",
     "GetNextCupRoundStringIndex",
+    "CountNearnessFactor",
 ]
 variables = [
     "_diyCompetitionStart",
@@ -176,6 +187,97 @@ types = ["DIYTournamentState", "CompetitionLeague", "CompetitionCup", "Playoffs"
 [[unit]]
 path = "src/career_teams.c"
 functions = ["DIY_AdvanceToNextCompetitionSlot"]
+variables = []
+
+# The simulation of a match nobody plays, a function at a time as M5 #8 ports it: a player's
+# match value and the team's strength (#8a); its standing, its form, its players' status buckets
+# (#8b); the result, its extra time and its shoot-out (#8c). The result's three are renamed
+# `upstream_*`: the oracle's stubs of their names give the competitions' tests the results they
+# set, or upstream's when a test asks (`ffi::stubs`).
+[[unit]]
+path = "src/match_sim.c"
+functions = [
+    "GetPlayerPrice",
+    "UpdatePlayerPositionAndReturnRole",
+    "ComputeOldPlayerSkillForViewResult",
+    "CalcTeamPriceRankPercentOffset",
+    "CalcTeamViewOffset",
+    "InitPlayerRemapTableForTeam",
+    "CalculateViewResult",
+    "ExtraTimeSecondPhaseScoring",
+    "PenaltyShootoutScorerPair",
+]
+renamed = ["CalculateViewResult", "ExtraTimeSecondPhaseScoring", "PenaltyShootoutScorerPair"]
+variables = ["_currentMatchPlayers", "_teamSkillCurrent"]
+
+# The career's players' status: whether a player is available (`IsPlayerInjured`), the available
+# players and goalkeepers (#8b); the countdown of a simulated match's teams' statuses (#8d),
+# renamed `upstream_*`: the oracle's stub of its name runs it when a test asks for upstream's
+# simulation (`ffi::stubs`). The rest is the career's (M7).
+[[unit]]
+path = "src/career_status.c"
+functions = [
+    "IsPlayerInjured",
+    "GetNumberOfAvailablePlayers",
+    "GetNumberOfAvailableSubstitutes",
+    "InitInGameTeams_WithMatchParam",
+]
+renamed = ["InitInGameTeams_WithMatchParam"]
+variables = []
+
+# The testers' rule (no injuries or cards: SWOS.ini's `[testing] no_injuries_cards`).
+[[unit]]
+path = "src/test_rules.c"
+functions = ["TestRules_SetSetting", "TestRules_Force"]
+variables = []
+
+# The menus' formations: each formation's outfield players by how defensive they are
+# (`InitializeTacticsPositions`), which a simulated result's stand-ins take their places by.
+[[unit]]
+path = "src/menus.c"
+functions = ["InitializeTacticsPositions"]
+variables = ["_playersPositionsByTactics"]
+
+# The rules library (src/rules/, MIT: Davide Lorigliola's, src/rules/LICENSE-MIT), built as
+# upstream builds it, through its src/swos_rules_*.c: the season's moves (`sr_post`), a cup's
+# clubs (`sr_cups`), parallel groups (`sr_groups`), the grouped cup's later rounds (`sr_cupd`)
+# (M5 #9a1).
+[[unit]]
+path = "src/swos_rules_post.c"
+functions = ["sr_final_moves", "sr_b_teams"]
+variables = []
+
+[[unit]]
+path = "src/swos_rules_cups.c"
+functions = ["sr_cup_entrants"]
+variables = []
+
+[[unit]]
+path = "src/swos_rules_groups.c"
+functions = ["sr_pg_season"]
+variables = []
+
+[[unit]]
+path = "src/swos_rules_cupd.c"
+functions = ["sr_cupd_end_reset", "sr_cupd_keep_place", "sr_cupd_note_arrival", "sr_cupd_make"]
+variables = []
+
+# The fixed tiers' brackets (`sr_dplay`) and the checks of a league's rules and spec
+# (`sr_check`) (M5 #9a2).
+[[unit]]
+path = "src/swos_rules_dplay.c"
+functions = ["sr_italy", "sr_out_held", "sr_playoff_held"]
+variables = []
+
+[[unit]]
+path = "src/swos_rules_check.c"
+functions = ["sr_spec_check", "sr_league_check", "sr_season_check"]
+variables = []
+
+# The pack's knockouts at the season end (`sr_gplay`'s `sr_knockouts`) (M5 #9a3).
+[[unit]]
+path = "src/swos_rules_gplay.c"
+functions = ["sr_knockouts"]
 variables = []
 
 # Upstream's RNC unpacker (the game's own, SWOS2.s): World 2026-27's foreign pool is packed, and
@@ -212,6 +314,10 @@ variables = [
     "_diyGroupPatternLookup",
     "_diyLeagueTeamShuffleMap",
     "_diyTeamShuffleScratch",
+    "_skillValuePonders",
+    "_plPricesIncreaseTable",
+    "_team1GoalCounterByPlayer",
+    "_team2GoalCounterByPlayer",
 ]
 
 [[data]]
@@ -270,7 +376,8 @@ variables = ["_aDiyLeague", "_aDiyCup", "_aDiyTournament", "_aCup_0", "_aLeague_
 path = "src/swos_amiga_data_imports.c"
 # Each team file's first global team number; the cached results a match takes
 # (`getCachedOrCalcViewResult`, `getCachedOrCalcExtraTimeResult`, `getCachedOrCalcPenaltyResult`),
-# which the oracle gives instead of simulated ones.
+# which the oracle gives instead of simulated ones; a training game's flag and the mode a
+# player's availability is checked in (`IsPlayerInjured`).
 variables = [
     "_teamsCountryNumbers",
     "_cachedViewResultTeam1Goals",
@@ -279,6 +386,8 @@ variables = [
     "_cachedExtraTimeTeam2Goals",
     "_cachedPenaltyShootoutTeam1Score",
     "_cachedPenaltyShootoutTeam2Score",
+    "_trainingGame",
+    "_inEditTactics",
 ]
 
 [[data]]
@@ -303,6 +412,32 @@ variables = [
 
 [[data]]
 path = "src/career_comp_copies.c"
+
+[[data]]
+path = "src/simulation_data.c"
+
+[[data]]
+path = "src/player_data.c"
+
+[[data]]
+path = "src/tactics_data.c"
+# The tactics the teams play (presets, the user's, the edited) and the tables a player's value
+# is reckoned by.
+variables = [
+    "_teamTacticsTable",
+    "_skillsPerQuadrant",
+    "_priceSkillPonders",
+    "_quadrantCoordinatesToBallQuadrant",
+    "_quadrantDistanceFactor",
+]
+
+[[data]]
+path = "src/career_unavailable_players.c"
+
+[[data]]
+path = "src/career_team_scalars.c"
+# The career club's players.
+variables = ["_careerNumPlayers"]
 
 [[data]]
 path = "src/swos_amiga_ptr_imports.c"

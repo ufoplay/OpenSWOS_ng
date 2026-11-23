@@ -9,6 +9,8 @@ pub mod draw;
 #[cfg(not(oracle_unavailable))]
 mod ffi;
 #[cfg(not(oracle_unavailable))]
+pub mod knockouts;
+#[cfg(not(oracle_unavailable))]
 pub mod league;
 #[cfg(not(oracle_unavailable))]
 pub mod math;
@@ -17,7 +19,15 @@ pub mod play;
 #[cfg(not(oracle_unavailable))]
 pub mod rng;
 #[cfg(not(oracle_unavailable))]
+pub mod rules_library;
+#[cfg(not(oracle_unavailable))]
 pub mod running;
+#[cfg(not(oracle_unavailable))]
+pub mod sim;
+#[cfg(not(oracle_unavailable))]
+pub mod sim_play;
+#[cfg(not(oracle_unavailable))]
+pub mod sim_result;
 #[cfg(not(oracle_unavailable))]
 pub mod stage;
 #[cfg(not(oracle_unavailable))]

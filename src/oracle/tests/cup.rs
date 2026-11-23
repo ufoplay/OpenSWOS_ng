@@ -11,21 +11,26 @@
 //! not either (`tests/available.rs` says so).
 #![cfg(not(oracle_unavailable))]
 
+mod given;
+mod sim_setup;
+mod simulated;
+
 use std::sync::LazyLock;
 
+use given::Given;
 use openswos_common::Nibble;
 use openswos_common::json::JsonByte;
 use openswos_competitions_json_resource::{
     CompetitionHeader, CompetitionType, Cup, CupKind, Playoff, RoundRules, SymbolId,
 };
 use openswos_core::competition::cup::{
-    CupFixture, CupPlayError, CupRecord, CupStart, MatchResults, StartError, Venue, WorldKnockout,
-    decide, next_round, play_cup_match, round_name, stage_name, start_cup,
+    CupFixture, CupPlayError, CupRecord, CupStart, StartError, WorldKnockout, decide, next_round,
+    play_cup_match, round_name, stage_name, start_cup,
 };
 use openswos_core::competition::running::{IMAGE_LEN, RunningCompetition};
 use openswos_core::competition::start::{LoadedTeam, Pitch};
-use openswos_core::competition::table::Score;
 use openswos_core::competition::tournament::{STATE_LEN, TournamentState};
+use openswos_core::sim::{Simulation, formation_orders};
 use openswos_core::world::{CompetitionRef, Source, TableContent, World};
 use openswos_oracle::Oracle;
 use openswos_oracle::cup::{CompiledCupSetup, CupSetup, KnockoutBytes, Layout, SelectedTeam};
@@ -40,6 +45,10 @@ use openswos_test_utils::world_1996_97_path;
 use openswos_world_package_resource::{PackageFiles, WorldPackage};
 use proptest::collection::vec;
 use proptest::prelude::*;
+use sim_setup::core_tactics;
+use simulated::{
+    CAREER_PLACE, CAREER_TEAM, Recorded, Sim, england, generators_alike, squads_alike, variant,
+};
 
 /// The name pointer's bytes in the image (an address: the C's own, not compared).
 const NAME_POINTER: std::ops::Range<usize> = 40..48;
@@ -466,41 +475,6 @@ fn world_1996_97s_knockouts_start_as_upstreams_compiled_records() {
     );
 }
 
-/// The simulation's mode flag for a neutral ground (upstream's 0xFF).
-const NEUTRAL: u16 = 0xFF;
-
-/// A match's results as the core's source: each part, and which were asked.
-struct Given {
-    /// The results.
-    results: CachedResults,
-    /// The parts asked.
-    taken: Taken,
-}
-
-impl MatchResults for Given {
-    fn normal_time(&mut self, _fixture: CupFixture, venue: Venue) -> Score {
-        self.taken.normal = true;
-        self.taken.venue = Some(match venue {
-            Venue::Home => 0,
-            Venue::Neutral => NEUTRAL,
-        });
-        let (home, away) = self.results.normal;
-        Score { home, away }
-    }
-
-    fn extra_time(&mut self, _fixture: CupFixture) -> Score {
-        self.taken.extra = true;
-        let (home, away) = self.results.extra;
-        Score { home, away }
-    }
-
-    fn penalties(&mut self, _fixture: CupFixture) -> Score {
-        self.taken.penalties = true;
-        let (home, away) = self.results.penalties;
-        Score { home, away }
-    }
-}
-
 /// Match `number`'s results, drawn from `seed`: goals 0 to 3 (decisive from the 200th match, so
 /// replays end), extra time 0 to 2, a shoot-out 0 to 9.
 fn results_of(seed: u64, number: usize) -> CachedResults {
@@ -566,7 +540,12 @@ enum Ended {
 
 /// Plays the cup started in `ours` and `theirs` (with `state`) to its end, as the career does:
 /// its matches until a round is complete, then the next round unless it is finished; each step
-/// alike on both sides, the results of match `n` `results_of(seed, n)`.
+/// alike on both sides, the results of match `n` `results_of(seed, n)`, or the `simulation`'s
+/// and upstream's (the squads and the generators alike after each match too).
+#[expect(
+    clippy::too_many_arguments,
+    reason = "both sides' cups and their results"
+)]
 fn play_through(
     oracle: &mut Oracle,
     mut ours: RunningCompetition,
@@ -575,37 +554,40 @@ fn play_through(
     career_team: SelectedTeam,
     rng: &mut Rng,
     seed: u64,
+    mut simulation: Option<&mut Sim<'_>>,
 ) -> Result<Ended, TestCaseError> {
     let mut our_state = TournamentState::default();
     let mut their_state = Box::new([0; STATE_LEN]);
     for number in 0..MAX_MATCHES {
         let results = results_of(seed, number);
-        let mut given = Given {
-            results,
-            taken: Taken::default(),
+        let loaded = loader(teams, &career_team);
+        let (played, taken) = match simulation.as_deref_mut() {
+            Some(simulation) => {
+                let mut recorded = Recorded::new(simulation);
+                let played = play_cup_match(&mut ours, &mut our_state, &mut recorded, loaded, rng);
+                (played, recorded.taken)
+            }
+            None => {
+                let mut given = Given::new(results);
+                let played = play_cup_match(&mut ours, &mut our_state, &mut given, loaded, rng);
+                (played, given.taken)
+            }
         };
-        let played = play_cup_match(
-            &mut ours,
-            &mut our_state,
-            &mut given,
-            loader(teams, &career_team),
-            rng,
-        );
         if let Err(error) = played
             && past_bracket(error)
         {
             return Ok(Ended::Refused(error));
         }
         prop_assert!(played.is_ok(), "match {}: {:?}", number, played);
-        let (after, state_after, taken) = oracle.play_cup_match(&CupMatchSetup {
+        let (after, state_after, their_taken) = oracle.play_cup_match(&CupMatchSetup {
             competition: theirs,
             state: their_state,
             teams: teams.to_vec(),
             career_team,
-            results,
+            results: simulation.is_none().then_some(results),
         });
         (theirs, their_state) = (after, state_after);
-        prop_assert_eq!(given.taken, taken, "match {}: the parts taken", number);
+        prop_assert_eq!(taken, their_taken, "match {}: the parts taken", number);
         assert_played_alike(
             &ours,
             &our_state,
@@ -613,6 +595,11 @@ fn play_through(
             &their_state,
             &format!("match {number}"),
         )?;
+        if let Some(simulation) = simulation.as_deref() {
+            squads_alike(oracle, &simulation.squads)
+                .and_then(|()| generators_alike(oracle, rng))
+                .map_err(|error| TestCaseError::fail(format!("match {number}: {error}")))?;
+        }
         if ours.round_complete() == 0 {
             continue;
         }
@@ -695,7 +682,7 @@ proptest! {
         let competition = RunningCompetition::from_image(&image);
         let fixture = CupFixture { home_slot: 0, away_slot: 1, home: 0, away: 1 };
         let mut given = Given { results, taken: Taken::default() };
-        let ours = decide(&competition, fixture, first_leg, &mut given).expect("decided");
+        let ours = decide(&competition, fixture, first_leg, &mut given, &mut Rng::default()).expect("decided");
         let teams: Vec<SelectedTeam> = (0..2).map(|_| SelectedTeam { prices: [0; 16], controls: 1 }).collect();
         let theirs = Oracle::lock().decide_tie(
             &CupMatchSetup {
@@ -703,7 +690,7 @@ proptest! {
                 state: Box::new([0; STATE_LEN]),
                 teams,
                 career_team: SelectedTeam { prices: [0; 16], controls: 1 },
-                results,
+                results: Some(results),
             },
             first_leg,
         );
@@ -755,7 +742,7 @@ proptest! {
                 career_team,
             })
             .expect("started");
-        let ended = play_through(&mut oracle, ours, theirs, &teams, career_team, &mut rng, seed)?;
+        let ended = play_through(&mut oracle, ours, theirs, &teams, career_team, &mut rng, seed, None)?;
         if let Ended::Refused(error) = ended {
             prop_assert!(past_bracket(error), "{:?}", error);
         }
@@ -880,6 +867,84 @@ fn world_1996_97s_knockouts_play_through_as_upstream_s() {
             career_team,
             &mut rng,
             seed,
+            None,
+        )
+        .unwrap_or_else(|error| panic!("{id} ({:?}): {error}", compiled.source));
+        let Ended::Finished(matches) = ended else {
+            panic!("{id}: {ended:?}");
+        };
+        assert!(matches > 0, "{id}: no match");
+        played += 1;
+    }
+    assert!(played >= MIN_COMPILED_KNOCKOUTS, "{played} played");
+}
+
+#[test]
+fn world_1996_97s_knockouts_simulate_through_as_upstream_s() {
+    let world = &*WORLD;
+    let records = compiled_knockouts(world);
+    let mut oracle = Oracle::lock();
+    let tactics_records = oracle.compiled_tactics();
+    let tactics = core_tactics(&tactics_records);
+    let orders = formation_orders(&tactics);
+    // The image's teams the selected teams in order, the career club second.
+    let mut image = RunningCompetition::default();
+    for ordinal in 0..=u8::MAX >> 2 {
+        image.set_cup_team(usize::from(ordinal), [0, ordinal]);
+    }
+    image.set_cup_team(CAREER_PLACE, CAREER_TEAM);
+    let before = Box::new(*image.image());
+    let mut played = 0;
+    for (number, compiled) in records.iter().enumerate() {
+        let england = england();
+        let (teams, career_team) = england.selected_teams();
+        oracle.set_rand2_state(RandState {
+            seed: 0,
+            xor_index: 0,
+            xor_key: 0,
+        });
+        let theirs = oracle
+            .start_compiled_cup(&CompiledCupSetup {
+                before: before.clone(),
+                record: compiled.record,
+                pitch_type: SEASONAL,
+                teams: teams.clone(),
+                career_team,
+            })
+            .expect("upstream's record");
+        let Ok(theirs) = theirs else {
+            continue;
+        };
+        let resolved = WorldKnockout::resolve(world, compiled.competition, compiled.source)
+            .expect("a knockout of the world");
+        let mut rng = Rng::default();
+        rng.secondary = Generator::default();
+        let mut ours = RunningCompetition::from_image(&before);
+        start_cup(
+            &mut ours,
+            &resolved.start(Pitch::Seasonal),
+            loader(&teams, &career_team),
+            &mut rng,
+        )
+        .expect("started");
+        let id = world.competition_id(compiled.competition).as_str();
+        let variant = variant(number);
+        oracle.set_simulation(&variant.oracle_session(&england, &tactics_records));
+        let mut simulation = Simulation::new(
+            england.squads.clone(),
+            variant.session(&tactics, &orders),
+            england.loader(),
+        );
+        let seed = u64::try_from(number).expect("a few");
+        let ended = play_through(
+            &mut oracle,
+            ours,
+            theirs,
+            &teams,
+            career_team,
+            &mut rng,
+            seed,
+            Some(&mut simulation),
         )
         .unwrap_or_else(|error| panic!("{id} ({:?}): {error}", compiled.source));
         let Ended::Finished(matches) = ended else {
