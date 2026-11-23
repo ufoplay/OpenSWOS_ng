@@ -302,7 +302,10 @@ fn entry_row(entry: u16) -> Result<usize, PlayError> {
 }
 
 /// The row of place `place` of the table.
-pub(in crate::competition) fn place_row(competition: &RunningCompetition, place: usize) -> Result<usize, PlayError> {
+pub(in crate::competition) fn place_row(
+    competition: &RunningCompetition,
+    place: usize,
+) -> Result<usize, PlayError> {
     if place >= PLACES {
         return Err(PlayError::PlacePastOrder(place));
     }

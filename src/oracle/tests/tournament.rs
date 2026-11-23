@@ -32,8 +32,8 @@ use proptest::collection::vec;
 use proptest::prelude::*;
 use tournaments::{
     CAREER_COUNTRY, DIY_CUP, DIY_LEAGUE, DIY_TOURNAMENT, LEAGUE, MIN_TOURNAMENTS, SEASONAL,
-    SELECTED_TEAMS, WORLD, assert_alike, core_record, own_draw, record, selected,
-    selected_loader, start_9697, tournaments, world_teams,
+    SELECTED_TEAMS, WORLD, assert_alike, core_record, own_draw, record, selected, selected_loader,
+    start_9697, tournaments, world_teams,
 };
 
 /// A stage's months (`progressionTable[90]`).

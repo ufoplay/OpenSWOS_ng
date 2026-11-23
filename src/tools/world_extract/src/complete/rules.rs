@@ -175,7 +175,9 @@ fn fit_national_files(
 #[cfg(test)]
 mod tests {
     use openswos_oracle::tables::{CountryEntry, FixtureSchedule};
-    use openswos_world_rules_resource::{CompetitionSchedule, OwnDraw, Ranking, Schedule, StageDraw};
+    use openswos_world_rules_resource::{
+        CompetitionSchedule, OwnDraw, Ranking, Schedule, StageDraw,
+    };
 
     use super::*;
 

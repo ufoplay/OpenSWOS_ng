@@ -155,7 +155,10 @@ mod tests {
     fn a_kept_or_ordered_stage_takes_the_places_before() {
         let state = state();
         assert_eq!(StageDraw::Keep(3).drawn(&state), Ok(vec![63, 62, 61]));
-        assert_eq!(StageDraw::Order(vec![2, 0, 1]).drawn(&state), Ok(vec![61, 63, 62]));
+        assert_eq!(
+            StageDraw::Order(vec![2, 0, 1]).drawn(&state),
+            Ok(vec![61, 63, 62])
+        );
     }
 
     #[test]
@@ -171,10 +174,16 @@ mod tests {
         };
         assert_eq!(best.drawn(&state), Ok(vec![63, 60, 62, 61]));
         state.set_group(60, 2);
-        assert_eq!(best.drawn(&state), Err(LoadError::NoBestPlacedPattern(0b0110)));
+        assert_eq!(
+            best.drawn(&state),
+            Err(LoadError::NoBestPlacedPattern(0b0110))
+        );
         // A group past a byte's bits sets none the patterns compare.
         state.set_group(60, 9);
-        assert_eq!(best.drawn(&state), Err(LoadError::NoBestPlacedPattern(0b0010)));
+        assert_eq!(
+            best.drawn(&state),
+            Err(LoadError::NoBestPlacedPattern(0b0010))
+        );
         state.set_group(60, 31);
         assert_eq!(best.drawn(&state), Err(LoadError::BestPlacedGroup(31)));
         state.set_group(60, 0x80);

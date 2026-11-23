@@ -521,8 +521,8 @@ mod tests {
     use openswos_world_rules_resource::{Pattern, StageDraw};
 
     use super::*;
-    use crate::competition::tournament::Ranking;
     use crate::competition::schedule::{Pair, Schedule};
+    use crate::competition::tournament::Ranking;
     use crate::fixture::{ALBANIA, ENGLAND, package, package_with};
 
     fn id(text: &str) -> SymbolId {

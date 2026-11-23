@@ -282,7 +282,8 @@ pub(crate) fn assert_alike(
 
 /// A `WORLD.ini` for the committed package, which holds none (its fingerprint, which covers
 /// the rosters, is not read here).
-pub(crate) const WORLD_INI: &str = "tag = 9697\nname = World 1996-97\nfingerprint = 0000000000000000\n";
+pub(crate) const WORLD_INI: &str =
+    "tag = 9697\nname = World 1996-97\nfingerprint = 0000000000000000\n";
 
 /// World 1996-97, from its committed package.
 pub(crate) static WORLD: LazyLock<World> = LazyLock::new(|| {

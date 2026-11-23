@@ -146,8 +146,9 @@ mod tests {
 
     #[test]
     fn a_draw_without_its_stages_or_of_an_unknown_ranking_does_not_read() {
-        let error = read::<Draws>(br#"{"own_draws": [{"competitions": [], "ranking": "by_place"}]}"#)
-            .expect_err("no stages");
+        let error =
+            read::<Draws>(br#"{"own_draws": [{"competitions": [], "ranking": "by_place"}]}"#)
+                .expect_err("no stages");
         assert!(error.to_string().contains("stages"), "{error}");
         let error = read::<Draws>(
             br#"{"own_draws": [{"competitions": [], "ranking": "by_luck", "stages": []}]}"#,

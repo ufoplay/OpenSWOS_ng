@@ -11,9 +11,7 @@ use std::collections::BTreeMap;
 
 use openswos_competitions_json_resource::{CompetitionsDocument, CompetitionsFile};
 use openswos_oracle::tables::OwnDrawTables;
-use openswos_world_rules_resource::{
-    BestPlaced, Draws, OwnDraw, Pattern, Ranking, StageDraw,
-};
+use openswos_world_rules_resource::{BestPlaced, Draws, OwnDraw, Pattern, Ranking, StageDraw};
 
 use crate::error::ExtractError;
 
@@ -65,12 +63,13 @@ fn groups(bits: u8) -> Vec<u8> {
 /// The patterns of `_diyGroupPatternLookup`, up to its end (a byte below 0 where a pattern's
 /// groups would be).
 fn patterns(table: &[u8]) -> Vec<Pattern> {
-    table
-        .chunks_exact(PATTERN_LEN)
-        .take_while(|pattern| pattern[0].cast_signed() >= 0)
-        .map(|pattern| Pattern {
-            groups: groups(pattern[0]),
-            order: pattern[1..].to_vec(),
+    let (patterns, _) = table.as_chunks::<PATTERN_LEN>();
+    patterns
+        .iter()
+        .take_while(|[bits, ..]| bits.cast_signed() >= 0)
+        .map(|[bits, order @ ..]| Pattern {
+            groups: groups(*bits),
+            order: order.to_vec(),
         })
         .collect()
 }

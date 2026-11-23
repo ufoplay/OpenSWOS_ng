@@ -18,7 +18,8 @@ pub(crate) fn next_stage(setup: &StageSetup) -> Result<Started, u16> {
     // SAFETY: plain writes to globals the lock's holder owns: the draws' scratch, the
     // career's flags the stubs own.
     unsafe {
-        (*(&raw mut bulk::_diyTeamShuffleScratch)).fill(SCRATCH);
+        let scratch = &raw mut bulk::_diyTeamShuffleScratch;
+        scratch.write(scratch.read().map(|_| SCRATCH));
         stubs::_gameType = 0;
         stubs::_careerLoadedFlag = 0;
     }

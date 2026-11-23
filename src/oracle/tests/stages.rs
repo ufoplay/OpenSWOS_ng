@@ -12,6 +12,7 @@
 
 mod tournaments;
 
+use openswos_competitions_json_resource::SymbolId;
 use openswos_core::competition::cup::{
     CupFixture, CupPlayError, MatchResults, Venue, next_round, play_cup_match,
 };
@@ -25,7 +26,6 @@ use openswos_core::competition::tournament::{
     TournamentStart, TournamentState, next_stage, start_tournament,
 };
 use openswos_core::world::World;
-use openswos_competitions_json_resource::SymbolId;
 use openswos_oracle::Oracle;
 use openswos_oracle::cup::SelectedTeam;
 use openswos_oracle::cup_play::{CachedResults, CupMatchSetup, Taken};
@@ -89,7 +89,11 @@ fn kind() -> impl Strategy<Value = Kind> {
 /// A stage drawn: its kind, a pick (what a stage of groups sends on, a knockout's teams, a
 /// noise's teams), and whether its teams are noise (any, a time in eight).
 fn drawn_stage() -> impl Strategy<Value = (Kind, u8, bool)> {
-    (kind(), any::<u8>(), prop_oneof![7 => Just(false), 1 => Just(true)])
+    (
+        kind(),
+        any::<u8>(),
+        prop_oneof![7 => Just(false), 1 => Just(true)],
+    )
 }
 
 /// The groups of 1 to 8 of 2 to 8 teams that hold `teams` exactly, the pick's of them.
@@ -120,7 +124,10 @@ fn plausible(stages: &[(Kind, u8, bool)]) -> ([[i8; 3]; STAGES], i8) {
         };
         let pick = stages[stage].1;
         through = match kind {
-            Kind::Groups(..) => 1 + i8::try_from(u16::from(pick) % u16::from(teams.cast_unsigned().max(1))).expect("a byte"),
+            Kind::Groups(..) => {
+                1 + i8::try_from(u16::from(pick) % u16::from(teams.cast_unsigned().max(1)))
+                    .expect("a byte")
+            }
             Kind::Knockout(_) => (teams / 2).max(1),
         };
         let Some(&(next, next_pick, noise)) = stages.get(stage + 1) else {
@@ -145,12 +152,19 @@ fn plausible(stages: &[(Kind, u8, bool)]) -> ([[i8; 3]; STAGES], i8) {
 /// A tournament to play: [`record`]'s, its stages [`plausible`] and their plays few.
 fn tournament() -> impl Strategy<Value = (TournamentBytes, Vec<Option<usize>>)> {
     (record(), vec(drawn_stage(), STAGES), PLAYS).prop_map(|((mut bytes, seeds), drawn, plays)| {
-        let count = usize::try_from(bytes.round_string_base).expect("1 to 6");
-        let (rounds, through) = plausible(&drawn[..count]);
+        let drawn_count = usize::try_from(bytes.round_string_base).expect("1 to 6");
+        let (rounds, through) = plausible(&drawn[..drawn_count]);
+        // The stages end at the final: none of a team alone after it.
+        let count = rounds[..drawn_count]
+            .iter()
+            .position(|&[teams, ..]| teams < 2)
+            .unwrap_or(drawn_count)
+            .max(1);
+        bytes.round_string_base = i8::try_from(count).expect("1 to 6");
         bytes.rounds = rounds;
         if count == STAGES {
             bytes.reserved = through;
-        } else {
+        } else if count == drawn_count {
             bytes.rounds[count][0] = through;
         }
         bytes.play_each_team = plays;
@@ -240,7 +254,11 @@ impl MatchResults for Given {
 
 /// The career's copy of a stage's progress into the state before its advance (src/career_teams.c
 /// `Career_UpdateHybridCompetitionProgressAndMaybeAdvanceSlot`, M7's): the same on both sides.
-fn keep_stage_progress(state: &mut TournamentState, competition: &RunningCompetition, knockout: bool) {
+fn keep_stage_progress(
+    state: &mut TournamentState,
+    competition: &RunningCompetition,
+    knockout: bool,
+) {
     state.set_match_started(competition.match_started());
     state.set_career_team_involved(competition.career_team_involved());
     state.set_result_code(competition.result_code());
@@ -266,8 +284,12 @@ impl Sides {
     fn alike(&self, what: &str) -> Result<(), TestCaseError> {
         let mut theirs = *self.their_competition;
         theirs[NAME_POINTER].copy_from_slice(&self.competition.image()[NAME_POINTER]);
-        for (offset, (&mine, &upstream)) in
-            self.competition.image().iter().zip(theirs.iter()).enumerate()
+        for (offset, (&mine, &upstream)) in self
+            .competition
+            .image()
+            .iter()
+            .zip(theirs.iter())
+            .enumerate()
         {
             prop_assert_eq!(mine, upstream, "{}: competition byte {}", what, offset);
         }
@@ -305,6 +327,24 @@ struct Play<'a> {
     schedule: &'a dyn Fn(u8) -> Option<Schedule>,
     /// The seed of its matches' results.
     seed: u64,
+    /// Each stage's end changed on both sides before its advance: whether the teams through
+    /// are made 1, whether the next stage's bracket is made doubled (none, as it is).
+    stage_ends: &'a [Option<(bool, bool)>],
+}
+
+/// `state` changed for stage `stage`'s end as `change` says: its teams through 1, the next
+/// stage's bracket doubled.
+fn change_stage_end(
+    state: &mut TournamentState,
+    stage: usize,
+    (through_one, doubled): (bool, bool),
+) {
+    if through_one {
+        state.set_slot_division_factor(stage, 1);
+    }
+    if doubled && TournamentState::has_slot(stage + 1) {
+        state.set_slot_double_count(stage + 1, 1);
+    }
 }
 
 /// Whether a league's refusal is one where upstream runs past its memory or reads garbage.
@@ -415,7 +455,11 @@ fn play_knockout(
 fn generators_alike(oracle: &mut Oracle, rng: &Rng, what: &str) -> Result<(), TestCaseError> {
     let state = oracle.rand2_state();
     prop_assert_eq!(
-        (rng.secondary.seed, rng.secondary.xor_index, rng.secondary.xor_key),
+        (
+            rng.secondary.seed,
+            rng.secondary.xor_index,
+            rng.secondary.xor_key
+        ),
         (state.seed, state.xor_index, state.xor_key),
         "{}: the second generators",
         what
@@ -448,6 +492,10 @@ fn play_through(
         let mut their_state = TournamentState::from_image(&sides.their_state);
         let their_competition = RunningCompetition::from_image(&sides.their_competition);
         keep_stage_progress(&mut their_state, &their_competition, knockout);
+        if let Some(change) = play.stage_ends.get(current).copied().flatten() {
+            change_stage_end(&mut sides.state, current, change);
+            change_stage_end(&mut their_state, current, change);
+        }
         let advanced = next_stage(
             &mut sides.state,
             &mut sides.competition,
@@ -456,6 +504,17 @@ fn play_through(
             name_of(play.names),
             rng,
         );
+        let what = format!("stage {current}'s end");
+        // Refused where upstream runs past its memory: not run, unless upstream halts there.
+        let halts = matches!(
+            advanced,
+            Err(NextStageError::Load(LoadError::NoBestPlacedPattern(_)))
+        );
+        if let Err(error) = &advanced
+            && !halts
+        {
+            return Ok(Ended::Refused(format!("{what}: {error:?}")));
+        }
         let upstream = oracle.next_stage(&StageSetup {
             state: Box::new(*their_state.image()),
             competition: sides.their_competition.clone(),
@@ -463,13 +522,16 @@ fn play_through(
             career_team: play.career_team,
             names: play.names.clone(),
         });
-        let what = format!("stage {current}'s end");
         match (advanced, upstream) {
-            (Err(NextStageError::Load(LoadError::NoBestPlacedPattern(_))), Err(halt)) => {
+            (Err(_), Err(halt)) => {
                 prop_assert_eq!(halt, NO_PATTERN, "{}", what);
                 return Ok(Ended::Refused("no pattern".to_owned()));
             }
-            (Err(error), _) => return Ok(Ended::Refused(format!("{what}: {error:?}"))),
+            (Err(error), Ok(_)) => {
+                return Err(TestCaseError::fail(format!(
+                    "{what}: the port refuses ({error:?}), upstream goes on"
+                )));
+            }
             (Ok(advance), Err(halt)) => {
                 return Err(TestCaseError::fail(format!(
                     "{what}: upstream halts ({halt:#06X}), the port {advance:?}"
@@ -518,6 +580,7 @@ proptest! {
         names in names(),
         rand in any::<(u8, u8, u8)>(),
         seed in any::<u64>(),
+        stage_ends in vec(prop_oneof![5 => Just(None), 1 => any::<(bool, bool)>().prop_map(Some)], STAGES),
     ) {
         // The state's teams: the selected teams in order, so every team differs.
         let mut before = TournamentState::default();
@@ -581,6 +644,7 @@ proptest! {
             rules: start.stage_rules(),
             schedule: &round_robin,
             seed,
+            stage_ends: &stage_ends,
         };
         play_through(&mut oracle, &mut sides, &play, &mut rng)?;
     }
@@ -634,12 +698,16 @@ fn world_1996_97s_tournaments_play_through_as_upstream_s() {
             rules: start.stage_rules(),
             schedule: &round_robin,
             seed: u64::try_from(index).expect("a few"),
+            stage_ends: &[],
         };
         let mut rng = both.rng;
         let ended = play_through(&mut oracle, &mut sides, &play, &mut rng)
             .unwrap_or_else(|error| panic!("{id} ({:?}): {error}", tournament.source));
         match ended {
-            Ended::Finished(matches) => { eprintln!("DEBUG {id} {:?}: {matches} matches, stages {}", tournament.source, sides.state.total_matches_in_round()); finished += 1 },
+            Ended::Finished(matches) => {
+                assert!(matches > 0, "{id}: no match played");
+                finished += 1;
+            }
             Ended::Refused(why) => panic!("{id} ({:?}): refused: {why}", tournament.source),
         }
     }

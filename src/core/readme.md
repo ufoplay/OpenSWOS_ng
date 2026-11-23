@@ -33,7 +33,7 @@ files come (docs/WORLD_INVENTORY.md §4; M4 #5c, M5, M7).
 | `SeasonEnd` | `rules/season.json` | the season end's countries, in its order; a club coach's own country first |
 | `Texts` | `rules/strings.json` | the texts the records' names name (a name is its symbol's text, or itself, a byte a character), the names a league's, a cup's and a tournament's resets write first, the default division names and the cup's and tournament's names |
 | `is_national_teams`, `is_continental`, `name_prefix` | `rules/competition_classes.json` | the national teams' competitions and the continental suspensions' contests, each played from its record or from the career's copy (`Source`); the adjective a competition's name takes (its record's country's, none for a national teams' one) |
-| `own_draw` | `rules/draws.json` | the tournaments whose stages are drawn by their own tables (upstream picks the World Cup and the European Championships by id), with the places a first stage keeps in order |
+| `own_draw` | `rules/draws.json` | the tournaments whose stages are drawn by their own tables (upstream picks the World Cup and the European Championships by id): each stage's draw (`OwnDraw`: places kept, an order, or the order the best placed's groups set) and how its stages of groups rank |
 | `Schedules` | `rules/fixtures.json` | the round robins (`competition::schedule`): each size's pairs in playing order and whether it plays real rounds, and the competitions that play their own (`Schedules::of`: a competition's own, else its size's); whether tournament groups may be odd-sized |
 
 References become typed handles (`LeagueRef`, `CupRef`, `CompetitionRef`, `GroupRef`,
@@ -68,8 +68,9 @@ competitions/cups.json: competitions[1] (_cupWinnersCup).team_seed_list[0].count
   `fixtures.json`, `strings.json`, `competition_classes.json` and `draws.json`, each required (no world's
   behaviour is a default): every country with one entry of details and no other number;
   every name, string and adjective a byte a character (Latin-1, no NUL); each class's id a
-  competition's or a career copy's; each own draw's ids tournaments, each once, keeping 1 to
-  64 places; 256 bases never going down; a second file a country's, numbered as
+  competition's or a career copy's; each own draw's ids tournaments, each once, a stage at
+  least, every place within the order's 64, a pattern's groups within a byte, each ordering
+  every best placed; 256 bases never going down; a second file a country's, numbered as
   no country is; the season end's countries the world's, each once; each round robin every
   pair of its two or more clubs once, real rounds where it says so, a size once; a
   competition's own round robin of the size its record states (a league's divisions, a
@@ -194,7 +195,13 @@ The generic engine of docs/PLAN.md M5, unit by unit. Today:
   groups as a league (its draw: kept, shuffled, or seeded into pots and dealt into the
   groups; each team's group), a knockout as a cup (kept, shuffled, or seeded into quarters
   and each pair's home side drawn; its bracket). `WorldTournament::resolve` resolves its
-  texts, classes, own draw and odd groups from a world (`TournamentStart`).
+  texts, classes, own draw and odd groups from a world (`TournamentStart`). `next_stage`
+  moves it on after a stage as upstream's `DIY_AdvanceToNextCompetitionSlot` does: a stage
+  of groups' teams ranked (`Ranking`: the engine's by place, or a world's by group) or a
+  knockout's winners first, into the order the next stage draws from, then that stage
+  loaded (any stage: a later stage of groups deals the ranked order on, a later knockout
+  keeps it; a world's `OwnDraw` from its tables), or the tournament ended after its last
+  (`Advance`).
 - `start`: what both starts share: the session's `Pitch`, a `LoadedTeam` as upstream's
   loader finds it (its identity, who controls it, its prices), the name written into its
   buffer, the months a competition's matches are played in.

@@ -178,11 +178,21 @@ pub(crate) fn own_draw_tables() -> OwnDrawTables {
     // SAFETY: plain reads of upstream's arrays, of their declared lengths.
     unsafe {
         OwnDrawTables {
-            order_8: (&raw const swos_data_bulk_imports_c::_diyShuffleOrder8Teams).read().to_vec(),
-            order_4: (&raw const swos_data_bulk_imports_c::_diyShuffleOrder4Teams).read().to_vec(),
-            tournament_order_8: (&raw const swos_data_bulk_imports_c::_diyTournamentShuffleOrder8).read().to_vec(),
-            group_patterns: (&raw const swos_data_bulk_imports_c::_diyGroupPatternLookup).read().to_vec(),
-            best_placed_map: (&raw const swos_data_bulk_imports_c::_diyLeagueTeamShuffleMap).read().to_vec(),
+            order_8: (&raw const swos_data_bulk_imports_c::_diyShuffleOrder8Teams)
+                .read()
+                .to_vec(),
+            order_4: (&raw const swos_data_bulk_imports_c::_diyShuffleOrder4Teams)
+                .read()
+                .to_vec(),
+            tournament_order_8: (&raw const swos_data_bulk_imports_c::_diyTournamentShuffleOrder8)
+                .read()
+                .to_vec(),
+            group_patterns: (&raw const swos_data_bulk_imports_c::_diyGroupPatternLookup)
+                .read()
+                .to_vec(),
+            best_placed_map: (&raw const swos_data_bulk_imports_c::_diyLeagueTeamShuffleMap)
+                .read()
+                .to_vec(),
         }
     }
 }

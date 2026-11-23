@@ -107,16 +107,7 @@ pub enum NextStageError {
     Ties(#[from] CupPlayError),
     /// The next stage does not load.
     #[error(transparent)]
-    Load(LoadError),
-}
-
-impl From<LoadError> for NextStageError {
-    fn from(error: LoadError) -> Self {
-        match error {
-            LoadError::StagePastState(stage) => Self::StagePastState(stage),
-            other => Self::Load(other),
-        }
-    }
+    Load(#[from] LoadError),
 }
 
 /// The tournament of `state` moved on after its current stage (upstream
@@ -149,8 +140,10 @@ pub fn next_stage(
         state.set_current_round_index(1);
         return Ok(Advance::Ended);
     }
-    let stage = slot(current)?;
-    let ranking = rules.own_draw.map_or(Ranking::ByPlace, |draw| draw.ranking());
+    let stage = slot(current).map_err(|_| NextStageError::StagePastState(current))?;
+    let ranking = rules
+        .own_draw
+        .map_or(Ranking::ByPlace, |draw| draw.ranking());
     if state.slot_is_league_format(stage) != 0 {
         groups_end(state, competition, stage, ranking, &name)?;
     } else {
@@ -386,4 +379,149 @@ fn knockout_end(
         state.set_team_index(place, competition.grid_pairing(place));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::competition::running::StandingsRow;
+    use crate::competition::table::Line;
+
+    /// The names of the teams of identity 0 up: `A`, `B`, ...
+    fn name(identity: i32) -> Option<Vec<u8>> {
+        let index = u8::try_from(identity).ok()?;
+        Some(vec![b'A' + index])
+    }
+
+    /// Rules of the engine's draw, its resets' names.
+    fn rules() -> StageRules<'static> {
+        StageRules {
+            reset_names: super::super::ResetNames {
+                tournament: b"T",
+                league: b"L",
+                cup: b"C",
+            },
+            own_draw: None,
+        }
+    }
+
+    #[test]
+    fn an_ended_tournament_stays_and_its_last_stage_ends_it() {
+        let (mut state, mut competition) =
+            (TournamentState::default(), RunningCompetition::default());
+        let mut rng = Rng::default();
+        state.set_total_matches_in_round(1);
+        let advanced = next_stage(
+            &mut state,
+            &mut competition,
+            &rules(),
+            |_| None,
+            name,
+            &mut rng,
+        );
+        assert_eq!(advanced, Ok(Advance::Ended));
+        assert_eq!((state.is_active(), state.current_round_index()), (ENDED, 1));
+        let advanced = next_stage(
+            &mut state,
+            &mut competition,
+            &rules(),
+            |_| None,
+            name,
+            &mut rng,
+        );
+        assert_eq!(advanced, Ok(Advance::Over));
+    }
+
+    #[test]
+    fn a_stage_past_the_state_or_of_no_groups_is_refused() {
+        let (mut state, mut competition) =
+            (TournamentState::default(), RunningCompetition::default());
+        let mut rng = Rng::default();
+        state.set_round_complete(7);
+        let advanced = next_stage(
+            &mut state,
+            &mut competition,
+            &rules(),
+            |_| None,
+            name,
+            &mut rng,
+        );
+        assert_eq!(advanced, Err(NextStageError::StagePastState(7)));
+        state.set_round_complete(0);
+        state.set_total_matches_in_round(2);
+        state.set_slot_is_league_format(0, 1);
+        let advanced = next_stage(
+            &mut state,
+            &mut competition,
+            &rules(),
+            |_| None,
+            name,
+            &mut rng,
+        );
+        assert_eq!(advanced, Err(NextStageError::NoGroups(0)));
+    }
+
+    #[test]
+    fn groups_rank_by_place_their_winners_first() {
+        // Two groups of two, two through: one a group.
+        let mut state = TournamentState::default();
+        state.set_slot_groups(0, 2);
+        state.set_slot_division_factor(0, 2);
+        let mut competition = RunningCompetition::default();
+        competition.set_match_pairs_per_round(2);
+        competition.set_total_matches_in_round(2);
+        competition.set_num_teams(4);
+        for row in 0..4u16 {
+            let place = usize::from(row);
+            competition.set_team_entry_offset(place, row * ROW_BYTES);
+            let line = Line {
+                played: 0,
+                won: 0,
+                drawn: 0,
+                lost: 0,
+                goals_for: 0,
+                goals_against: 0,
+                points: u16::from(row == 3),
+            };
+            competition.set_row(
+                place,
+                StandingsRow {
+                    team: i32::from(row),
+                    line,
+                },
+            );
+        }
+        by_place(&state, &mut competition, 0, &name).expect("ranked");
+        let order: Vec<u16> = (0..4)
+            .map(|place| competition.team_entry_offset(place) / ROW_BYTES)
+            .collect();
+        // The winners (rows 0, 2) in their groups' order, then the runners-up by their record.
+        assert_eq!(order, [0, 2, 3, 1]);
+        assert_eq!(competition.row(0).line.points, 32_000);
+        assert_eq!(competition.row(3).line.points, 2001);
+    }
+
+    #[test]
+    fn a_knockout_s_winners_come_first() {
+        let mut state = TournamentState::default();
+        state.set_slot_division_factor(0, 2);
+        let mut competition = RunningCompetition::default();
+        competition.set_match_pairs_per_round(2);
+        competition.set_num_teams(4);
+        for place in 0..4u8 {
+            competition.set_grid_pairing(usize::from(place), place);
+        }
+        competition.set_cup_round_result(0, crate::competition::cup::ResultFlags::AWAY_WON);
+        knockout_end(&mut state, &mut competition, 0, Ranking::ByPlace, &name).expect("ended");
+        let order: Vec<u8> = (0..4).map(|place| state.team_index(place)).collect();
+        assert_eq!(order, [1, 2, 0, 3]);
+        // A doubled next bracket swaps the first two ties.
+        state.set_slot_double_count(1, 1);
+        for place in 0..4u8 {
+            competition.set_grid_pairing(usize::from(place), place);
+        }
+        knockout_end(&mut state, &mut competition, 0, Ranking::ByPlace, &name).expect("ended");
+        let order: Vec<u8> = (0..4).map(|place| state.team_index(place)).collect();
+        assert_eq!(order, [0, 3, 1, 2]);
+    }
 }

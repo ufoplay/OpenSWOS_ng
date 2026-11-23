@@ -12,11 +12,11 @@
 mod play;
 mod world_division;
 
-pub(super) use play::{keep_progress, place_row};
 pub use play::{
     Fixture, Moves, PlayError, advance, fixture, play_result, season_moves, sort_table,
     update_qualifiers,
 };
+pub(super) use play::{keep_progress, place_row};
 pub use world_division::{ResolveError, WorldDivision};
 
 use openswos_competitions_json_resource::{CompetitionType, Cup, League};

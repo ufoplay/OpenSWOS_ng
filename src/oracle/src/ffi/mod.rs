@@ -145,7 +145,10 @@ pub(crate) fn reset() {
     rng::reset();
     style::reset();
     black_box(stubs::PanicHaltLoop as extern "C-unwind" fn() -> !);
-    black_box(bindings::career_teams_c::DIY_AdvanceToNextCompetitionSlot as unsafe extern "C-unwind" fn());
+    black_box(
+        bindings::career_teams_c::DIY_AdvanceToNextCompetitionSlot
+            as unsafe extern "C-unwind" fn(),
+    );
     black_box(stubs::TacticsData_SelectRelease as extern "C-unwind" fn(_));
     black_box(stubs::Tweaks_On as extern "C-unwind" fn(_) -> _);
     black_box(stubs::World_Current as extern "C-unwind" fn() -> _);

@@ -41,8 +41,12 @@ the PC game's rosters, and World 2026-27's data is the SWOS 96/97 Mod's (D8).
       (`_careerContests` pairs them), then the records of the ids `continental_record` names
       (the Copa) (`src/texts.rs`);
     - `draws.json`: the tournaments upstream draws by its own tables, which its code picks by
-      competition id (the World Cup's first stage keeping 24 places, the European
-      Championships' 16), each the world's tournament records of the ids (`src/draws.rs`);
+      competition id, each the world's tournament records of the ids, with each stage's draw
+      from upstream's compiled tables (`own_draw_tables`: the European Championships' orders
+      of eight and four, the World Cup's best placed patterns and map and its order of
+      eight; the counts its code copies and the World Cup's semi-finals' table of the code's
+      own stated) and how their groups rank (the World Cup's by group) (`src/draws.rs`). The
+      completion reads the tables before World 2026-27's install;
   - the facts upstream keeps in code, not in a table: `src/extract.rs`'s constants, each
     citing its source (the first year, a club coach's own country first, no second team
     files or kept squad numbers, odd-sized tournament groups refused).

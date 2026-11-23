@@ -782,8 +782,8 @@ fn winners_and_losers(
     let count = ties(pairs)?;
     // Faithful to the original: the places written back are twice the pairs, a word; past
     // the ties' (a count below 0 that doubles to one above) upstream copies its scratch.
-    let written = usize::try_from(pairs.cast_unsigned().wrapping_mul(2).cast_signed())
-        .unwrap_or_default();
+    let written =
+        usize::try_from(pairs.cast_unsigned().wrapping_mul(2).cast_signed()).unwrap_or_default();
     if written > 2 * count {
         return Err(CupPlayError::TiesPastGrid(pairs));
     }

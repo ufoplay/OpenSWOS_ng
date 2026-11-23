@@ -551,7 +551,10 @@ mod tests {
     #[test]
     fn after_groups_each_of_their_groups_a_pot_moves_the_places_on() {
         // Two groups of two after two groups: each pot starts a group on.
-        assert_eq!(deal(&[0, 1, 2, 3], 4, 2, 2, Some(2)), Some(vec![1, 2, 0, 3]));
+        assert_eq!(
+            deal(&[0, 1, 2, 3], 4, 2, 2, Some(2)),
+            Some(vec![1, 2, 0, 3])
+        );
         // Two teams dealt into four places: places 0 and 3 never dealt.
         assert_eq!(deal(&[0, 1], 4, 1, 2, Some(2)), None);
     }
